@@ -1,0 +1,72 @@
+/*
+  Pertency Design Tokens — CSS Custom Properties
+  Fonte: tokens.json · v0.1.0
+
+  Uso:
+  - Protótipos HTML no Claude.ai: colar este bloco dentro de <style> (ou <link> se hospedado)
+  - Projeto real (Next.js): importar em app/globals.css, e referenciar via var(--nome) no tailwind.config
+  - NUNCA redefinir estes valores localmente num protótipo — se um valor não serve, o ajuste é feito
+    AQUI, e propaga para todo o resto. Essa é a régua que evita divergência entre protótipo e produto.
+*/
+
+:root{
+  /* ===== Cor — paleta primitiva ===== */
+  --blue-100: #99CEFF;
+  --blue-500: #2E9AFF;
+  --blue-700: #005FB8;
+  --blue-900: #001A62;
+  --navy-bg:  #000E38;
+
+  /* ===== Cor — semântica (o que os componentes devem consumir) ===== */
+  --bg:         #FAFBFC;
+  --surface:    #FFFFFF;
+  --ink:        #0F1B2D;
+  --muted:      #64748B;
+  --line:       #E4E9EF;
+  --brand:      #2E9AFF;  /* = --blue-500 */
+  --brand-tint: #EAF4FF;
+  --brand-ink:  #103A63;
+
+  /* ===== Raio de canto (derivado da geometria do símbolo) ===== */
+  --r-sm:   9px;
+  --r-md:   14px;
+  --r-lg:   22px;
+  --r-full: 9999px;
+
+  /* ===== Tipografia ===== */
+  --font-sans:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-logotype: 'Dongle', sans-serif; /* uso EXCLUSIVO no wordmark — nunca em UI */
+
+  --text-title:     700 34px/1.15 var(--font-sans);
+  --text-subtitle:  700 24px/1.2  var(--font-sans);
+  --text-highlight: 700 16px/1.3  var(--font-sans);
+  --text-body:      400 15px/1.6  var(--font-sans);
+  --text-caption:   500 12.5px/1.4 var(--font-sans);
+
+  /* ===== Espaçamento — grade base 8px (chave × 8px), confirmada ===== */
+  --space-0:  0px;
+  --space-1:  8px;
+  --space-2:  16px;
+  --space-3:  24px;
+  --space-4:  32px;
+  --space-5:  40px;
+  --space-6:  48px;
+  --space-8:  64px;
+  --space-10: 80px;
+  --space-12: 96px;
+  --space-16: 128px;
+  --space-20: 160px;
+  --space-24: 192px;
+
+  /* ===== Elevação — confirmada ===== */
+  --shadow-sm: 0 1px 2px rgba(15, 27, 45, 0.06);
+  --shadow-md: 0 8px 24px -8px rgba(15, 27, 45, 0.16);
+  --shadow-lg: 0 24px 48px -16px rgba(15, 27, 45, 0.24);
+
+  /* ===== Movimento — DRAFT, ainda não validada ===== */
+  --ease-standard: cubic-bezier(.4,0,.2,1);
+  --ease-enter:    cubic-bezier(.16,.84,.44,1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+}
