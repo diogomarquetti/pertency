@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
@@ -246,9 +247,22 @@ export async function gerarLinkAcesso(
     email: authUser.user.email,
   });
 
-  if (error || !data?.properties?.action_link) {
+  if (error || !data?.properties?.hashed_token) {
     return { error: "Não foi possível gerar o link de acesso." };
   }
 
-  return { link: data.properties.action_link };
+  // Não usamos `action_link` (aponta pro endpoint hospedado do Supabase,
+  // que devolve a sessão via #access_token= — formato "implicit" que o
+  // client do navegador não processa, já que roda em flowType "pkce", padrão
+  // do @supabase/ssr). Em vez disso, montamos um link pra nossa própria rota
+  // (app/auth/confirm/route.ts), que troca o hashed_token por uma sessão via
+  // cookie no servidor — funciona com qualquer flowType.
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const proto = headersList.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
+  const origin = host ? `${proto}://${host}` : "";
+
+  const link = `${origin}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery`;
+
+  return { link };
 }

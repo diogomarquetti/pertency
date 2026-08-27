@@ -1,7 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/login", "/redefinir-senha", "/auth"];
+
+// Subconjunto de PUBLIC_ROUTES que também afasta quem já está autenticado
+// (ex: não faz sentido ver a tela de login logado). /redefinir-senha fica
+// de fora de propósito — é ali que o usuário chega com uma sessão de
+// recuperação recém-criada (ver app/auth/confirm/route.ts) e precisa ver o
+// formulário de nova senha, não ser redirecionado pra "/".
+const REDIRECT_AUTHENTICATED_AWAY = ["/login"];
 
 /**
  * Atualiza a sessão Supabase a cada request e redireciona para /login quando
@@ -50,7 +57,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute) {
+  const shouldRedirectAuthenticatedAway = REDIRECT_AUTHENTICATED_AWAY.some((route) =>
+    request.nextUrl.pathname.startsWith(route),
+  );
+
+  if (user && shouldRedirectAuthenticatedAway) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
