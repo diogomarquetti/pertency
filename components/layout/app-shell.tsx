@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
 import { PageActionsProvider } from "@/components/layout/page-actions-context";
 import { PageTitleProvider } from "@/components/layout/page-title-context";
+import { Toaster } from "@/components/ui/toaster";
 
 export function AppShell({
   userName,
@@ -36,11 +37,13 @@ export function AppShell({
               userEmail={userEmail}
               onMenuClick={() => setMobileNavOpen(true)}
             />
-            <main className="flex-1 overflow-y-auto bg-surface px-4 py-4 md:px-6 md:py-6">
+            <main className="min-h-0 flex-1 overflow-y-auto bg-surface px-4 py-4 md:px-6 md:py-6">
               {children}
             </main>
           </div>
         </div>
+
+        <Toaster />
       </PageActionsProvider>
     </PageTitleProvider>
   );

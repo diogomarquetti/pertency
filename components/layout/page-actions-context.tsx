@@ -5,7 +5,12 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 export type PageActions = {
   formId: string;
   pending: boolean;
-  cancelHref: string;
+  /** Navega pra outro lugar ao cancelar — uso típico em fluxos criar/editar de uma lista. */
+  cancelHref?: string;
+  /** Alternativa a `cancelHref` pra páginas singleton sem "lista" pra voltar — reseta o form no lugar. */
+  onCancel?: () => void;
+  /** Texto do botão de salvar — default "Salvar". */
+  saveLabel?: string;
 };
 
 const PageActionsContext = createContext<PageActions | null>(null);

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
 import {
   createUsuarioSchema,
@@ -13,44 +13,12 @@ import {
   type UpdateUsuarioValues,
 } from "./schema";
 
-/**
- * Confere que quem está chamando a action é um administrador com perfil em
- * `usuarios` — a RLS já bloqueia a escrita de qualquer outro jeito, isso só
- * dá uma mensagem de erro clara em vez de um insert/update silenciosamente
- * ignorado pela política.
- */
-async function requireAdminProfile(): Promise<
-  { error: string } | { supabase: SupabaseServerClient; adminId: string; escolaId: string }
-> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Sessão expirada. Faça login novamente." } as const;
-  }
-
-  const { data: perfil } = await supabase
-    .from("usuarios")
-    .select("escola_id, funcao")
-    .eq("id", user.id)
-    .single();
-
-  if (!perfil || perfil.funcao !== "administrador") {
-    return { error: "Você não tem permissão para gerenciar usuários." } as const;
-  }
-
-  return { supabase, adminId: user.id, escolaId: perfil.escola_id as string } as const;
-}
-
 function isEmailInUseError(message: string | undefined) {
   if (!message) return false;
   const normalized = message.toLowerCase();
   return normalized.includes("already been registered") || normalized.includes("already exists");
 }
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type VinculoInput = {
   turmaId: string;
   componenteIds: string[];
@@ -184,7 +152,7 @@ export async function createUsuario(values: CreateUsuarioValues) {
   }
 
   revalidatePath("/usuarios");
-  redirect(`/usuarios/${novoUsuarioId}/editar`);
+  redirect(`/usuarios/${novoUsuarioId}/editar?criado=1`);
 }
 
 export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
@@ -249,7 +217,7 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
   }
 
   revalidatePath("/usuarios");
-  redirect("/usuarios");
+  redirect("/usuarios?salvo=1");
 }
 
 /**

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Search, UserPlus } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Search, UserPlus } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
+import { toast } from "@/lib/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +47,22 @@ export type UsuarioListItem = {
 export function UsuariosLista({ usuarios }: { usuarios: UsuarioListItem[] }) {
   const [busca, setBusca] = useState("");
   const [funcaoFiltro, setFuncaoFiltro] = useState(TODAS_FUNCOES);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // `updateUsuario` redireciona pra cá com `?salvo=1` (mesmo motivo do
+  // `?criado=1` em user-form.tsx — Server Action não devolve dado depois de
+  // um redirect). Dispara o toast uma vez e limpa o parâmetro da URL. O ref
+  // evita disparar duas vezes sob o StrictMode do dev.
+  const salvoToastDisparado = useRef(false);
+  useEffect(() => {
+    if (searchParams.get("salvo") === "1" && !salvoToastDisparado.current) {
+      salvoToastDisparado.current = true;
+      toast.success("Alterações salvas com sucesso.");
+      router.replace("/usuarios", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const usuariosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -143,8 +161,10 @@ export function UsuariosLista({ usuarios }: { usuarios: UsuarioListItem[] }) {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/usuarios/${usuario.id}/editar`}>Editar</Link>
+                    <Button variant="secondary" size="sm" icon asChild>
+                      <Link href={`/usuarios/${usuario.id}/editar`} aria-label="Editar usuário">
+                        <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                      </Link>
                     </Button>
                   </div>
                 </TableCell>

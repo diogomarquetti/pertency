@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Bell, ChevronRight, LogOut, Loader2, Menu } from "lucide-react";
+import { Bell, ChevronRight, HelpCircle, LogOut, Loader2, Menu } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -81,14 +81,25 @@ export function AppTopbar({
       <div className="flex shrink-0 items-center gap-2">
         {actions && (
           <>
-            <Button variant="secondary" asChild>
-              <Link href={actions.cancelHref}>Cancelar</Link>
-            </Button>
+            {actions.onCancel ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={actions.onCancel}
+                disabled={actions.pending}
+              >
+                Cancelar
+              </Button>
+            ) : actions.cancelHref ? (
+              <Button variant="secondary" asChild>
+                <Link href={actions.cancelHref}>Cancelar</Link>
+              </Button>
+            ) : null}
             <Button type="submit" form={actions.formId} disabled={actions.pending}>
               {actions.pending && (
                 <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
               )}
-              Salvar
+              {actions.saveLabel ?? "Salvar"}
             </Button>
           </>
         )}
@@ -115,6 +126,13 @@ export function AppTopbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {/* Sem destino definido ainda — item mantido desabilitado até termos
+                central de ajuda/documentação/e-mail de suporte pra apontar. */}
+            <DropdownMenuItem disabled>
+              <HelpCircle size={16} strokeWidth={2} aria-hidden="true" />
+              Ajuda
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="danger"

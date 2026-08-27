@@ -75,8 +75,8 @@ export function AppSidebar({
   return (
     <>
       <aside className="hidden w-[var(--sidebar-w)] shrink-0 flex-col overflow-y-auto bg-navy md:flex">
-        <div className="mb-3 px-[26px] pt-[28px]">
-          <LogoHorizontal variant="dark" className="h-[25px] w-auto" />
+        <div className="mb-2 flex h-[var(--topbar-h)] shrink-0 items-center px-[26px]">
+          <LogoHorizontal variant="dark" className="h-[23px] w-auto" />
         </div>
         <div className="flex-1 overflow-y-auto px-[14px]">
           <Nav />
@@ -101,8 +101,8 @@ export function AppSidebar({
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <div className="mb-8 flex items-center justify-between px-[26px] pt-[28px]">
-            <LogoHorizontal variant="dark" className="h-[25px] w-auto" />
+          <div className="mb-6 flex h-[var(--topbar-h)] shrink-0 items-center justify-between px-[26px]">
+            <LogoHorizontal variant="dark" className="h-[23px] w-auto" />
             <button
               type="button"
               onClick={onClose}

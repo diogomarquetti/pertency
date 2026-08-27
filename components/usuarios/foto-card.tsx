@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlertCircle, Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,7 +30,6 @@ type FotoCardProps =
  */
 export function FotoCard(props: FotoCardProps) {
   const [fotoUrl, setFotoUrl] = useState(props.mode === "edit" ? props.fotoUrlInicial : null);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   async function removeArquivosExistentes(
@@ -51,7 +51,6 @@ export function FotoCard(props: FotoCardProps) {
   function handleFile(file: File | null) {
     if (!file || props.mode !== "edit") return;
     const { usuarioId, escolaId } = props;
-    setError(null);
 
     startTransition(async () => {
       const supabase = createClient();
@@ -65,7 +64,7 @@ export function FotoCard(props: FotoCardProps) {
         .upload(path, file, { contentType: file.type, upsert: true });
 
       if (uploadError) {
-        setError("Não foi possível enviar a foto. Tente novamente.");
+        toast.error("Não foi possível enviar a foto", "Tente novamente.");
         return;
       }
 
@@ -78,18 +77,18 @@ export function FotoCard(props: FotoCardProps) {
         .eq("id", usuarioId);
 
       if (updateError) {
-        setError("Foto enviada, mas não foi possível salvar no cadastro. Tente novamente.");
+        toast.error("Foto enviada, mas não foi salva no cadastro", "Tente novamente.");
         return;
       }
 
       setFotoUrl(publicUrl);
+      toast.success("Foto atualizada com sucesso.");
     });
   }
 
   function handleRemove() {
     if (props.mode !== "edit") return;
     const { usuarioId, escolaId } = props;
-    setError(null);
 
     startTransition(async () => {
       const supabase = createClient();
@@ -101,11 +100,12 @@ export function FotoCard(props: FotoCardProps) {
         .eq("id", usuarioId);
 
       if (updateError) {
-        setError("Não foi possível remover a foto. Tente novamente.");
+        toast.error("Não foi possível remover a foto", "Tente novamente.");
         return;
       }
 
       setFotoUrl(null);
+      toast.success("Foto removida com sucesso.");
     });
   }
 
@@ -141,7 +141,11 @@ export function FotoCard(props: FotoCardProps) {
             </div>
           )}
 
-          <FileUpload onFileSelected={handleFile} onError={setError} disabled={isPending}>
+          <FileUpload
+            onFileSelected={handleFile}
+            onError={(message) => toast.error(message)}
+            disabled={isPending}
+          >
             <Upload size={26} strokeWidth={2} className="text-muted" aria-hidden="true" />
             <p className="text-caption text-muted">JPG ou PNG, até 5MB</p>
             <Button type="button" variant="secondary" size="sm">
@@ -153,13 +157,6 @@ export function FotoCard(props: FotoCardProps) {
             <p className="flex items-center gap-[5px] text-[12.5px] text-muted">
               <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />
               Enviando...
-            </p>
-          )}
-
-          {error && (
-            <p className="flex items-center gap-[5px] text-[12.5px] text-danger" role="alert">
-              <AlertCircle size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-              {error}
             </p>
           )}
         </>

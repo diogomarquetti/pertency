@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle } from "lucide-react";
 
 import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
+import { toast } from "@/lib/use-toast";
 
 import { createUsuario, updateUsuario } from "@/app/(app)/usuarios/actions";
 import {
@@ -56,6 +57,31 @@ export function UserForm(props: UserFormProps) {
   );
   const [panelState, setPanelState] = useState<PanelState>({ mode: "historico" });
   const setPageActions = usePageActionsSetter();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Criação redireciona pra cá com `?criado=1` (o Server Action não tem
+  // como devolver dado pro client depois de um redirect) — o toast de
+  // sucesso é disparado aqui, uma vez, e o parâmetro é removido da URL
+  // pra não repetir o toast num refresh manual da página. O ref evita
+  // disparar duas vezes sob o StrictMode do dev (que roda efeitos de
+  // montagem duas vezes de propósito).
+  const criadoToastDisparado = useRef(false);
+  useEffect(() => {
+    if (
+      props.mode === "edit" &&
+      searchParams.get("criado") === "1" &&
+      !criadoToastDisparado.current
+    ) {
+      criadoToastDisparado.current = true;
+      toast.success(
+        "Usuário criado com sucesso.",
+        "Gere o link de acesso no bloco Acesso para enviar ao usuário.",
+      );
+      router.replace(`/usuarios/${props.usuarioId}/editar`, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const schema = props.mode === "create" ? createUsuarioSchema : updateUsuarioSchema;
 
@@ -128,16 +154,21 @@ export function UserForm(props: UserFormProps) {
     setVinculos((current) => current.filter((v) => v.turmaId !== turmaId));
   }
 
-  function onSubmit(values: UpdateUsuarioValues) {
-    form.clearErrors("root");
-
-    if (isProfessor && vinculos.length === 0) {
-      form.setError("root", {
-        message: "Professores precisam de pelo menos uma turma vinculada.",
-      });
-      return;
+  // A regra "professor precisa de vínculo" já é imposta pelo próprio schema
+  // zod (superRefine no path "vinculos", ver schema.ts) — como não existe
+  // FormField ligado a esse path (vinculos vive em estado local, não em
+  // input controlado), o erro nunca aparece inline sozinho. Sem esse
+  // segundo argumento de handleSubmit, a validação falha silenciosamente:
+  // `onSubmit` nunca é chamado e o Salvar simplesmente não faz nada.
+  function onInvalid(errors: FieldErrors<UpdateUsuarioValues>) {
+    if (errors.vinculos) {
+      toast.error(
+        errors.vinculos.message ?? "Professores precisam de pelo menos uma turma vinculada.",
+      );
     }
+  }
 
+  function onSubmit(values: UpdateUsuarioValues) {
     const payload: UpdateUsuarioValues = {
       ...values,
       vinculos: isProfessor
@@ -156,15 +187,20 @@ export function UserForm(props: UserFormProps) {
           ? await createUsuario(payload)
           : await updateUsuario(props.usuarioId, payload);
 
+      // Sucesso não chega a devolver aqui — `createUsuario`/`updateUsuario`
+      // terminam em `redirect()` (lança internamente, não retorna). O toast
+      // de sucesso é disparado depois da navegação, lendo `?criado=1`/
+      // `?salvo=1` na página de destino (ver useEffect acima e
+      // usuarios-lista.tsx).
       if (result?.error) {
-        form.setError("root", { message: result.error });
+        toast.error("Não foi possível salvar", result.error);
       }
     });
   }
 
   return (
     <Form {...form}>
-      <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
         <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
           <div className="flex min-w-0 flex-col gap-[24px]">
             <DadosGeraisCard control={form.control} statusAtual={statusSelecionado} />
@@ -197,16 +233,6 @@ export function UserForm(props: UserFormProps) {
                 </>
               )}
             </div>
-
-            {form.formState.errors.root && (
-              <p
-                className="flex items-center gap-[5px] text-[12.5px] text-danger"
-                role="alert"
-              >
-                <AlertCircle size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-                {form.formState.errors.root.message}
-              </p>
-            )}
           </div>
 
           <ContextPanel

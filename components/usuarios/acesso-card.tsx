@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import type { Control } from "react-hook-form";
-import { AlertCircle, Link2, Loader2 } from "lucide-react";
+import { Link2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/use-toast";
 
 import { gerarLinkAcesso } from "@/app/(app)/usuarios/actions";
 import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
@@ -19,18 +20,16 @@ type AcessoCardProps = {
 export function AcessoCard(props: AcessoCardProps) {
   const [link, setLink] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleGerarLink() {
     if (props.mode !== "edit") return;
-    setError(null);
     setCopiado(false);
 
     startTransition(async () => {
       const result = await gerarLinkAcesso(props.usuarioId);
       if ("error" in result) {
-        setError(result.error);
+        toast.error("Não foi possível gerar o link", result.error);
         return;
       }
       setLink(result.link);
@@ -102,12 +101,6 @@ export function AcessoCard(props: AcessoCardProps) {
               O usuário recebe este link e define a própria senha no primeiro acesso. Copie e
               envie por onde preferir — e-mail, WhatsApp, etc.
             </p>
-            {error && (
-              <p className="flex items-center gap-[5px] text-[12.5px] text-danger" role="alert">
-                <AlertCircle size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-                {error}
-              </p>
-            )}
           </>
         )}
       </div>
