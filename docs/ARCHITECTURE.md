@@ -108,3 +108,96 @@ O projeto foi inicializado com Next.js 16 (App Router, TypeScript, Tailwind v4) 
   componentes para usar as classes do projeto, já que virão com os tokens padrão do shadcn).
 - **Supabase**: clientes em `/lib/supabase/client.ts` (browser) e `/lib/supabase/server.ts`
   (Server Components/Actions), usando `@supabase/ssr`, padrão App Router.
+
+## Banco de dados (registrado em 2026-08-26, Fase 0 do módulo Cadastro de Usuários)
+
+O schema de dados do módulo de usuários/turmas já existia no projeto Supabase remoto — criado
+fora deste repositório (provavelmente direto no dashboard/SQL editor), sem nenhuma migration
+versionada até este ponto. Rodamos `supabase link` + `supabase db pull` para trazer isso pro
+controle de versão: ver `supabase/migrations/20260826183829_remote_schema.sql` (dump completo
+do schema — fonte de verdade a partir de agora; qualquer mudança de schema deve ser uma nova
+migration, nunca edição manual no dashboard).
+
+### Tabelas (schema `public`)
+
+- `escolas` — stub temporário de tenancy (nome_oficial, status), a ser substituído por um
+  módulo completo de Cadastro de Escola no futuro.
+- `usuarios` — perfil funcional do usuário (Bloco 1 da história do Cadastro de Usuário).
+  `id` é o mesmo UUID de `auth.users.id` (sem default — precisa ser passado explicitamente ao
+  inserir, depois de criar o usuário de autenticação). `funcao` e `status` são enums Postgres
+  tipados (`public.user_role`: administrador/direcao/secretaria/coordenacao_pedagogica/
+  professor_regente/professor_arte/professor_educacao_fisica; `public.user_status`:
+  ativo/inativo) — batem exatamente com os valores da história. Login/senha ficam em
+  `auth.users`, não aqui.
+- `usuarios_auditoria` — histórico de alterações (campo_alterado/valor_anterior/valor_novo).
+- `etapas_ciclos`, `turnos`, `turmas` — dados de referência por escola, ainda vazios (nenhum
+  módulo de Cadastro de Turmas/Escola existe ainda).
+- `componentes_curriculares` — global (sem escola_id), já populado com os 7 componentes da
+  história (Português, Matemática, Ciências, Geografia, História, Arte, Educação Física).
+- `usuario_turmas` / `usuario_turma_componentes` — vínculo professor↔turma↔componentes
+  (Bloco 2 da história).
+
+### RLS e funções auxiliares
+
+`get_user_role()` e `get_escola_id()` são funções `SECURITY DEFINER` que leem
+`auth.uid()` e devolvem, respectivamente, `usuarios.funcao` e `usuarios.escola_id` da linha
+correspondente ao usuário logado. **Consequência importante**: um usuário de `auth.users` sem
+linha correspondente em `usuarios` fica com as duas funções retornando `null`, e toda política
+de RLS que dependa delas bloqueia — inclusive leitura da própria escola. É por isso que criar
+um novo usuário exige duas etapas em ordem (auth.users → usuarios), e por isso o bootstrap do
+admin de teste é obrigatório antes de qualquer teste manual funcionar.
+
+Todas as políticas de escrita (`*_write_admin`, `usuarios_insert_admin`, `usuarios_update_admin`,
+`usuarios_delete_admin`) exigem `get_user_role() = 'administrador'` **e**
+`escola_id = get_escola_id()`. Leitura é sempre escopada à mesma escola (`escola_id =
+get_escola_id()`), exceto `componentes_curriculares` (qualquer usuário autenticado) e as
+tabelas de vínculo (escopadas via join até `usuarios.escola_id`).
+
+**Implicação prática para código de aplicação**: como admin, o client normal
+(`lib/supabase/server.ts`, respeitando RLS) já consegue inserir/atualizar/deletar em
+`usuarios`, `usuario_turmas`, `usuario_turma_componentes`, `turmas`, `turnos`, `etapas_ciclos`
+— não é necessário bypassar RLS com a service role key para essas escritas. A service role só
+é estritamente necessária para provisionar o usuário em `auth.users` (criar login/senha), que
+não tem equivalente com a anon key.
+
+### Auditoria já é automática (triggers existentes)
+
+Não é preciso escrever `usuarios_auditoria` manualmente na aplicação — já existem triggers:
+
+- `trg_usuarios_audit` (AFTER UPDATE em `usuarios`) → audita mudanças de `funcao` e `status`.
+- `trg_auth_users_email_audit` (AFTER UPDATE OF email em `auth.users`) → audita troca de
+  e-mail de login (`campo_alterado = 'email_login'`).
+- `trg_usuario_turmas_audit_insert` / `trg_usuario_turmas_audit_delete` → auditam
+  adição/remoção de vínculo de turma.
+- `trg_usuarios_updated_at` mantém `usuarios.updated_at` automaticamente.
+
+Isso cobre exatamente os 4 campos que a regra de negócio da história pede (função, status,
+e-mail de login, vínculos de turma) — nada mais precisa ser adicionado na aplicação para
+auditoria.
+
+### `rls_auto_enable()`
+
+Event trigger que habilita RLS automaticamente em qualquer tabela nova criada no schema
+`public` — não precisa ser chamado manualmente, só existe para evitar esquecer de habilitar
+RLS numa tabela futura.
+
+## Storage — fotos de usuário (registrado em 2026-08-26, Bloco 4 do módulo Cadastro de Usuários)
+
+Bucket `usuarios-fotos`, criado via migration (`supabase/migrations/20260826193900_usuarios_fotos_bucket.sql`),
+**público de leitura** — fotos de profissionais não são dado sensível, e isso evita ter que lidar
+com signed URLs expirando na UI. Escrita (insert/update/delete em `storage.objects`) é restrita
+a administradores da própria escola, via política que compara o primeiro segmento do caminho do
+arquivo com `get_escola_id()`.
+
+Convenção de caminho: `{escola_id}/{usuario_id}.{ext}` (`ext` é `png` ou `jpg`, conforme o
+`FileUpload` só aceita `image/png`/`image/jpeg`). Antes de cada upload, o client lista e remove
+qualquer arquivo já existente com esse prefixo (`{escola_id}/{usuario_id}.*`) — evita ficar com
+uma foto antiga órfã no bucket se o usuário trocar de PNG pra JPG (ou vice-versa) entre uploads.
+
+O upload em si roda inteiramente no client ([`foto-upload.tsx`](../app/(app)/usuarios/foto-upload.tsx)),
+direto contra `lib/supabase/client.ts` — sem server action, sem service role. Só existe na tela
+de edição (precisa de `usuario_id`, que não existe até o cadastro ser salvo pela primeira vez);
+na criação, o Bloco 4 mostra só uma mensagem pedindo pra salvar o cadastro primeiro. Depois de
+cada upload/remoção bem-sucedida, o client já atualiza `usuarios.foto_url` diretamente — não
+passa pelas server actions de `createUsuario`/`updateUsuario`, então trocar de foto nunca
+bloqueia nem depende do resto do formulário ser salvo.

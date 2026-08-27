@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
+import { AlertCircle } from "lucide-react";
 import {
   Controller,
   FormProvider,
@@ -76,7 +77,7 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div data-slot="form-item" className={cn("grid gap-2", className)} {...props} />
+      <div data-slot="form-item" className={cn("grid gap-[7px]", className)} {...props} />
     </FormItemContext.Provider>
   );
 }
@@ -91,7 +92,7 @@ function FormLabel({
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={cn("data-[error=true]:text-red-600", className)}
+      className={cn("data-[error=true]:text-danger", className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -123,7 +124,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn("text-sm text-muted", className)}
+      className={cn("text-[12.5px] text-muted", className)}
       {...props}
     />
   );
@@ -141,9 +142,14 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-sm font-medium text-red-600", className)}
+      role="alert"
+      className={cn(
+        "flex items-center gap-[5px] text-[12.5px] text-danger",
+        className,
+      )}
       {...props}
     >
+      {error && <AlertCircle size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />}
       {body}
     </p>
   );

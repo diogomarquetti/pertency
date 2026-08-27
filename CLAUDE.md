@@ -2,7 +2,7 @@
 
 # Pertency
 
-Sistema para gestão e planejamento de estudantes nas APAEs.
+Sistema para gestão e planejamento de estudantes nas instituições.
 
 @docs/ARCHITECTURE.md
 

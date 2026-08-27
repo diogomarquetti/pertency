@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Pertency",
-  description: "Sistema para gestão e planejamento de estudantes nas APAEs",
+  description: "Sistema para gestão e planejamento de estudantes nas instituições",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

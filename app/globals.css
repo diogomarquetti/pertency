@@ -43,6 +43,25 @@
   --text-body: 400 15px/1.6 var(--font-sans);
   --text-caption: 500 12.5px/1.4 var(--font-sans);
 
+  /* Forma decomposta dos tamanhos acima (size/weight/lineHeight separados),
+     para consumo via utilitários Tailwind — ver fontSize em tailwind.config.ts.
+     Mesmos valores de docs/tokens.json > typography.scale, nunca redefinir aqui. */
+  --fs-title: 34px;
+  --fw-title: 700;
+  --lh-title: 1.15;
+  --fs-subtitle: 24px;
+  --fw-subtitle: 700;
+  --lh-subtitle: 1.2;
+  --fs-highlight: 16px;
+  --fw-highlight: 700;
+  --lh-highlight: 1.3;
+  --fs-body: 15px;
+  --fw-body: 400;
+  --lh-body: 1.6;
+  --fs-caption: 12.5px;
+  --fw-caption: 500;
+  --lh-caption: 1.4;
+
   /* ===== Espaçamento — grade base 8px (chave × 8px), confirmada ===== */
   --space-0: 0px;
   --space-1: 8px;
@@ -69,6 +88,65 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
+
+  /* =====================================================================
+     PROPOSTAS NOVAS — de pertency-componentes-v1.html. Ainda NÃO existem
+     como "done" — precisam de ratificação do time (ver docs/tokens.json,
+     $status: draft em cada bloco) antes de virarem parte oficial do sistema.
+     ===================================================================== */
+
+  /* ----- Cores de feedback (draft) ----- */
+  --danger: #c0392b;
+  --danger-tint: #fde8e8;
+  --danger-ink: #7a2318;
+  --success: #1e9e63;
+  --success-tint: #e6f6ee;
+  --success-ink: #10613d;
+  --warning: #b4790a;
+  --warning-tint: #fff6e5;
+  --warning-ink: #8a5a00;
+  --info: #0ea5e9;
+  --info-tint: #e8f6fd;
+  --info-ink: #0c4a6e;
+
+  /* ----- Tipografia de controle (draft) ----- */
+  --text-control: 400 14px/1.5 var(--font-sans);
+  --text-label: 600 13px/1.4 var(--font-sans);
+  --fs-control: 14px;
+  --fw-control: 400;
+  --lh-control: 1.5;
+  --fs-label: 13px;
+  --fw-label: 600;
+  --lh-label: 1.4;
+
+  /* ----- Anel de foco (draft) ----- */
+  --focus-ring-inner: 3px;
+  --focus-ring-outer: 5px;
+
+  /* ----- Escala de ícone de controle (draft) ----- */
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+
+  /* ----- Raio extra (draft) ----- */
+  --r-xs: 5px;
+
+  /* ----- Escala neutra primitiva (draft) ----- */
+  --neutral-50: #fafbfc;
+  --neutral-100: #f1f4f8;
+  --neutral-200: #e4e9ef;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f1b2d;
+
+  /* ----- Layout (draft) ----- */
+  --sidebar-w: 268px;
+  --topbar-h: 56px;
+  --panel-w: 360px;
 }
 
 body {

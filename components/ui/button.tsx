@@ -5,29 +5,43 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-fast ease-standard disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+  "inline-flex items-center justify-center gap-[var(--space-1)] whitespace-nowrap rounded-sm border font-semibold text-sm transition-colors duration-base ease-standard active:scale-[0.97] disabled:pointer-events-none disabled:cursor-not-allowed outline-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-[var(--icon-md)]",
   {
     variants: {
       variant: {
-        default: "bg-brand text-white shadow-sm hover:bg-blue-700",
-        destructive:
-          "bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-500",
-        outline:
-          "border border-line bg-surface text-ink shadow-sm hover:bg-brand-tint hover:text-brand-ink",
-        secondary: "bg-brand-tint text-brand-ink hover:bg-blue-100",
-        ghost: "text-ink hover:bg-brand-tint hover:text-brand-ink",
-        link: "text-brand underline-offset-4 hover:underline",
+        primary:
+          "border-transparent bg-brand text-white hover:bg-blue-700 focus-visible:shadow-[0_0_0_var(--focus-ring-inner)_#fff,0_0_0_var(--focus-ring-outer)_var(--brand)] disabled:bg-blue-100 disabled:text-white disabled:opacity-70",
+        secondary:
+          "border-line bg-surface text-brand-ink hover:border-brand hover:bg-brand-tint focus-visible:shadow-[0_0_0_var(--focus-ring-inner)_var(--brand-tint),0_0_0_var(--focus-ring-outer)_var(--brand)] disabled:text-muted disabled:border-line disabled:opacity-60",
+        ghost:
+          "border-transparent bg-transparent text-ink hover:bg-brand-tint focus-visible:shadow-[0_0_0_var(--focus-ring-inner)_var(--brand-tint),0_0_0_var(--focus-ring-outer)_var(--brand)] disabled:text-muted disabled:opacity-60",
+        danger:
+          "border-transparent bg-danger text-white hover:bg-[#A32A1C] focus-visible:shadow-[0_0_0_var(--focus-ring-inner)_#fff,0_0_0_var(--focus-ring-outer)_var(--danger)] disabled:bg-[#E9AFA6] disabled:opacity-80",
+        // bônus fora da spec (pertency-componentes-v1.html só define primary/secondary/ghost/danger)
+        subtle: "border-transparent bg-brand-tint text-brand-ink hover:bg-blue-100",
+        link: "border-transparent text-brand underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-9 rounded-sm px-3 has-[>svg]:px-2.5",
-        lg: "h-11 rounded-lg px-6 has-[>svg]:px-4",
-        icon: "size-10",
+        // alturas/paddings fora da grade de espaçamento onde a spec assim define
+        // (padding 18/13/22px) — ver pertency-componentes-v1.html § Botão
+        default: "h-[var(--space-5)] px-[18px]",
+        sm: "h-[var(--space-4)] rounded-sm px-[13px] text-[12.5px] [&_svg]:size-[var(--icon-sm)]",
+        lg: "h-[var(--space-6)] rounded-md px-[22px] text-[15px] [&_svg]:size-[var(--icon-lg)]",
+      },
+      icon: {
+        true: "flex-none gap-0 p-0",
+        false: "",
       },
     },
+    compoundVariants: [
+      { size: "default", icon: true, className: "w-[var(--space-5)]" },
+      { size: "sm", icon: true, className: "w-[var(--space-4)]" },
+      { size: "lg", icon: true, className: "w-[var(--space-6)]" },
+    ],
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
+      icon: false,
     },
   },
 );
@@ -36,6 +50,7 @@ function Button({
   className,
   variant,
   size,
+  icon,
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
@@ -47,7 +62,7 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, icon, className }))}
       {...props}
     />
   );

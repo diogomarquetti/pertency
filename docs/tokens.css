@@ -69,4 +69,63 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
+
+  /* =====================================================================
+     PROPOSTAS NOVAS — de pertency-componentes-v1.html. Ainda NÃO existem
+     como "done" — precisam de ratificação do time (ver docs/tokens.json,
+     $status: draft em cada bloco) antes de virarem parte oficial do sistema.
+     ===================================================================== */
+
+  /* ----- Cores de feedback (draft) ----- */
+  --danger:       #C0392B;
+  --danger-tint:  #FDE8E8;
+  --danger-ink:   #7A2318;
+  --success:      #1E9E63;
+  --success-tint: #E6F6EE;
+  --success-ink:  #10613D;
+  --warning:      #B4790A;
+  --warning-tint: #FFF6E5;
+  --warning-ink:  #8A5A00;
+  --info:         #0EA5E9;
+  --info-tint:    #E8F6FD;
+  --info-ink:     #0C4A6E;
+
+  /* ----- Tipografia de controle (draft) — cobre a faixa que
+     inputs/selects/checkbox/radio/switch e rótulos de campo usam,
+     não coberta pela escala title/subtitle/highlight/body/caption. ----- */
+  --text-control: 400 14px/1.5 var(--font-sans);
+  --text-label:   600 13px/1.4 var(--font-sans);
+
+  /* ----- Anel de foco (draft) — geometria única, cor varia por variante ----- */
+  --focus-ring-inner: 3px;
+  --focus-ring-outer: 5px;
+
+  /* ----- Escala de ícone (draft) — ícones DENTRO de controles interativos
+     (botão, input, select). Ícones decorativos maiores ficam fora desta escala. ----- */
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+
+  /* ----- Raio extra (draft) — menor que --r-sm; em alvo de 18px (checkbox)
+     --r-sm lia como círculo, competindo visualmente com o radio. ----- */
+  --r-xs: 5px;
+
+  /* ----- Escala neutra primitiva (draft) — extensão, não substitui
+     --bg/--muted/--line/--ink, que continuam sendo os apelidos semânticos.
+     50=bg, 200=line, 500=muted, 900=ink. ----- */
+  --neutral-50:  #FAFBFC;
+  --neutral-100: #F1F4F8;
+  --neutral-200: #E4E9EF;
+  --neutral-300: #CBD5E1;
+  --neutral-400: #94A3B8;
+  --neutral-500: #64748B;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1E293B;
+  --neutral-900: #0F1B2D;
+
+  /* ----- Layout (draft) ----- */
+  --sidebar-w: 268px;
+  --topbar-h:  56px;
+  --panel-w:   360px;
 }
