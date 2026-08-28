@@ -7,6 +7,7 @@ export type MeuPerfil = {
   email: string;
   telefone: string;
   fotoUrl: string | null;
+  funcao: string;
 };
 
 export async function getMeuPerfil(): Promise<MeuPerfil | null> {
@@ -19,7 +20,7 @@ export async function getMeuPerfil(): Promise<MeuPerfil | null> {
 
   const { data } = await supabase
     .from("usuarios")
-    .select("id, escola_id, nome_completo, email, telefone, foto_url")
+    .select("id, escola_id, nome_completo, email, telefone, foto_url, funcao")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -32,5 +33,6 @@ export async function getMeuPerfil(): Promise<MeuPerfil | null> {
     email: data.email,
     telefone: data.telefone ?? "",
     fotoUrl: data.foto_url,
+    funcao: data.funcao,
   };
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PageTitle } from "@/components/layout/page-title";
-import { MinhaContaForm } from "@/components/minha-conta/minha-conta-form";
+import { MinhaContaView } from "@/components/minha-conta/minha-conta-view";
 
 import { getMeuPerfil } from "./queries";
 
@@ -15,7 +15,7 @@ export default async function MinhaContaPage() {
   return (
     <div>
       <PageTitle value="Minha conta" />
-      <MinhaContaForm perfil={perfil} />
+      <MinhaContaView perfil={perfil} />
     </div>
   );
 }
