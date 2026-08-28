@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Bell, ChevronRight, HelpCircle, LogOut, Loader2, Menu } from "lucide-react";
+import { Bell, ChevronRight, HelpCircle, LogOut, Loader2, Menu, User } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -126,6 +126,13 @@ export function AppTopbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/minha-conta">
+                <User size={16} strokeWidth={2} aria-hidden="true" />
+                Minha conta
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {/* Sem destino definido ainda — item mantido desabilitado até termos
                 central de ajuda/documentação/e-mail de suporte pra apontar. */}
