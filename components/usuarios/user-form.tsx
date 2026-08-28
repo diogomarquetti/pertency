@@ -102,7 +102,6 @@ export function UserForm(props: UserFormProps) {
   });
 
   const funcaoSelecionada = form.watch("funcao");
-  const statusSelecionado = form.watch("status");
   const isProfessor = isFuncaoProfessor(funcaoSelecionada);
 
   // O react-hook-form só sabe validar o schema (incluindo a regra de
@@ -203,7 +202,7 @@ export function UserForm(props: UserFormProps) {
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
         <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
           <div className="flex min-w-0 flex-col gap-[24px]">
-            <DadosGeraisCard control={form.control} statusAtual={statusSelecionado} />
+            <DadosGeraisCard control={form.control} />
 
             {isProfessor && (
               <TurmasVinculadasCard

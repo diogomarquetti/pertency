@@ -51,6 +51,7 @@ export async function updateEscola(values: EscolaValues) {
     return { error: "Não foi possível salvar as alterações." };
   }
 
+  revalidatePath("/minha-escola/escola");
   revalidatePath("/minha-escola");
   return { success: true } as const;
 }
@@ -100,6 +101,7 @@ export async function createMantenedora(values: MantenedoraValues) {
     return { error: "Não foi possível criar a mantenedora." };
   }
 
+  revalidatePath("/minha-escola/mantenedora");
   revalidatePath("/minha-escola");
   return { success: true } as const;
 }
@@ -125,6 +127,7 @@ export async function updateMantenedora(values: MantenedoraValues) {
     return { error: "Não foi possível salvar as alterações." };
   }
 
+  revalidatePath("/minha-escola/mantenedora");
   revalidatePath("/minha-escola");
   return { success: true } as const;
 }

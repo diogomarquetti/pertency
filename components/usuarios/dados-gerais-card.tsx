@@ -1,6 +1,5 @@
 import type { Control } from "react-hook-form";
 
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
   FormControl,
@@ -18,26 +17,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
-import { FUNCAO_OPTIONS, STATUS_OPTIONS } from "@/app/(app)/usuarios/schema";
+import { FUNCAO_OPTIONS } from "@/app/(app)/usuarios/schema";
 import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
 
-export function DadosGeraisCard({
-  control,
-  statusAtual,
-}: {
-  control: Control<UpdateUsuarioValues>;
-  statusAtual: "ativo" | "inativo";
-}) {
+export function DadosGeraisCard({ control }: { control: Control<UpdateUsuarioValues> }) {
   return (
     <Card className="gap-4 p-[24px]">
       <div className="flex items-center justify-between">
         <h2 className="flex items-baseline gap-2 text-highlight text-ink">
           <span className="text-brand">1.</span> Dados gerais
         </h2>
-        <Badge variant={statusAtual === "ativo" ? "success" : "neutral"}>
-          {statusAtual === "ativo" ? "Ativo" : "Inativo"}
-        </Badge>
+        <FormField
+          control={control}
+          name="status"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-[8px] space-y-0">
+              <FormLabel className="text-[13px] font-medium text-muted">
+                {field.value === "ativo" ? "Ativo" : "Inativo"}
+              </FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value === "ativo"}
+                  onCheckedChange={(checked) => field.onChange(checked ? "ativo" : "inativo")}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -99,31 +107,6 @@ export function DadosGeraisCard({
                 </FormControl>
                 <SelectContent>
                   {FUNCAO_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status do usuário</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

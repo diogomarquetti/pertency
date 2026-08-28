@@ -18,7 +18,7 @@ import { EscolaResponsaveisCard } from "./escola-responsaveis-card";
 
 const FORM_ID = "escola-form";
 
-export function EscolaTab({ escola }: { escola: EscolaAtual }) {
+export function EscolaForm({ escola }: { escola: EscolaAtual }) {
   const [isPending, startTransition] = useTransition();
   const setPageActions = usePageActionsSetter();
 
@@ -37,9 +37,7 @@ export function EscolaTab({ escola }: { escola: EscolaAtual }) {
       formId: FORM_ID,
       pending: isPending,
       saveLabel: "Salvar escola",
-      onCancel: () => {
-        form.reset(defaultValues);
-      },
+      cancelHref: "/minha-escola",
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -15,7 +15,6 @@ import type { MantenedoraAtual } from "@/app/(app)/minha-escola/queries";
 import { MantenedoraEnderecoContatoCard } from "./mantenedora-endereco-contato-card";
 import { MantenedoraIdentificacaoCard } from "./mantenedora-identificacao-card";
 import { MantenedoraRepresentacaoLegalCard } from "./mantenedora-representacao-legal-card";
-import { MantenedoraSituacaoCard } from "./mantenedora-situacao-card";
 
 const FORM_ID = "mantenedora-form";
 
@@ -41,7 +40,7 @@ const VALORES_VAZIOS: MantenedoraValues = {
   status: "ativa",
 };
 
-export function MantenedoraTab({ mantenedora }: { mantenedora: MantenedoraAtual | null }) {
+export function MantenedoraForm({ mantenedora }: { mantenedora: MantenedoraAtual | null }) {
   const [isPending, startTransition] = useTransition();
   const [existe, setExiste] = useState(mantenedora !== null);
   const setPageActions = usePageActionsSetter();
@@ -82,9 +81,7 @@ export function MantenedoraTab({ mantenedora }: { mantenedora: MantenedoraAtual 
       formId: FORM_ID,
       pending: isPending,
       saveLabel: existe ? "Salvar" : "Criar mantenedora",
-      onCancel: () => {
-        form.reset(defaultValues);
-      },
+      cancelHref: "/minha-escola",
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,10 +108,9 @@ export function MantenedoraTab({ mantenedora }: { mantenedora: MantenedoraAtual 
     <Form {...form}>
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div className="flex flex-col gap-[24px]">
-          <MantenedoraIdentificacaoCard control={form.control} />
+          <MantenedoraIdentificacaoCard control={form.control} statusAtual={statusAtual} />
           <MantenedoraEnderecoContatoCard control={form.control} />
           <MantenedoraRepresentacaoLegalCard control={form.control} />
-          <MantenedoraSituacaoCard control={form.control} statusAtual={statusAtual} />
         </div>
       </form>
     </Form>

@@ -1,7 +1,7 @@
 import {
-  Building2,
   ClipboardList,
   LayoutDashboard,
+  Settings,
   UserCog,
   Users,
   type LucideIcon,
@@ -18,5 +18,5 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/estudantes", label: "Estudantes", icon: Users },
   { href: "/planejamentos", label: "Planejamentos", icon: ClipboardList },
   { href: "/usuarios", label: "Usuários", icon: UserCog },
-  { href: "/minha-escola", label: "Minha Escola", icon: Building2 },
+  { href: "/minha-escola", label: "Configurações", icon: Settings },
 ];
