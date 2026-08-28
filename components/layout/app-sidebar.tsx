@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ChevronDown, X } from "lucide-react";
+import { Building2, X } from "lucide-react";
 
 import { LogoHorizontal } from "@/components/brand/logo-horizontal";
 import { cn } from "@/lib/utils";
@@ -52,12 +52,6 @@ function EscolaAtivaFooter({ escolaNome }: { escolaNome: string | null }) {
           <div className="text-[12.5px] font-medium text-white/55">Escola ativa</div>
           <div className="truncate text-[13.5px] font-semibold text-white">{escolaNome}</div>
         </div>
-        <ChevronDown
-          size={16}
-          strokeWidth={2}
-          className="ml-auto shrink-0 text-white/45"
-          aria-hidden="true"
-        />
       </div>
     </div>
   );
