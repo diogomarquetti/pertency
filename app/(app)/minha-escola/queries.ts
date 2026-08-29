@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 import type { EscolaValues, MantenedoraValues } from "./schema";
 
@@ -12,9 +13,7 @@ export type EscolaAtual = EscolaValues & { id: string };
  */
 export async function getEscolaAtualCompleta(): Promise<EscolaAtual | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 
@@ -65,9 +64,7 @@ export async function getEscolaAtualCompleta(): Promise<EscolaAtual | null> {
 
 async function getEscolaIdAtual(): Promise<string | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 

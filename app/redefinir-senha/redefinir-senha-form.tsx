@@ -36,11 +36,15 @@ export function RedefinirSenhaForm({ isInvite }: { isInvite: boolean }) {
 
     startTransition(async () => {
       const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password: values.senha });
+      const { data, error } = await supabase.auth.updateUser({ password: values.senha });
 
       if (error) {
         form.setError("root", { message: "Não foi possível atualizar a senha. Tente novamente." });
         return;
+      }
+
+      if (isInvite && data.user) {
+        await supabase.from("usuarios").update({ senha_definida: true }).eq("id", data.user.id);
       }
 
       setSucesso(true);

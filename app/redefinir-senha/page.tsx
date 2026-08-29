@@ -2,30 +2,29 @@ import { AlertCircle } from "lucide-react";
 
 import { LogoHorizontal } from "@/components/brand/logo-horizontal";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 import { RedefinirSenhaForm } from "./redefinir-senha-form";
 
-export default async function RedefinirSenhaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ type?: string }>;
-}) {
-  const { type } = await searchParams;
-  const isInvite = type === "invite";
-
+export default async function RedefinirSenhaPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
+  // "Primeiro acesso" não dá pra inferir do `type` do link da Supabase Auth
+  // (invite vs. recovery) — na prática todo link que chega a alguém, seja o
+  // primeiro acesso ou uma redefinição de senha esquecida, é gerado pelo
+  // mesmo botão "Gerar link" (sempre `recovery`). `senha_definida` é quem
+  // sabe se essa pessoa já passou por aqui antes.
   let primeiroNome: string | null = null;
-  if (user && isInvite) {
+  let isInvite = false;
+  if (user) {
     const { data: perfil } = await supabase
       .from("usuarios")
-      .select("nome_completo")
+      .select("nome_completo, senha_definida")
       .eq("id", user.id)
       .maybeSingle();
-    primeiroNome = perfil?.nome_completo?.split(" ")[0] ?? null;
+    isInvite = perfil?.senha_definida === false;
+    primeiroNome = isInvite ? (perfil?.nome_completo?.split(" ")[0] ?? null) : null;
   }
 
   return (

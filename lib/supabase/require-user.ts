@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import type { SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
 /**
@@ -12,9 +13,7 @@ export async function requireUser(): Promise<
   { error: string } | { supabase: SupabaseServerClient; userId: string }
 > {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return { error: "Sessão expirada. Faça login novamente." } as const;

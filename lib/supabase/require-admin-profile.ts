@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 export type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -14,9 +15,7 @@ export async function requireAdminProfile(): Promise<
   { error: string } | { supabase: SupabaseServerClient; adminId: string; escolaId: string }
 > {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return { error: "Sessão expirada. Faça login novamente." } as const;

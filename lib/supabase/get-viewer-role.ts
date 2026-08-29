@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 /**
  * Só pra UI decidir o que renderizar (esconder Salvar, travar campos, etc) —
@@ -7,9 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function getViewerIsAdmin(): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return false;
 

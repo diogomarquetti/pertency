@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -443,6 +443,7 @@ export type Database = {
           funcao: Database["public"]["Enums"]["user_role"]
           id: string
           nome_completo: string
+          senha_definida: boolean
           status: Database["public"]["Enums"]["user_status"]
           telefone: string | null
           updated_at: string
@@ -456,6 +457,7 @@ export type Database = {
           funcao: Database["public"]["Enums"]["user_role"]
           id: string
           nome_completo: string
+          senha_definida?: boolean
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
           updated_at?: string
@@ -469,6 +471,7 @@ export type Database = {
           funcao?: Database["public"]["Enums"]["user_role"]
           id?: string
           nome_completo?: string
+          senha_definida?: boolean
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
           updated_at?: string

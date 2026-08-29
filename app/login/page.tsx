@@ -1,15 +1,12 @@
 import { redirect } from "next/navigation";
 
 import { LogoHorizontal } from "@/components/brand/logo-horizontal";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (user) {
     redirect("/");

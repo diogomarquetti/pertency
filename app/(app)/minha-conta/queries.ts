@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 
 export type MeuPerfil = {
   id: string;
@@ -12,9 +13,7 @@ export type MeuPerfil = {
 
 export async function getMeuPerfil(): Promise<MeuPerfil | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 
