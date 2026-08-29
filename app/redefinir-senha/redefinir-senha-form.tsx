@@ -20,7 +20,7 @@ import {
 
 import { redefinirSenhaSchema, type RedefinirSenhaValues } from "./schema";
 
-export function RedefinirSenhaForm() {
+export function RedefinirSenhaForm({ isInvite }: { isInvite: boolean }) {
   const [sucesso, setSucesso] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -51,7 +51,7 @@ export function RedefinirSenhaForm() {
   if (sucesso) {
     return (
       <p className="text-sm text-success-ink">
-        Senha atualizada com sucesso. Redirecionando...
+        {isInvite ? "Senha definida com sucesso." : "Senha atualizada com sucesso."} Redirecionando...
       </p>
     );
   }
@@ -64,7 +64,7 @@ export function RedefinirSenhaForm() {
           name="senha"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nova senha</FormLabel>
+              <FormLabel>{isInvite ? "Defina sua senha" : "Nova senha"}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -97,7 +97,7 @@ export function RedefinirSenhaForm() {
           name="confirmarSenha"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirmar nova senha</FormLabel>
+              <FormLabel>{isInvite ? "Confirme sua senha" : "Confirmar nova senha"}</FormLabel>
               <FormControl>
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -119,7 +119,7 @@ export function RedefinirSenhaForm() {
 
         <Button type="submit" size="lg" className="mt-1 w-full" disabled={isPending}>
           {isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
-          Salvar nova senha
+          {isInvite ? "Salvar e prosseguir" : "Salvar nova senha"}
         </Button>
       </form>
     </Form>

@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
 
   // Sucesso ou falha, o destino é sempre o mesmo — a página confere se a
   // sessão foi mesmo criada (`supabase.auth.getUser()`) e decide sozinha
-  // entre mostrar o formulário ou o aviso de link inválido/expirado.
-  redirect("/redefinir-senha");
+  // entre mostrar o formulário ou o aviso de link inválido/expirado. O
+  // `type` segue na query só pra decidir o texto (convite vs. redefinição
+  // normal) — não é usado pra nenhuma checagem de permissão.
+  redirect(type === "invite" ? "/redefinir-senha?type=invite" : "/redefinir-senha");
 }

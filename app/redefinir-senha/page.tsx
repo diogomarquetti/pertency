@@ -5,27 +5,54 @@ import { createClient } from "@/lib/supabase/server";
 
 import { RedefinirSenhaForm } from "./redefinir-senha-form";
 
-export default async function RedefinirSenhaPage() {
+export default async function RedefinirSenhaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type } = await searchParams;
+  const isInvite = type === "invite";
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let primeiroNome: string | null = null;
+  if (user && isInvite) {
+    const { data: perfil } = await supabase
+      .from("usuarios")
+      .select("nome_completo")
+      .eq("id", user.id)
+      .maybeSingle();
+    primeiroNome = perfil?.nome_completo?.split(" ")[0] ?? null;
+  }
 
   return (
     <div className="flex min-h-full flex-1 bg-bg">
       <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
         <div className="w-full max-w-sm">
           <div>
-            <h1 className="sr-only">Redefinir senha</h1>
+            <h1 className="sr-only">{isInvite ? "Bem-vindo ao Pertency" : "Redefinir senha"}</h1>
             <LogoHorizontal className="h-9 w-auto" />
-            <p className="mt-3 text-sm text-muted">
-              Defina a nova senha de acesso à sua conta Pertency.
-            </p>
+            {isInvite && user ? (
+              <>
+                <p className="mt-3 text-sm text-ink">
+                  {primeiroNome ? `${primeiroNome}, você` : "Você"} foi convidado(a) para
+                  colaborar com uma educação mais organizada e compartilhada.
+                </p>
+                <p className="mt-1 text-[12.5px] text-muted">{user.email}</p>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-muted">
+                Defina a nova senha de acesso à sua conta Pertency.
+              </p>
+            )}
           </div>
 
           <div className="mt-6">
             {user ? (
-              <RedefinirSenhaForm />
+              <RedefinirSenhaForm isInvite={isInvite} />
             ) : (
               <div className="flex flex-col gap-[10px]">
                 <p className="flex items-center gap-[8px] text-sm text-danger" role="alert">
