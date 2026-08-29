@@ -37,7 +37,7 @@ export function AppShell({
               userEmail={userEmail}
               onMenuClick={() => setMobileNavOpen(true)}
             />
-            <main className="min-h-0 flex-1 overflow-y-auto bg-surface px-4 py-4 md:px-6 md:py-6">
+            <main className="min-h-0 flex-1 overflow-y-auto bg-bg px-4 py-4 md:px-6 md:py-6">
               {children}
             </main>
           </div>
