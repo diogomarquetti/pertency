@@ -1,10 +1,11 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { EscolaForm } from "@/components/minha-escola/escola-form";
+import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 
 import { getEscolaAtualCompleta } from "../queries";
 
 export default async function EscolaPage() {
-  const escola = await getEscolaAtualCompleta();
+  const [escola, canEdit] = await Promise.all([getEscolaAtualCompleta(), getViewerIsAdmin()]);
 
   // A linha de escolas sempre existe (criada no bootstrap) — se não veio,
   // é falha de bootstrap/RLS, não um estado de UI a tratar como "vazio".
@@ -18,7 +19,7 @@ export default async function EscolaPage() {
         value="Escola"
         breadcrumb={[{ label: "Configurações", href: "/minha-escola" }, { label: "Escola" }]}
       />
-      <EscolaForm escola={escola} />
+      <EscolaForm escola={escola} canEdit={canEdit} />
     </div>
   );
 }

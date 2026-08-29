@@ -88,19 +88,21 @@ export function AppTopbar({
                 onClick={actions.onCancel}
                 disabled={actions.pending}
               >
-                Cancelar
+                {actions.cancelLabel ?? "Cancelar"}
               </Button>
             ) : actions.cancelHref ? (
               <Button variant="secondary" asChild>
-                <Link href={actions.cancelHref}>Cancelar</Link>
+                <Link href={actions.cancelHref}>{actions.cancelLabel ?? "Cancelar"}</Link>
               </Button>
             ) : null}
-            <Button type="submit" form={actions.formId} disabled={actions.pending}>
-              {actions.pending && (
-                <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
-              )}
-              {actions.saveLabel ?? "Salvar"}
-            </Button>
+            {!actions.readOnly && (
+              <Button type="submit" form={actions.formId} disabled={actions.pending}>
+                {actions.pending && (
+                  <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
+                )}
+                {actions.saveLabel ?? "Salvar"}
+              </Button>
+            )}
           </>
         )}
 

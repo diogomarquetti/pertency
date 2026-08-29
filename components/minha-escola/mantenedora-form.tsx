@@ -40,7 +40,13 @@ const VALORES_VAZIOS: MantenedoraValues = {
   status: "ativa",
 };
 
-export function MantenedoraForm({ mantenedora }: { mantenedora: MantenedoraAtual | null }) {
+export function MantenedoraForm({
+  mantenedora,
+  canEdit,
+}: {
+  mantenedora: MantenedoraAtual | null;
+  canEdit: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
   const [existe, setExiste] = useState(mantenedora !== null);
   const setPageActions = usePageActionsSetter();
@@ -82,10 +88,12 @@ export function MantenedoraForm({ mantenedora }: { mantenedora: MantenedoraAtual
       pending: isPending,
       saveLabel: existe ? "Salvar" : "Criar mantenedora",
       cancelHref: "/minha-escola",
+      cancelLabel: canEdit ? undefined : "Voltar",
+      readOnly: !canEdit,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending, existe]);
+  }, [isPending, existe, canEdit]);
 
   function onSubmit(values: MantenedoraValues) {
     const eraCriacao = !existe;
@@ -107,11 +115,13 @@ export function MantenedoraForm({ mantenedora }: { mantenedora: MantenedoraAtual
   return (
     <Form {...form}>
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
-        <div className="flex flex-col gap-[24px]">
-          <MantenedoraIdentificacaoCard control={form.control} statusAtual={statusAtual} />
-          <MantenedoraEnderecoContatoCard control={form.control} />
-          <MantenedoraRepresentacaoLegalCard control={form.control} />
-        </div>
+        <fieldset disabled={!canEdit} className="contents">
+          <div className="flex flex-col gap-[24px]">
+            <MantenedoraIdentificacaoCard control={form.control} statusAtual={statusAtual} />
+            <MantenedoraEnderecoContatoCard control={form.control} />
+            <MantenedoraRepresentacaoLegalCard control={form.control} />
+          </div>
+        </fieldset>
       </form>
     </Form>
   );

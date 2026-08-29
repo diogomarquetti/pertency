@@ -19,9 +19,11 @@ function statusBadge(status: "ativa" | "inativa") {
 export function ConfiguracoesLista({
   escola,
   mantenedora,
+  canEdit,
 }: {
   escola: EscolaAtual;
   mantenedora: MantenedoraAtual | null;
+  canEdit: boolean;
 }) {
   return (
     <div className="flex flex-col gap-[16px]">
@@ -33,6 +35,7 @@ export function ConfiguracoesLista({
         status={statusBadge(escola.status)}
         href="/minha-escola/escola"
         preenchido
+        canEdit={canEdit}
       />
 
       <ConfiguracaoCard
@@ -43,6 +46,7 @@ export function ConfiguracoesLista({
         status={mantenedora ? statusBadge(mantenedora.status) : undefined}
         href="/minha-escola/mantenedora"
         preenchido={mantenedora !== null}
+        canEdit={canEdit}
       />
     </div>
   );

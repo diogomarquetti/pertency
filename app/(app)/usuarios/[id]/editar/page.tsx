@@ -4,6 +4,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { UserForm } from "@/components/usuarios/user-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 
 import { getAuditoriaUsuario, getEscolaIdAtual, getReferenciaTurmas, getVinculosUsuario } from "../../queries";
 import type { VinculoLocal } from "@/components/usuarios/vinculo-types";
@@ -18,7 +19,7 @@ export default async function EditarUsuarioPage({
   const supabase = await createClient();
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome_completo, email, telefone, funcao, status, foto_url")
+    .select("nome_completo, email, telefone, funcao, status, foto_url, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -30,11 +31,12 @@ export default async function EditarUsuarioPage({
   const admin = createAdminClient();
   const { data: authUser } = await admin.auth.admin.getUserById(id);
 
-  const [referencia, vinculosExistentes, escolaId, auditoria] = await Promise.all([
+  const [referencia, vinculosExistentes, escolaId, auditoria, canEdit] = await Promise.all([
     getReferenciaTurmas(),
     getVinculosUsuario(id),
     getEscolaIdAtual(),
     getAuditoriaUsuario(id),
+    getViewerIsAdmin(),
   ]);
 
   const vinculosIniciais: VinculoLocal[] = vinculosExistentes.map((vinculo) => ({
@@ -54,8 +56,11 @@ export default async function EditarUsuarioPage({
   return (
     <div>
       <PageTitle
-        value="Editar Usuário"
-        breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: "Editar usuário" }]}
+        value={canEdit ? "Editar Usuário" : "Visualizar Usuário"}
+        breadcrumb={[
+          { label: "Usuários", href: "/usuarios" },
+          { label: canEdit ? "Editar usuário" : "Visualizar usuário" },
+        ]}
       />
       <UserForm
         mode="edit"
@@ -65,6 +70,7 @@ export default async function EditarUsuarioPage({
         vinculosIniciais={vinculosIniciais}
         fotoUrlInicial={usuario.foto_url}
         auditoria={auditoria}
+        canEdit={canEdit}
         defaultValues={{
           nomeCompleto: usuario.nome_completo,
           email: usuario.email,
@@ -72,6 +78,8 @@ export default async function EditarUsuarioPage({
           funcao: usuario.funcao,
           status: usuario.status,
           emailLogin: authUser.user?.email ?? "",
+          criadoEm: usuario.created_at,
+          atualizadoEm: usuario.updated_at,
         }}
       />
     </div>

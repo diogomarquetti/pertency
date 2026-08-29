@@ -30,6 +30,7 @@ const FORM_ID = "user-edit-form";
 
 type UserFormProps = {
   referencia: ReferenciaTurmas;
+  canEdit: boolean;
 } & (
   | { mode: "create" }
   | {
@@ -43,6 +44,8 @@ type UserFormProps = {
         funcao: string;
         status: "ativo" | "inativo";
         emailLogin: string;
+        criadoEm: string;
+        atualizadoEm: string;
       };
       vinculosIniciais: VinculoLocal[];
       fotoUrlInicial: string | null;
@@ -89,7 +92,15 @@ export function UserForm(props: UserFormProps) {
     resolver: zodResolver(schema as typeof updateUsuarioSchema),
     defaultValues:
       props.mode === "edit"
-        ? { ...props.defaultValues, vinculos: [] }
+        ? {
+            nomeCompleto: props.defaultValues.nomeCompleto,
+            email: props.defaultValues.email,
+            telefone: props.defaultValues.telefone,
+            funcao: props.defaultValues.funcao,
+            status: props.defaultValues.status,
+            emailLogin: props.defaultValues.emailLogin,
+            vinculos: [],
+          }
         : {
             nomeCompleto: "",
             email: "",
@@ -136,10 +147,12 @@ export function UserForm(props: UserFormProps) {
       formId: FORM_ID,
       pending: isPending,
       cancelHref: "/usuarios",
+      cancelLabel: props.canEdit ? undefined : "Voltar",
+      readOnly: !props.canEdit,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending]);
+  }, [isPending, props.canEdit]);
 
   function handleAddVinculo(vinculo: VinculoLocal) {
     setVinculos((current) => [...current, vinculo]);
@@ -201,38 +214,41 @@ export function UserForm(props: UserFormProps) {
     <Form {...form}>
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
         <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
-          <div className="flex min-w-0 flex-col gap-[24px]">
-            <DadosGeraisCard control={form.control} />
+          <fieldset disabled={!props.canEdit} className="contents">
+            <div className="flex min-w-0 flex-col gap-[24px]">
+              <DadosGeraisCard control={form.control} />
 
-            {isProfessor && (
-              <TurmasVinculadasCard
-                vinculos={vinculos}
-                onRequestAdd={() => setPanelState({ mode: "form", editingIndex: null })}
-                onRequestEdit={(index) => setPanelState({ mode: "form", editingIndex: index })}
-                onRemove={handleRemoveVinculo}
-              />
-            )}
-
-            <div className="grid gap-[24px] sm:grid-cols-2">
-              {props.mode === "create" ? (
-                <>
-                  <AcessoCard control={form.control} mode="create" />
-                  <FotoCard mode="create" />
-                </>
-              ) : (
-                <>
-                  <AcessoCard control={form.control} mode="edit" usuarioId={props.usuarioId} />
-                  <FotoCard
-                    mode="edit"
-                    usuarioId={props.usuarioId}
-                    escolaId={props.escolaId}
-                    nomeCompleto={props.defaultValues.nomeCompleto}
-                    fotoUrlInicial={props.fotoUrlInicial}
-                  />
-                </>
+              {isProfessor && (
+                <TurmasVinculadasCard
+                  vinculos={vinculos}
+                  onRequestAdd={() => setPanelState({ mode: "form", editingIndex: null })}
+                  onRequestEdit={(index) => setPanelState({ mode: "form", editingIndex: index })}
+                  onRemove={handleRemoveVinculo}
+                />
               )}
+
+              <div className="grid gap-[24px] sm:grid-cols-2">
+                {props.mode === "create" ? (
+                  <>
+                    <AcessoCard control={form.control} mode="create" />
+                    <FotoCard mode="create" canEdit={props.canEdit} />
+                  </>
+                ) : (
+                  <>
+                    <AcessoCard control={form.control} mode="edit" usuarioId={props.usuarioId} />
+                    <FotoCard
+                      mode="edit"
+                      usuarioId={props.usuarioId}
+                      escolaId={props.escolaId}
+                      nomeCompleto={props.defaultValues.nomeCompleto}
+                      fotoUrlInicial={props.fotoUrlInicial}
+                      canEdit={props.canEdit}
+                    />
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          </fieldset>
 
           <ContextPanel
             panelState={panelState}
@@ -242,6 +258,14 @@ export function UserForm(props: UserFormProps) {
             onAddVinculo={handleAddVinculo}
             onReplaceVinculo={handleReplaceVinculo}
             auditoria={props.mode === "edit" ? props.auditoria : undefined}
+            cadastro={
+              props.mode === "edit" && !props.canEdit
+                ? {
+                    criadoEm: props.defaultValues.criadoEm,
+                    atualizadoEm: props.defaultValues.atualizadoEm,
+                  }
+                : undefined
+            }
           />
         </div>
       </form>

@@ -18,7 +18,7 @@ import { EscolaResponsaveisCard } from "./escola-responsaveis-card";
 
 const FORM_ID = "escola-form";
 
-export function EscolaForm({ escola }: { escola: EscolaAtual }) {
+export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: boolean }) {
   const [isPending, startTransition] = useTransition();
   const setPageActions = usePageActionsSetter();
 
@@ -38,10 +38,12 @@ export function EscolaForm({ escola }: { escola: EscolaAtual }) {
       pending: isPending,
       saveLabel: "Salvar escola",
       cancelHref: "/minha-escola",
+      cancelLabel: canEdit ? undefined : "Voltar",
+      readOnly: !canEdit,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending]);
+  }, [isPending, canEdit]);
 
   function onSubmit(values: EscolaValues) {
     startTransition(async () => {
@@ -58,16 +60,18 @@ export function EscolaForm({ escola }: { escola: EscolaAtual }) {
   return (
     <Form {...form}>
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
-        <div className="flex flex-col gap-[24px]">
-          <EscolaIdentificacaoCard control={form.control} statusAtual={statusAtual} />
-          <EscolaEnderecoContatoCard control={form.control} />
-          <EscolaResponsaveisCard control={form.control} />
+        <fieldset disabled={!canEdit} className="contents">
+          <div className="flex flex-col gap-[24px]">
+            <EscolaIdentificacaoCard control={form.control} statusAtual={statusAtual} />
+            <EscolaEnderecoContatoCard control={form.control} />
+            <EscolaResponsaveisCard control={form.control} />
 
-          <div className="rounded-md bg-brand-tint px-[14px] py-[12px] text-[13px] leading-relaxed text-brand-ink">
-            <span className="font-semibold">Importante:</span> As informações cadastradas serão
-            utilizadas em documentos, relatórios e comunicações do sistema.
+            <div className="rounded-md bg-brand-tint px-[14px] py-[12px] text-[13px] leading-relaxed text-brand-ink">
+              <span className="font-semibold">Importante:</span> As informações cadastradas serão
+              utilizadas em documentos, relatórios e comunicações do sistema.
+            </div>
           </div>
-        </div>
+        </fieldset>
       </form>
     </Form>
   );

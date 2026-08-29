@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 
-type FotoCardProps =
+type FotoCardProps = { canEdit: boolean } & (
   | { mode: "create" }
   | {
       mode: "edit";
@@ -19,7 +19,8 @@ type FotoCardProps =
       escolaId: string;
       nomeCompleto: string;
       fotoUrlInicial: string | null;
-    };
+    }
+);
 
 /**
  * Sobe a foto pro bucket "usuarios-fotos" e atualiza usuarios.foto_url
@@ -133,7 +134,7 @@ export function FotoCard(props: FotoCardProps) {
                 variant="ghost"
                 size="sm"
                 onClick={handleRemove}
-                disabled={isPending}
+                disabled={isPending || !props.canEdit}
               >
                 <Trash2 size={14} strokeWidth={2} aria-hidden="true" />
                 Remover foto
@@ -144,7 +145,7 @@ export function FotoCard(props: FotoCardProps) {
           <FileUpload
             onFileSelected={handleFile}
             onError={(message) => toast.error(message)}
-            disabled={isPending}
+            disabled={isPending || !props.canEdit}
           >
             <Upload size={26} strokeWidth={2} className="text-muted" aria-hidden="true" />
             <p className="text-caption text-muted">JPG ou PNG, até 5MB</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, BookOpen, Clock, History, Mail, User, X, type LucideIcon } from "lucide-react";
+import { AlertCircle, BookOpen, Calendar, Clock, History, Mail, User, X, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -105,13 +105,44 @@ function HistoricoVazio({ mensagem }: { mensagem: string }) {
 function HistoricoPanel({
   auditoria,
   referencia,
+  cadastro,
 }: {
   auditoria: AuditoriaRow[] | undefined;
   referencia: ReferenciaTurmas;
+  cadastro: { criadoEm: string; atualizadoEm: string } | undefined;
 }) {
   if (auditoria === undefined) {
     return (
       <HistoricoVazio mensagem="O histórico de alterações fica disponível depois que o cadastro é salvo pela primeira vez." />
+    );
+  }
+
+  if (cadastro) {
+    return (
+      <div className="flex flex-col gap-4 px-[8px] py-[8px]">
+        <div className="flex items-center gap-3">
+          <div className="flex size-[36px] shrink-0 items-center justify-center rounded-full bg-brand-tint text-brand">
+            <Calendar size={16} strokeWidth={2} aria-hidden="true" />
+          </div>
+          <div>
+            <div className="text-[12.5px] text-muted">Cadastrado em</div>
+            <div className="text-[13.5px] font-semibold text-ink">
+              {dateFormatter.format(new Date(cadastro.criadoEm))}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex size-[36px] shrink-0 items-center justify-center rounded-full bg-brand-tint text-brand">
+            <Clock size={16} strokeWidth={2} aria-hidden="true" />
+          </div>
+          <div>
+            <div className="text-[12.5px] text-muted">Última atualização</div>
+            <div className="text-[13.5px] font-semibold text-ink">
+              {dateFormatter.format(new Date(cadastro.atualizadoEm))}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -326,6 +357,7 @@ export function ContextPanel({
   onAddVinculo,
   onReplaceVinculo,
   auditoria,
+  cadastro,
 }: {
   panelState: PanelState;
   onClose: () => void;
@@ -334,6 +366,7 @@ export function ContextPanel({
   onAddVinculo: (vinculo: VinculoLocal) => void;
   onReplaceVinculo: (index: number, vinculo: VinculoLocal) => void;
   auditoria: AuditoriaRow[] | undefined;
+  cadastro: { criadoEm: string; atualizadoEm: string } | undefined;
 }) {
   return (
     <div className="static overflow-hidden rounded-md border border-line bg-surface shadow-sm xl:sticky xl:top-0">
@@ -343,7 +376,7 @@ export function ContextPanel({
             <h3 className="text-highlight text-ink">Histórico de alterações</h3>
           </div>
           <div className="p-[24px]">
-            <HistoricoPanel auditoria={auditoria} referencia={referencia} />
+            <HistoricoPanel auditoria={auditoria} referencia={referencia} cadastro={cadastro} />
           </div>
         </>
       ) : (

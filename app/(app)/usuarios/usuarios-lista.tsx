@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Search, UserPlus } from "lucide-react";
+import { Eye, Pencil, Search, UserPlus } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { toast } from "@/lib/use-toast";
@@ -44,7 +44,13 @@ export type UsuarioListItem = {
   foto_url: string | null;
 };
 
-export function UsuariosLista({ usuarios }: { usuarios: UsuarioListItem[] }) {
+export function UsuariosLista({
+  usuarios,
+  canEdit,
+}: {
+  usuarios: UsuarioListItem[];
+  canEdit: boolean;
+}) {
   const [busca, setBusca] = useState("");
   const [funcaoFiltro, setFuncaoFiltro] = useState(TODAS_FUNCOES);
   const router = useRouter();
@@ -112,12 +118,14 @@ export function UsuariosLista({ usuarios }: { usuarios: UsuarioListItem[] }) {
           </Select>
         </div>
 
-        <Button asChild>
-          <Link href="/usuarios/novo">
-            <UserPlus size={16} strokeWidth={2} aria-hidden="true" />
-            Novo usuário
-          </Link>
-        </Button>
+        {canEdit && (
+          <Button asChild>
+            <Link href="/usuarios/novo">
+              <UserPlus size={16} strokeWidth={2} aria-hidden="true" />
+              Novo usuário
+            </Link>
+          </Button>
+        )}
       </div>
 
       {usuariosFiltrados.length > 0 ? (
@@ -162,8 +170,15 @@ export function UsuariosLista({ usuarios }: { usuarios: UsuarioListItem[] }) {
                 <TableCell>
                   <div className="flex justify-end">
                     <Button variant="secondary" size="sm" icon asChild>
-                      <Link href={`/usuarios/${usuario.id}/editar`} aria-label="Editar usuário">
-                        <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                      <Link
+                        href={`/usuarios/${usuario.id}/editar`}
+                        aria-label={canEdit ? "Editar usuário" : "Visualizar usuário"}
+                      >
+                        {canEdit ? (
+                          <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                        ) : (
+                          <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                        )}
                       </Link>
                     </Button>
                   </div>

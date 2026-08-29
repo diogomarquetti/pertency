@@ -1,12 +1,14 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { ConfiguracoesLista } from "@/components/minha-escola/configuracoes-lista";
+import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 
 import { getEscolaAtualCompleta, getMantenedoraAtual } from "./queries";
 
 export default async function MinhaEscolaPage() {
-  const [escola, mantenedora] = await Promise.all([
+  const [escola, mantenedora, canEdit] = await Promise.all([
     getEscolaAtualCompleta(),
     getMantenedoraAtual(),
+    getViewerIsAdmin(),
   ]);
 
   // A linha de escolas sempre existe (criada no bootstrap) — se não veio,
@@ -20,7 +22,7 @@ export default async function MinhaEscolaPage() {
   return (
     <div>
       <PageTitle value="Configurações" />
-      <ConfiguracoesLista escola={escola} mantenedora={mantenedora} />
+      <ConfiguracoesLista escola={escola} mantenedora={mantenedora} canEdit={canEdit} />
     </div>
   );
 }

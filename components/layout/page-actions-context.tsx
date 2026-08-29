@@ -11,6 +11,10 @@ export type PageActions = {
   onCancel?: () => void;
   /** Texto do botão de salvar — default "Salvar". */
   saveLabel?: string;
+  /** Texto do botão de cancelar/voltar — default "Cancelar". */
+  cancelLabel?: string;
+  /** Esconde o botão de salvar — usado em telas de visualização sem permissão de escrita. */
+  readOnly?: boolean;
 };
 
 const PageActionsContext = createContext<PageActions | null>(null);
