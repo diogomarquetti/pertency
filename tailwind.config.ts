@@ -77,6 +77,7 @@ export default {
         sm: "var(--r-sm)",
         md: "var(--r-md)",
         lg: "var(--r-lg)",
+        xl: "var(--r-xl)",
         full: "var(--r-full)",
       },
       fontFamily: {

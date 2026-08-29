@@ -31,22 +31,29 @@ export default async function LoginPage() {
       </div>
 
       <div className="hidden flex-1 p-6 lg:flex">
-        <div className="flex w-full flex-col justify-between rounded-lg bg-navy px-12 py-10">
-          <span className="font-logotype text-4xl leading-none text-white">
-            Pertency
-          </span>
+        <div className="relative flex w-full flex-col justify-end gap-[14px] overflow-hidden rounded-xl bg-navy px-12 py-10 text-white">
+          <video
+            className="absolute inset-0 size-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden="true"
+            src="/brand/login-banner.mp4"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,14,56,0.55)_0%,rgba(0,14,56,0.35)_45%,rgba(0,14,56,0.78)_100%)]" />
 
-          <div className="max-w-sm">
-            <p className="text-subtitle text-white">
-              Gestão e planejamento de estudantes nas instituições.
-            </p>
-            <p className="mt-3 text-body text-blue-100/80">
-              Um só lugar para acompanhar o percurso pedagógico de cada
-              estudante.
+          <div className="relative max-w-sm">
+            <h2 className="text-subtitle text-white">
+              Pertencimento começa com organização.
+            </h2>
+            <p className="mt-3 text-body text-white">
+              A plataforma de gestão pedagógica feita para escolas
+              especializadas.
             </p>
           </div>
 
-          <span className="text-caption text-blue-100/50">
+          <span className="relative text-caption text-white/45">
             © {new Date().getFullYear()} Pertency
           </span>
         </div>
