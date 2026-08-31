@@ -1,11 +1,21 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, ChevronRight, HelpCircle, LogOut, Loader2, Menu, User } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,24 +40,32 @@ export function AppTopbar({
   onMenuClick: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const router = useRouter();
   const title = usePageTitle();
   const breadcrumb = usePageBreadcrumb();
   const actions = usePageActions();
   const initials = getInitials(userName || userEmail);
 
-  function handleCancelClick() {
-    if (
-      actions?.isDirty &&
-      !window.confirm("Você tem alterações não salvas. Se sair agora, elas serão perdidas.")
-    ) {
-      return;
-    }
+  function proceedCancel() {
     if (actions?.onCancel) {
       actions.onCancel();
     } else if (actions?.cancelHref) {
       router.push(actions.cancelHref);
     }
+  }
+
+  function handleCancelClick() {
+    if (actions?.isDirty) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    proceedCancel();
+  }
+
+  function handleConfirmDiscard() {
+    setShowUnsavedDialog(false);
+    proceedCancel();
   }
 
   return (
@@ -166,6 +184,21 @@ export function AppTopbar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se sair agora, elas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDiscard}>Sair sem salvar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
