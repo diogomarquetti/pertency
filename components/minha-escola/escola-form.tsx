@@ -31,6 +31,7 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
   });
 
   const statusAtual = form.watch("status");
+  const { isDirty } = form.formState;
 
   useEffect(() => {
     setPageActions({
@@ -40,10 +41,11 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
       cancelHref: "/minha-escola",
       cancelLabel: canEdit ? undefined : "Voltar",
       readOnly: !canEdit,
+      isDirty,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending, canEdit]);
+  }, [isPending, canEdit, isDirty]);
 
   function onSubmit(values: EscolaValues) {
     startTransition(async () => {

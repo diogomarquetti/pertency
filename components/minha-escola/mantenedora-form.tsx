@@ -81,6 +81,7 @@ export function MantenedoraForm({
   });
 
   const statusAtual = form.watch("status");
+  const { isDirty } = form.formState;
 
   useEffect(() => {
     setPageActions({
@@ -90,10 +91,11 @@ export function MantenedoraForm({
       cancelHref: "/minha-escola",
       cancelLabel: canEdit ? undefined : "Voltar",
       readOnly: !canEdit,
+      isDirty,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending, existe, canEdit]);
+  }, [isPending, existe, canEdit, isDirty]);
 
   function onSubmit(values: MantenedoraValues) {
     const eraCriacao = !existe;

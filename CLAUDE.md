@@ -31,6 +31,9 @@ Sistema para gestão e planejamento de estudantes nas instituições.
 /components        → componentes compostos específicos do produto
 /lib               → utilitários, clientes (ex: supabase), hooks
 /docs              → tokens.json, tokens.css, tailwind.config.reference.js, ARCHITECTURE.md
+/docs/requisitos   → histórias/requisitos de cada módulo (cadastro-usuario.md, cadastro-mantenedora.md,
+                     cadastro-escola.md, cadastro-estudante.md) — não carregados automaticamente
+                     (são longos); ler o arquivo do módulo relevante quando a tarefa for sobre ele
 ```
 
 Sem pastas `atoms/molecules/organisms` — decisão explícita, ver `docs/ARCHITECTURE.md`.

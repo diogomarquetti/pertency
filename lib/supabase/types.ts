@@ -113,6 +113,51 @@ export type Database = {
         }
         Relationships: []
       }
+      escolas_auditoria: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          campo_alterado: string
+          escola_id: string
+          id: string
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          campo_alterado: string
+          escola_id: string
+          id?: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          campo_alterado?: string
+          escola_id?: string
+          id?: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escolas_auditoria_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escolas_auditoria_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       etapas_ciclos: {
         Row: {
           escola_id: string

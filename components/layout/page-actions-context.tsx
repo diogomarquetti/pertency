@@ -15,6 +15,8 @@ export type PageActions = {
   cancelLabel?: string;
   /** Esconde o botão de salvar — usado em telas de visualização sem permissão de escrita. */
   readOnly?: boolean;
+  /** Form tem alterações não salvas — avisa antes de sair ao clicar Cancelar/Voltar. */
+  isDirty?: boolean;
 };
 
 const PageActionsContext = createContext<PageActions | null>(null);

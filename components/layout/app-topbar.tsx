@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell, ChevronRight, HelpCircle, LogOut, Loader2, Menu, User } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
@@ -29,10 +30,25 @@ export function AppTopbar({
   onMenuClick: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const title = usePageTitle();
   const breadcrumb = usePageBreadcrumb();
   const actions = usePageActions();
   const initials = getInitials(userName || userEmail);
+
+  function handleCancelClick() {
+    if (
+      actions?.isDirty &&
+      !window.confirm("Você tem alterações não salvas. Se sair agora, elas serão perdidas.")
+    ) {
+      return;
+    }
+    if (actions?.onCancel) {
+      actions.onCancel();
+    } else if (actions?.cancelHref) {
+      router.push(actions.cancelHref);
+    }
+  }
 
   return (
     <header className="flex h-[var(--topbar-h)] shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4 md:px-6">
@@ -81,20 +97,16 @@ export function AppTopbar({
       <div className="flex shrink-0 items-center gap-2">
         {actions && (
           <>
-            {actions.onCancel ? (
+            {(actions.onCancel || actions.cancelHref) && (
               <Button
                 type="button"
                 variant="secondary"
-                onClick={actions.onCancel}
+                onClick={handleCancelClick}
                 disabled={actions.pending}
               >
                 {actions.cancelLabel ?? "Cancelar"}
               </Button>
-            ) : actions.cancelHref ? (
-              <Button variant="secondary" asChild>
-                <Link href={actions.cancelHref}>{actions.cancelLabel ?? "Cancelar"}</Link>
-              </Button>
-            ) : null}
+            )}
             {!actions.readOnly && (
               <Button type="submit" form={actions.formId} disabled={actions.pending}>
                 {actions.pending && (

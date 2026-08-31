@@ -99,7 +99,17 @@ export function UserForm(props: UserFormProps) {
             funcao: props.defaultValues.funcao,
             status: props.defaultValues.status,
             emailLogin: props.defaultValues.emailLogin,
-            vinculos: [],
+            // Precisa bater com o valor real inicial (não só `[]`) — senão
+            // o efeito de espelhamento abaixo, ao sincronizar os vínculos
+            // de verdade pro form logo no mount, já deixa isDirty=true na
+            // hora, mesmo sem nenhuma ação do usuário (RHF compara o valor
+            // atual contra este default pra calcular isDirty).
+            vinculos: vinculos.map(({ etapaCicloId, turnoId, turmaId, componenteIds }) => ({
+              etapaCicloId,
+              turnoId,
+              turmaId,
+              componenteIds,
+            })),
           }
         : {
             nomeCompleto: "",
@@ -114,6 +124,7 @@ export function UserForm(props: UserFormProps) {
 
   const funcaoSelecionada = form.watch("funcao");
   const isProfessor = isFuncaoProfessor(funcaoSelecionada);
+  const { isDirty } = form.formState;
 
   // O react-hook-form só sabe validar o schema (incluindo a regra de
   // "professor precisa de vínculo") pelo valor que ele mesmo controla — como
@@ -130,7 +141,7 @@ export function UserForm(props: UserFormProps) {
         turmaId,
         componenteIds,
       })),
-      { shouldValidate: form.formState.isSubmitted },
+      { shouldValidate: form.formState.isSubmitted, shouldDirty: true },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vinculos]);
@@ -149,10 +160,11 @@ export function UserForm(props: UserFormProps) {
       cancelHref: "/usuarios",
       cancelLabel: props.canEdit ? undefined : "Voltar",
       readOnly: !props.canEdit,
+      isDirty,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending, props.canEdit]);
+  }, [isPending, props.canEdit, isDirty]);
 
   function handleAddVinculo(vinculo: VinculoLocal) {
     setVinculos((current) => [...current, vinculo]);
