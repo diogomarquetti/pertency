@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      anos_letivos: {
+        Row: {
+          ano: number
+          escola_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          ano: number
+          escola_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          ano?: number
+          escola_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anos_letivos_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       componentes_curriculares: {
         Row: {
           id: string
@@ -163,18 +192,21 @@ export type Database = {
           escola_id: string
           id: string
           nome: string
+          oferta_id: string
           ordem: number | null
         }
         Insert: {
           escola_id: string
           id?: string
           nome: string
+          oferta_id: string
           ordem?: number | null
         }
         Update: {
           escola_id?: string
           id?: string
           nome?: string
+          oferta_id?: string
           ordem?: number | null
         }
         Relationships: [
@@ -183,6 +215,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etapas_ciclos_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas"
             referencedColumns: ["id"]
           },
         ]
@@ -318,38 +357,161 @@ export type Database = {
           },
         ]
       }
-      turmas: {
+      matrizes_curriculares: {
         Row: {
-          ano_letivo: number | null
-          created_at: string
-          escola_id: string
-          etapa_ciclo_id: string
           id: string
           nome: string
-          status: string
-          turno_id: string
+          oferta_id: string
         }
         Insert: {
-          ano_letivo?: number | null
-          created_at?: string
-          escola_id: string
-          etapa_ciclo_id: string
           id?: string
           nome: string
-          status?: string
-          turno_id: string
+          oferta_id: string
         }
         Update: {
-          ano_letivo?: number | null
-          created_at?: string
-          escola_id?: string
-          etapa_ciclo_id?: string
           id?: string
           nome?: string
-          status?: string
-          turno_id?: string
+          oferta_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "matrizes_curriculares_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ofertas: {
+        Row: {
+          id: string
+          nome: string
+          slug: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          slug: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      turma_componentes: {
+        Row: {
+          componente_id: string
+          id: string
+          turma_id: string
+        }
+        Insert: {
+          componente_id: string
+          id?: string
+          turma_id: string
+        }
+        Update: {
+          componente_id?: string
+          id?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turma_componentes_componente_id_fkey"
+            columns: ["componente_id"]
+            isOneToOne: false
+            referencedRelation: "componentes_curriculares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turma_componentes_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turmas: {
+        Row: {
+          ano_letivo_id: string
+          areas_conhecimento: string[] | null
+          campos_experiencias: string[] | null
+          capacidade: number | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          direitos_aprendizagem: string[] | null
+          eixos_funcionais: string[] | null
+          escola_id: string
+          etapa_ciclo_id: string
+          etapa_do_ciclo: string | null
+          id: string
+          matriz_curricular_id: string
+          nome: string
+          objetivo_geral: string | null
+          observacoes: string | null
+          oferta_id: string
+          status: string
+          turno_id: string
+          unidades_ocupacionais: string[] | null
+        }
+        Insert: {
+          ano_letivo_id: string
+          areas_conhecimento?: string[] | null
+          campos_experiencias?: string[] | null
+          capacidade?: number | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          direitos_aprendizagem?: string[] | null
+          eixos_funcionais?: string[] | null
+          escola_id: string
+          etapa_ciclo_id: string
+          etapa_do_ciclo?: string | null
+          id?: string
+          matriz_curricular_id: string
+          nome: string
+          objetivo_geral?: string | null
+          observacoes?: string | null
+          oferta_id: string
+          status?: string
+          turno_id: string
+          unidades_ocupacionais?: string[] | null
+        }
+        Update: {
+          ano_letivo_id?: string
+          areas_conhecimento?: string[] | null
+          campos_experiencias?: string[] | null
+          capacidade?: number | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          direitos_aprendizagem?: string[] | null
+          eixos_funcionais?: string[] | null
+          escola_id?: string
+          etapa_ciclo_id?: string
+          etapa_do_ciclo?: string | null
+          id?: string
+          matriz_curricular_id?: string
+          nome?: string
+          objetivo_geral?: string | null
+          observacoes?: string | null
+          oferta_id?: string
+          status?: string
+          turno_id?: string
+          unidades_ocupacionais?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turmas_ano_letivo_id_fkey"
+            columns: ["ano_letivo_id"]
+            isOneToOne: false
+            referencedRelation: "anos_letivos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "turmas_escola_id_fkey"
             columns: ["escola_id"]
@@ -365,6 +527,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "turmas_matriz_curricular_id_fkey"
+            columns: ["matriz_curricular_id"]
+            isOneToOne: false
+            referencedRelation: "matrizes_curriculares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "turmas_turno_id_fkey"
             columns: ["turno_id"]
             isOneToOne: false
@@ -373,18 +549,76 @@ export type Database = {
           },
         ]
       }
+      turmas_auditoria: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          campo_alterado: string
+          escola_id: string
+          id: string
+          turma_id: string
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          campo_alterado: string
+          escola_id: string
+          id?: string
+          turma_id: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          campo_alterado?: string
+          escola_id?: string
+          id?: string
+          turma_id?: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turmas_auditoria_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_auditoria_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_auditoria_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turnos: {
         Row: {
+          ativo: boolean
           escola_id: string
           id: string
           nome: string
         }
         Insert: {
+          ativo?: boolean
           escola_id: string
           id?: string
           nome: string
         }
         Update: {
+          ativo?: boolean
           escola_id?: string
           id?: string
           nome?: string
@@ -436,21 +670,27 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          escopo_eja: string[] | null
           id: string
+          status: string
           turma_id: string
           usuario_id: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          escopo_eja?: string[] | null
           id?: string
+          status?: string
           turma_id: string
           usuario_id: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          escopo_eja?: string[] | null
           id?: string
+          status?: string
           turma_id?: string
           usuario_id?: string
         }
@@ -619,12 +859,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -648,11 +888,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -673,11 +913,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -698,11 +938,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -715,11 +955,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
