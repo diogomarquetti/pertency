@@ -17,12 +17,14 @@ import {
 } from "@/app/(app)/turmas/schema";
 import type {
   AuditoriaTurmaRow,
+  EstudanteVinculado,
   ProfessorElegivel,
   ProfessorVinculado,
   ReferenciaTurmaForm,
 } from "@/app/(app)/turmas/queries";
 
 import { EstruturaCurricularCard } from "./estrutura-curricular-card";
+import { EstudantesVinculadosCard } from "./estudantes-vinculados-card";
 import { HistoricoCard } from "./historico-card";
 import { IdentificacaoCard } from "./identificacao-card";
 import { ObservacoesStatusCard } from "./observacoes-status-card";
@@ -69,6 +71,7 @@ type TurmaFormProps = {
       auditoria: AuditoriaTurmaRow[];
       professoresVinculados: ProfessorVinculado[];
       professoresElegiveis: ProfessorElegivel[];
+      estudantesVinculados: EstudanteVinculado[];
       scopePool: ScopePool;
     }
 );
@@ -152,13 +155,16 @@ export function TurmaForm(props: TurmaFormProps) {
               <EstruturaCurricularCard form={form} referencia={props.referencia} />
 
               {props.mode === "edit" && (
-                <ProfessoresVinculadosCard
-                  turmaId={props.turmaId}
-                  professores={props.professoresVinculados}
-                  ofertaSlug={props.scopePool.ofertaSlug}
-                  onRequestAdd={() => setDrawerState({ open: true, editing: null })}
-                  onRequestEdit={(professor) => setDrawerState({ open: true, editing: professor })}
-                />
+                <>
+                  <ProfessoresVinculadosCard
+                    turmaId={props.turmaId}
+                    professores={props.professoresVinculados}
+                    ofertaSlug={props.scopePool.ofertaSlug}
+                    onRequestAdd={() => setDrawerState({ open: true, editing: null })}
+                    onRequestEdit={(professor) => setDrawerState({ open: true, editing: professor })}
+                  />
+                  <EstudantesVinculadosCard estudantes={props.estudantesVinculados} />
+                </>
               )}
 
               <ObservacoesStatusCard control={form.control} />

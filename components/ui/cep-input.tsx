@@ -30,6 +30,7 @@ const CepInput = React.forwardRef<HTMLInputElement, CepInputProps>(function CepI
       inputRef={ref}
       data-slot="input"
       placeholder="00000-000"
+      autoComplete="off"
       className={cn(inputVariants, className)}
       {...props}
     />

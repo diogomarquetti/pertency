@@ -9,6 +9,7 @@ import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 import {
   getAuditoriaTurma,
   getComponentesTurma,
+  getEstudantesVinculados,
   getProfessoresElegiveis,
   getProfessoresVinculados,
   getReferenciaTurmaForm,
@@ -38,15 +39,23 @@ export default async function EditarTurmaPage({
     notFound();
   }
 
-  const [referencia, componenteIds, auditoria, professoresVinculados, professoresElegiveis, canEdit] =
-    await Promise.all([
-      getReferenciaTurmaForm(),
-      getComponentesTurma(id),
-      getAuditoriaTurma(id),
-      getProfessoresVinculados(id),
-      getProfessoresElegiveis(),
-      getViewerIsAdmin(),
-    ]);
+  const [
+    referencia,
+    componenteIds,
+    auditoria,
+    professoresVinculados,
+    professoresElegiveis,
+    estudantesVinculados,
+    canEdit,
+  ] = await Promise.all([
+    getReferenciaTurmaForm(),
+    getComponentesTurma(id),
+    getAuditoriaTurma(id),
+    getProfessoresVinculados(id),
+    getProfessoresElegiveis(),
+    getEstudantesVinculados(id),
+    getViewerIsAdmin(),
+  ]);
 
   const ofertaSlug = (turma.ofertas as unknown as { slug: string } | null)?.slug ?? "";
 
@@ -98,6 +107,7 @@ export default async function EditarTurmaPage({
         auditoria={auditoria}
         professoresVinculados={professoresVinculados}
         professoresElegiveis={professoresElegiveis}
+        estudantesVinculados={estudantesVinculados}
         scopePool={scopePool}
         canEdit={canEdit}
       />

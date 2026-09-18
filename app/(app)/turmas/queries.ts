@@ -166,3 +166,42 @@ export async function getProfessoresElegiveis(): Promise<ProfessorElegivel[]> {
     .filter((usuario) => isFuncaoProfessor(usuario.funcao))
     .map((usuario) => ({ id: usuario.id, nome: usuario.nome_completo, funcao: usuario.funcao }));
 }
+
+export type EstudanteVinculado = {
+  estudanteId: string;
+  nome: string;
+  situacao: string;
+  matriculaInterna: string;
+};
+
+/**
+ * Estudantes com vínculo escolar anual apontando pra esta turma (Bloco 5) —
+ * só leitura aqui; o vínculo em si é criado/editado do lado do Cadastro de
+ * Estudante (Aba 4, Dados escolares), não daqui.
+ */
+export async function getEstudantesVinculados(turmaId: string): Promise<EstudanteVinculado[]> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("vinculos_escolares_anuais")
+    .select("matricula_interna, estudantes(id, nome_completo, situacao)")
+    .eq("turma_id", turmaId);
+
+  return (data ?? [])
+    .map((row) => {
+      const estudante = row.estudantes as unknown as {
+        id: string;
+        nome_completo: string;
+        situacao: string;
+      } | null;
+      if (!estudante) return null;
+      return {
+        estudanteId: estudante.id,
+        nome: estudante.nome_completo,
+        situacao: estudante.situacao,
+        matriculaInterna: (row.matricula_interna as string | null) ?? "",
+      };
+    })
+    .filter((row): row is EstudanteVinculado => row !== null)
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}

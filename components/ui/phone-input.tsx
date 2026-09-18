@@ -31,6 +31,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         inputRef={ref}
         data-slot="input"
         placeholder="(00) 00000-0000"
+        autoComplete="off"
         className={cn(inputVariants, className)}
         {...props}
       />

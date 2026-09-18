@@ -8,6 +8,7 @@ export const FUNCAO_OPTIONS = [
   { value: "professor_regente", label: "Professor(a) Regente" },
   { value: "professor_arte", label: "Professor(a) de Arte" },
   { value: "professor_educacao_fisica", label: "Professor(a) de Educação Física" },
+  { value: "profissional_complementar", label: "Profissional Complementar" },
 ] as const;
 
 const FUNCAO_VALUES = FUNCAO_OPTIONS.map((option) => option.value) as [

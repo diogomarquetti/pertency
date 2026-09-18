@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { CPF_REGEX, isValidCPF } from "@/lib/utils";
+
 // Catálogo provisório — INEP/MEC têm uma taxonomia oficial mais extensa
 // para tipo/modalidade de escola; por ora só o valor já em uso no banco
 // (registrado no bootstrap) + variações plausíveis, editável sem migration
@@ -61,7 +63,6 @@ export const escolaSchema = z.object({
 export type EscolaValues = z.infer<typeof escolaSchema>;
 
 const CNPJ_REGEX = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
-const CPF_REGEX = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 
 /** Validação de dígito verificador de CNPJ (algoritmo padrão), não só formato. */
 function isValidCNPJ(cnpj: string): boolean {
@@ -80,30 +81,6 @@ function isValidCNPJ(cnpj: string): boolean {
 
   const digit2 = calcDigit(digits, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
   if (digit2 !== Number(digits[13])) return false;
-
-  return true;
-}
-
-/** Validação de dígito verificador de CPF (algoritmo padrão), não só formato. */
-function isValidCPF(cpf: string): boolean {
-  const digits = cpf.replace(/\D/g, "");
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-
-  function calcDigit(base: string, factor: number): number {
-    let sum = 0;
-    for (let i = 0; i < factor - 1; i++) {
-      sum += Number(base[i]) * (factor - i);
-    }
-    const rest = sum % 11;
-    return rest < 2 ? 0 : 11 - rest;
-  }
-
-  const digit1 = calcDigit(digits, 10);
-  if (digit1 !== Number(digits[9])) return false;
-
-  const digit2 = calcDigit(digits, 11);
-  if (digit2 !== Number(digits[10])) return false;
 
   return true;
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ChevronDown, Loader2, Search } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn, refreshAndBlur } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -208,7 +208,7 @@ function DrawerBody({
       }
 
       toast.success(editing ? "Vínculo atualizado." : "Professor vinculado.");
-      router.refresh();
+      refreshAndBlur(router);
       onOpenChange(false);
     });
   }

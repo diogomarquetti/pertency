@@ -24,14 +24,24 @@ export function AppShell({
   return (
     <PageTitleProvider>
       <PageActionsProvider>
-        <div className="flex h-screen flex-1 overflow-hidden">
+        {/* `fixed inset-0` tira o shell do fluxo do documento (imune a
+            scroll do <html>/<body>). Os wrappers internos usam
+            `overflow-clip`, não `overflow-hidden` — "hidden" ainda permite
+            scrollTop programático (é o que um scrollIntoView nativo usa pra
+            tentar trazer o botão de submit de volta à vista depois de um
+            router.refresh()), então mesmo escondido ele vira alvo válido de
+            scroll; "clip" recusa ter uma scroll box, então não sobra
+            nenhum container pra esse scroll "pousar" — só o <main>
+            (overflow-y-auto) é rolável de verdade. Ver também
+            refreshAndBlur() em lib/utils.ts. */}
+        <div className="fixed inset-0 flex overflow-clip">
           <AppSidebar
             open={mobileNavOpen}
             onClose={() => setMobileNavOpen(false)}
             escolaNome={escolaNome}
           />
 
-          <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col overflow-clip">
             <AppTopbar
               userName={userName}
               userEmail={userEmail}

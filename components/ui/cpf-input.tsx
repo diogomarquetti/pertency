@@ -30,6 +30,7 @@ const CpfInput = React.forwardRef<HTMLInputElement, CpfInputProps>(function CpfI
       inputRef={ref}
       data-slot="input"
       placeholder="000.000.000-00"
+      autoComplete="off"
       className={cn(inputVariants, className)}
       {...props}
     />

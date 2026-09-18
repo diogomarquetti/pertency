@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { refreshAndBlur } from "@/lib/utils";
 import { toast } from "@/lib/use-toast";
 
 import { removerVinculoProfessor } from "@/app/(app)/turmas/professores-actions";
@@ -37,7 +38,7 @@ export function ProfessoresVinculadosCard({
         return;
       }
       toast.success("Vínculo removido.");
-      router.refresh();
+      refreshAndBlur(router);
     });
   }
 
