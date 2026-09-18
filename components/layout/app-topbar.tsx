@@ -157,7 +157,10 @@ export function AppTopbar({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
+            <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
+              {userName && <span className="text-[14.5px] font-semibold text-ink">{userName}</span>}
+              <span className="text-[12.5px] text-muted">{userEmail}</span>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/minha-conta">

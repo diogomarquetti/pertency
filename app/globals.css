@@ -146,6 +146,7 @@
 
   /* ----- Layout (draft) ----- */
   --sidebar-w: 268px;
+  --sidebar-w-collapsed: 72px;
   --topbar-h: 56px;
   --panel-w: 360px;
 }

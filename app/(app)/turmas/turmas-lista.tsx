@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { OFERTA_OPTIONS, STATUS_OPTIONS } from "./schema";
 
@@ -150,18 +151,23 @@ export function TurmasLista({
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end">
-                    <Button variant="secondary" size="sm" icon asChild>
-                      <Link
-                        href={`/turmas/${turma.id}/editar`}
-                        aria-label={canEdit ? "Editar turma" : "Visualizar turma"}
-                      >
-                        {canEdit ? (
-                          <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                        ) : (
-                          <Eye size={14} strokeWidth={2} aria-hidden="true" />
-                        )}
-                      </Link>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="secondary" size="sm" icon asChild>
+                          <Link
+                            href={`/turmas/${turma.id}/editar`}
+                            aria-label={canEdit ? "Editar turma" : "Visualizar turma"}
+                          >
+                            {canEdit ? (
+                              <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                            ) : (
+                              <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                            )}
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
+                    </Tooltip>
                   </div>
                 </TableCell>
               </TableRow>
