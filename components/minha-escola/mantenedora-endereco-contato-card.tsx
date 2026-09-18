@@ -1,4 +1,4 @@
-import type { Control } from "react-hook-form";
+import { useFormContext, type Control } from "react-hook-form";
 
 import { CepInput } from "@/components/ui/cep-input";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { MunicipioCombobox } from "@/components/ui/municipio-combobox";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
   Select,
@@ -26,6 +27,8 @@ export function MantenedoraEnderecoContatoCard({
 }: {
   control: Control<MantenedoraValues>;
 }) {
+  const { setValue } = useFormContext<MantenedoraValues>();
+
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
@@ -112,7 +115,14 @@ export function MantenedoraEnderecoContatoCard({
             <FormItem>
               <FormLabel>Município</FormLabel>
               <FormControl>
-                <Input placeholder="Município" {...field} />
+                <MunicipioCombobox
+                  placeholder="Digite para buscar..."
+                  value={field.value}
+                  onChange={field.onChange}
+                  onSelectMunicipio={(municipio) =>
+                    setValue("uf", municipio.uf, { shouldValidate: true, shouldDirty: true })
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

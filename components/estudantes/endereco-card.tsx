@@ -1,4 +1,4 @@
-import type { Control } from "react-hook-form";
+import { useFormContext, type Control } from "react-hook-form";
 
 import { Card } from "@/components/ui/card";
 import { CepInput } from "@/components/ui/cep-input";
@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { MunicipioCombobox } from "@/components/ui/municipio-combobox";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,8 @@ import {
 import { UF_OPTIONS, type UpdateEstudanteValues } from "@/app/(app)/estudantes/schema";
 
 export function EnderecoCard({ control }: { control: Control<UpdateEstudanteValues> }) {
+  const { setValue } = useFormContext<UpdateEstudanteValues>();
+
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
@@ -107,7 +110,17 @@ export function EnderecoCard({ control }: { control: Control<UpdateEstudanteValu
             <FormItem>
               <FormLabel>Município</FormLabel>
               <FormControl>
-                <Input placeholder="Cidade" {...field} />
+                <MunicipioCombobox
+                  placeholder="Digite para buscar..."
+                  value={field.value}
+                  onChange={field.onChange}
+                  onSelectMunicipio={(municipio) =>
+                    setValue("enderecoUf", municipio.uf, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
