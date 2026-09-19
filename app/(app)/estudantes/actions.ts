@@ -45,7 +45,8 @@ function toEstudanteRow(escolaId: string, data: CreateEstudanteValues | UpdateEs
     segundo_responsavel_telefone: data.segundoResponsavelTelefone || null,
     filiacao: data.filiacao,
     quem_pode_retirar: data.quemPodeRetirar,
-    contato_emergencia: data.contatoEmergencia,
+    contato_emergencia_nome: data.contatoEmergenciaNome,
+    contato_emergencia_telefone: data.contatoEmergenciaTelefone,
   };
 }
 

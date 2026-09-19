@@ -88,7 +88,8 @@ const EMPTY_VALUES: UpdateEstudanteValues = {
   segundoResponsavelTelefone: "",
   filiacao: "",
   quemPodeRetirar: "",
-  contatoEmergencia: "",
+  contatoEmergenciaNome: "",
+  contatoEmergenciaTelefone: "",
 };
 
 type EstudanteFormProps = {

@@ -1060,7 +1060,8 @@ export type Database = {
       }
       estudantes: {
         Row: {
-          contato_emergencia: string | null
+          contato_emergencia_nome: string | null
+          contato_emergencia_telefone: string | null
           cor_raca: string | null
           cpf: string | null
           created_at: string
@@ -1096,7 +1097,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          contato_emergencia?: string | null
+          contato_emergencia_nome?: string | null
+          contato_emergencia_telefone?: string | null
           cor_raca?: string | null
           cpf?: string | null
           created_at?: string
@@ -1132,7 +1134,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          contato_emergencia?: string | null
+          contato_emergencia_nome?: string | null
+          contato_emergencia_telefone?: string | null
           cor_raca?: string | null
           cpf?: string | null
           created_at?: string

@@ -669,7 +669,8 @@ export type PerfilEstudanteResumo = {
   responsavelPrincipalNome: string;
   responsavelPrincipalParentesco: string;
   responsavelPrincipalTelefone: string;
-  contatoEmergencia: string;
+  contatoEmergenciaNome: string;
+  contatoEmergenciaTelefone: string;
   enderecoMunicipio: string;
   enderecoUf: string;
 };
@@ -683,7 +684,7 @@ export async function getPerfilEstudante(estudanteId: string): Promise<PerfilEst
     .select(
       `id, nome_completo, foto_url, situacao, data_nascimento,
        responsavel_principal_nome, responsavel_principal_parentesco, responsavel_principal_telefone,
-       contato_emergencia, endereco_municipio, endereco_uf`,
+       contato_emergencia_nome, contato_emergencia_telefone, endereco_municipio, endereco_uf`,
     )
     .eq("id", estudanteId)
     .maybeSingle();
@@ -699,7 +700,8 @@ export async function getPerfilEstudante(estudanteId: string): Promise<PerfilEst
     responsavelPrincipalNome: data.responsavel_principal_nome ?? "",
     responsavelPrincipalParentesco: data.responsavel_principal_parentesco ?? "",
     responsavelPrincipalTelefone: data.responsavel_principal_telefone ?? "",
-    contatoEmergencia: data.contato_emergencia ?? "",
+    contatoEmergenciaNome: data.contato_emergencia_nome ?? "",
+    contatoEmergenciaTelefone: data.contato_emergencia_telefone ?? "",
     enderecoMunicipio: data.endereco_municipio ?? "",
     enderecoUf: data.endereco_uf ?? "",
   };

@@ -172,12 +172,26 @@ export function ResponsaveisCard({ control }: { control: Control<UpdateEstudante
 
         <FormField
           control={control}
-          name="contatoEmergencia"
+          name="contatoEmergenciaNome"
           render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Contato de emergência</FormLabel>
+            <FormItem>
+              <FormLabel>Nome do contato de emergência</FormLabel>
               <FormControl>
-                <Input placeholder="Nome e telefone" {...field} />
+                <Input placeholder="Nome completo" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="contatoEmergenciaTelefone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telefone do contato de emergência</FormLabel>
+              <FormControl>
+                <PhoneInput value={field.value} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

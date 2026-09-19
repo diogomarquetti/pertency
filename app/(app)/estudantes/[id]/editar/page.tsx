@@ -47,7 +47,7 @@ export default async function EditarEstudantePage({
        endereco_cep, endereco_municipio, endereco_uf,
        responsavel_principal_nome, responsavel_principal_parentesco, responsavel_principal_telefone,
        segundo_responsavel_nome, segundo_responsavel_parentesco, segundo_responsavel_telefone,
-       filiacao, quem_pode_retirar, contato_emergencia`,
+       filiacao, quem_pode_retirar, contato_emergencia_nome, contato_emergencia_telefone`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -128,7 +128,8 @@ export default async function EditarEstudantePage({
     segundoResponsavelTelefone: estudante.segundo_responsavel_telefone ?? "",
     filiacao: estudante.filiacao ?? "",
     quemPodeRetirar: estudante.quem_pode_retirar ?? "",
-    contatoEmergencia: estudante.contato_emergencia ?? "",
+    contatoEmergenciaNome: estudante.contato_emergencia_nome ?? "",
+    contatoEmergenciaTelefone: estudante.contato_emergencia_telefone ?? "",
   };
 
   return (

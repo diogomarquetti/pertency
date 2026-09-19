@@ -43,7 +43,8 @@ export function DadosContatoCard({ estudante }: { estudante: PerfilEstudanteResu
       <div className="flex flex-col">
         <Campo rotulo="Responsável principal" valor={responsavel} />
         <Campo rotulo="Telefone principal" valor={estudante.responsavelPrincipalTelefone} />
-        <Campo rotulo="Contato de emergência" valor={estudante.contatoEmergencia} />
+        <Campo rotulo="Contato de emergência" valor={estudante.contatoEmergenciaNome} />
+        <Campo rotulo="Telefone de emergência" valor={estudante.contatoEmergenciaTelefone} />
         <Campo rotulo="Endereço" valor={endereco} />
       </div>
     </Card>

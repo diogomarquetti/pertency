@@ -115,7 +115,8 @@ const estudanteFields = {
   segundoResponsavelTelefone: z.string().optional().or(z.literal("")),
   filiacao: z.string().min(1, "Informe a filiação"),
   quemPodeRetirar: z.string().min(1, "Informe quem pode retirar o estudante"),
-  contatoEmergencia: z.string().min(1, "Informe um contato de emergência"),
+  contatoEmergenciaNome: z.string().min(1, "Informe o nome do contato de emergência"),
+  contatoEmergenciaTelefone: z.string().min(1, "Informe o telefone do contato de emergência"),
 };
 
 // Órgão emissor/UF só faz sentido pra RG — Certidão de Nascimento/Casamento
