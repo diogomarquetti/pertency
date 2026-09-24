@@ -216,11 +216,14 @@ export function InformacoesRotinaCard({ form }: { form: UseFormReturn<PerfilFunc
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Informações adicionais autorizadas pela escola{" "}
+                Informações relevantes sobre a medicação na rotina escolar{" "}
                 <span className="font-normal text-muted">(opcional)</span>
               </FormLabel>
               <FormControl>
-                <Textarea placeholder="Sem prontuário ou prescrição detalhada…" {...field} />
+                <Textarea
+                  placeholder="Ex.: horário, quem administra, cuidados na rotina — sem prescrição detalhada."
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -254,6 +257,9 @@ export function InformacoesRotinaCard({ form }: { form: UseFormReturn<PerfilFunc
             <FormControl>
               <Textarea {...field} />
             </FormControl>
+            <p className="text-[12.5px] text-muted">
+              Registre apenas o que não foi informado nos campos acima.
+            </p>
             <FormMessage />
           </FormItem>
         )}

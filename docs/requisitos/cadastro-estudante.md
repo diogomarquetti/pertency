@@ -328,7 +328,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Necessita apoio para locomoção? | Sim/Não | Não | Informação funcional e de segurança. |
 | Necessita apoio em outras atividades de vida diária? | Sim/Não | Não | Se Sim, abrir checklist: Vestir-se, Uso do banheiro, Organização de materiais, Organização da rotina, Orientação no ambiente, Outro. |
 | Alergias e restrições relevantes para a rotina escolar | Texto | Não | Somente informações necessárias à segurança/rotina escolar. |
-| Necessita medicação durante o período escolar? | Sim/Não | Não | Se Sim, permitir informações adicionais autorizadas pela escola, sem prontuário ou prescrição detalhada. |
+| Necessita medicação durante o período escolar? | Sim/Não | Não | Se Sim, exibir "Informações relevantes sobre a medicação na rotina escolar" (sem prontuário ou prescrição detalhada). |
 | Recursos de acessibilidade e apoio utilizados | Seleção múltipla | Não | Ex.: comunicação alternativa, tecnologia assistiva, recurso visual, material adaptado, apoio de posicionamento, mobilidade, outro. |
 | Outras informações relevantes para a rotina escolar | Texto longo | Não | Evitar repetição dos campos estruturados. |
 
