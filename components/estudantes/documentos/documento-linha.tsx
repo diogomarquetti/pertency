@@ -2,27 +2,29 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Eye, Loader2, Trash2, Upload } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, Loader2, MoreHorizontal, Trash2, Upload } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { refreshAndBlur } from "@/lib/utils";
 import { toast } from "@/lib/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/ui/file-upload";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileUpload } from "@/components/ui/file-upload";
+import { Input } from "@/components/ui/input";
 
 import {
+  desfazerStatusDocumento,
+  marcarNaoSeAplica,
+  registrarEntregaFisica,
   salvarArquivoDocumento,
-  salvarStatusDocumentoExtra,
-  salvarStatusDocumentoFixo,
 } from "@/app/(app)/estudantes/documentos-actions";
-import { STATUS_DOCUMENTO_OPTIONS, type DocumentoTipoFixo } from "@/app/(app)/estudantes/documentos-schema";
+import type { DocumentoTipoFixo } from "@/app/(app)/estudantes/documentos-schema";
 import type { DocumentoVersaoEstudante } from "@/app/(app)/estudantes/queries";
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -32,6 +34,10 @@ type DocumentoLinhaProps = {
   escolaId: string;
   label: string;
   status: string;
+  formaEntrega: "arquivo" | "fisica" | null;
+  motivoNaoSeAplica: string | null;
+  /** "Não se aplica" deduzido pelo sistema (ex.: primeira matrícula) — texto do motivo. */
+  naoSeAplicaAutomatico?: string | null;
   dataEnvio: string | null;
   conferidoPorNome: string | null;
   arquivoPath: string | null;
@@ -40,32 +46,50 @@ type DocumentoLinhaProps = {
   canEdit: boolean;
 } & ({ kind: "fixo"; tipo: DocumentoTipoFixo } | { kind: "extra"; docId: string; onRemove: () => void });
 
+/**
+ * Status do documento é consequência de ações, não um select: enviar
+ * arquivo → Entregue; "Registrar entrega física" → Entregue (físico);
+ * "Marcar como não se aplica" (com motivo) → Não se aplica. Entrega física e
+ * "não se aplica" manual podem ser desfeitos; entrega por arquivo se corrige
+ * enviando nova versão.
+ */
 export function DocumentoLinha(props: DocumentoLinhaProps) {
   const [isPending, startTransition] = useTransition();
   const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [pedindoMotivo, setPedindoMotivo] = useState(false);
+  const [motivo, setMotivo] = useState("");
   const router = useRouter();
 
-  function handleStatusChange(status: string) {
-    startTransition(async () => {
-      const result =
-        props.kind === "fixo"
-          ? await salvarStatusDocumentoFixo(
-              props.estudanteId,
-              props.tipo,
-              status as "entregue" | "pendente" | "nao_se_aplica",
-            )
-          : await salvarStatusDocumentoExtra(
-              props.estudanteId,
-              props.docId,
-              status as "entregue" | "pendente" | "nao_se_aplica",
-            );
+  const alvo = props.kind === "fixo" ? { tipo: props.tipo } : { docId: props.docId };
+  const entregue = props.status === "entregue";
+  const naoSeAplicaManual = props.status === "nao_se_aplica";
+  const naoSeAplicaAuto = !entregue && !naoSeAplicaManual && !!props.naoSeAplicaAutomatico;
+  const pendente = !entregue && !naoSeAplicaManual && !naoSeAplicaAuto;
 
-      if (result && "error" in result) {
+  function executar(acao: () => Promise<{ error?: string } | { success: true }>, sucesso?: () => void) {
+    startTransition(async () => {
+      const result = await acao();
+      if (result && "error" in result && result.error) {
         toast.error("Não foi possível salvar", result.error);
         return;
       }
+      sucesso?.();
       refreshAndBlur(router);
     });
+  }
+
+  function handleConfirmarNaoSeAplica() {
+    if (!motivo.trim()) {
+      toast.error("Informe o motivo.");
+      return;
+    }
+    executar(
+      () => marcarNaoSeAplica(props.estudanteId, alvo, motivo),
+      () => {
+        setPedindoMotivo(false);
+        setMotivo("");
+      },
+    );
   }
 
   function handleFile(file: File | null) {
@@ -123,25 +147,20 @@ export function DocumentoLinha(props: DocumentoLinhaProps) {
         <div className="min-w-0 flex-1">
           <div className="font-semibold text-ink">{props.label}</div>
           <div className="mt-[2px] text-[12.5px] text-muted">
-            {props.arquivoNome ? props.arquivoNome : "Nenhum arquivo enviado"}
-            {props.dataEnvio && ` · enviado em ${dateFormatter.format(new Date(props.dataEnvio))}`}
-            {props.conferidoPorNome && ` · conferido por ${props.conferidoPorNome}`}
+            <DetalheStatus {...props} naoSeAplicaAuto={naoSeAplicaAuto} />
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Select value={props.status} onValueChange={handleStatusChange} disabled={!props.canEdit || isPending}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_DOCUMENTO_OPTIONS.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {entregue ? (
+            <Badge variant="success">
+              {props.formaEntrega === "fisica" ? "Entregue (físico)" : "Entregue"}
+            </Badge>
+          ) : naoSeAplicaManual || naoSeAplicaAuto ? (
+            <Badge variant="neutral">Não se aplica</Badge>
+          ) : (
+            <Badge variant="warning">Pendente</Badge>
+          )}
 
           {props.arquivoPath && (
             <Button
@@ -173,6 +192,54 @@ export function DocumentoLinha(props: DocumentoLinhaProps) {
             </FileUpload>
           )}
 
+          {props.canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon
+                  aria-label="Mais ações do documento"
+                  disabled={isPending}
+                >
+                  <MoreHorizontal size={14} strokeWidth={2} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!entregue && (
+                  <DropdownMenuItem
+                    onSelect={() => executar(() => registrarEntregaFisica(props.estudanteId, alvo))}
+                  >
+                    Registrar entrega física
+                  </DropdownMenuItem>
+                )}
+                {pendente && (
+                  <DropdownMenuItem onSelect={() => setPedindoMotivo(true)}>
+                    Marcar como não se aplica
+                  </DropdownMenuItem>
+                )}
+                {entregue && props.formaEntrega === "fisica" && !props.arquivoPath && (
+                  <DropdownMenuItem
+                    onSelect={() => executar(() => desfazerStatusDocumento(props.estudanteId, alvo))}
+                  >
+                    Desfazer entrega física
+                  </DropdownMenuItem>
+                )}
+                {naoSeAplicaManual && (
+                  <DropdownMenuItem
+                    onSelect={() => executar(() => desfazerStatusDocumento(props.estudanteId, alvo))}
+                  >
+                    Desfazer &ldquo;não se aplica&rdquo;
+                  </DropdownMenuItem>
+                )}
+                {entregue && props.formaEntrega === "arquivo" && (
+                  <DropdownMenuItem disabled>Para corrigir, envie uma nova versão</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {props.kind === "extra" && props.canEdit && (
             <Button
               type="button"
@@ -188,6 +255,32 @@ export function DocumentoLinha(props: DocumentoLinhaProps) {
           )}
         </div>
       </div>
+
+      {pedindoMotivo && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={motivo}
+            onChange={(event) => setMotivo(event.target.value)}
+            placeholder="Motivo (ex.: estudante ainda não tem CPF emitido)"
+            className="max-w-[420px]"
+            autoFocus
+          />
+          <Button type="button" size="sm" onClick={handleConfirmarNaoSeAplica} disabled={isPending}>
+            Confirmar
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setPedindoMotivo(false);
+              setMotivo("");
+            }}
+          >
+            Cancelar
+          </Button>
+        </div>
+      )}
 
       {props.versoesAnteriores.length > 0 && (
         <div>
@@ -232,4 +325,35 @@ export function DocumentoLinha(props: DocumentoLinhaProps) {
       )}
     </div>
   );
+}
+
+function DetalheStatus(props: DocumentoLinhaProps & { naoSeAplicaAuto: boolean }) {
+  const quando = props.dataEnvio ? dateFormatter.format(new Date(props.dataEnvio)) : null;
+  const por = props.conferidoPorNome ? ` por ${props.conferidoPorNome}` : "";
+
+  if (props.status === "entregue" && props.formaEntrega === "fisica" && !props.arquivoPath) {
+    return <>Entrega física registrada{quando && ` em ${quando}`}{por}</>;
+  }
+  if (props.status === "entregue") {
+    return (
+      <>
+        {props.arquivoNome ?? "Arquivo enviado"}
+        {quando && ` · enviado em ${quando}`}
+        {por}
+      </>
+    );
+  }
+  if (props.status === "nao_se_aplica") {
+    return (
+      <>
+        {props.motivoNaoSeAplica ?? "Não se aplica"}
+        {quando && ` · registrado em ${quando}`}
+        {por}
+      </>
+    );
+  }
+  if (props.naoSeAplicaAuto) {
+    return <>{props.naoSeAplicaAutomatico}</>;
+  }
+  return <>Nenhum arquivo enviado</>;
 }

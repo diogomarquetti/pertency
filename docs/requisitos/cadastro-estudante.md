@@ -252,7 +252,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Coluna | Comportamento |
 | :---- | :---- |
 | Documento | Nome padronizado a partir de Tipos de documentos ou item dinâmico do checklist. |
-| Status | Entregue, Pendente, Não se aplica ou Gerado pelo sistema quando pertinente. |
+| Status | Entregue, Pendente, Não se aplica ou Gerado pelo sistema quando pertinente. **Não é escolhido pelo usuário**: é consequência de ações — enviar arquivo → Entregue; "Registrar entrega física" (papel, sem arquivo) → Entregue (físico); "Marcar como não se aplica" com motivo obrigatório → Não se aplica; "Desfazer" (só para entrega física ou não se aplica manual) → Pendente. Histórico escolar e Relatório anterior ficam "Não se aplica" automaticamente quando a Forma de origem é Primeira matrícula escolar. Exibido como badge. |
 | Anexo | Upload, visualizar, baixar e substituir conforme permissão. |
 | Data de envio | Automática no upload; pode refletir data de recebimento quando informada pela Secretaria. |
 | Conferido por | Usuário e data/hora da conferência. |

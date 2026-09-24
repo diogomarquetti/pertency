@@ -290,6 +290,9 @@ export type DocumentoEstudante = {
   tipo: string;
   nomeDocumento: string | null;
   status: string;
+  /** Só quando entregue: por arquivo enviado ou registro de entrega física. */
+  formaEntrega: "arquivo" | "fisica" | null;
+  motivoNaoSeAplica: string | null;
   arquivoPath: string | null;
   arquivoNome: string | null;
   dataEnvio: string | null;
@@ -304,7 +307,7 @@ export async function getDocumentosEstudante(estudanteId: string): Promise<Docum
   const { data } = await supabase
     .from("documentos_estudante")
     .select(
-      "id, tipo, nome_documento, status, arquivo_path, arquivo_nome, data_envio, usuarios!documentos_estudante_conferido_por_fkey(nome_completo)",
+      "id, tipo, nome_documento, status, forma_entrega, motivo_nao_se_aplica, arquivo_path, arquivo_nome, data_envio, usuarios!documentos_estudante_conferido_por_fkey(nome_completo)",
     )
     .eq("estudante_id", estudanteId)
     .order("created_at");
@@ -352,6 +355,8 @@ export async function getDocumentosEstudante(estudanteId: string): Promise<Docum
       tipo: row.tipo as string,
       nomeDocumento: row.nome_documento as string | null,
       status: row.status as string,
+      formaEntrega: row.forma_entrega as "arquivo" | "fisica" | null,
+      motivoNaoSeAplica: row.motivo_nao_se_aplica as string | null,
       arquivoPath,
       arquivoNome: row.arquivo_nome as string | null,
       dataEnvio: row.data_envio as string | null,

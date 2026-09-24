@@ -9,8 +9,6 @@ import {
 
 import type { DocumentoTipoFixo } from "./documentos-schema";
 
-type StatusDocumento = "entregue" | "pendente" | "nao_se_aplica";
-
 function hoje() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -82,15 +80,13 @@ async function garantirDocumentoFixo(
   return { documentoId: (data?.id as string | undefined) ?? null, error };
 }
 
-/**
- * Marca status de um documento do checklist fixo. Quando o status vira
- * "entregue", a própria ação de marcar já registra quem conferiu e quando —
- * não existe campo manual separado pra isso (regra 6 da história).
- */
-export async function salvarStatusDocumentoFixo(
+type AlvoDocumento = { tipo: DocumentoTipoFixo } | { docId: string };
+
+/** Aplica um patch no documento-alvo — fixo (cria a linha na primeira vez) ou extra (por id). */
+async function gravarDocumento(
   estudanteId: string,
-  tipo: DocumentoTipoFixo,
-  status: StatusDocumento,
+  alvo: AlvoDocumento,
+  patch: (userId: string) => Record<string, unknown>,
 ) {
   const context = await requireEstudanteWriteProfile();
   if ("error" in context) {
@@ -98,13 +94,14 @@ export async function salvarStatusDocumentoFixo(
   }
   const { supabase, userId, escolaId } = context;
 
-  const patch: Record<string, unknown> = { status };
-  if (status === "entregue") {
-    patch.conferido_por = userId;
-    patch.data_envio = hoje();
-  }
-
-  const { error } = await gravarDocumentoFixo(supabase, estudanteId, escolaId, userId, tipo, patch);
+  const { error } =
+    "tipo" in alvo
+      ? await gravarDocumentoFixo(supabase, estudanteId, escolaId, userId, alvo.tipo, patch(userId))
+      : await supabase
+          .from("documentos_estudante")
+          .update(patch(userId))
+          .eq("id", alvo.docId)
+          .eq("estudante_id", estudanteId);
 
   if (error) {
     return { error: "Não foi possível atualizar o documento." };
@@ -114,32 +111,50 @@ export async function salvarStatusDocumentoFixo(
   return { success: true } as const;
 }
 
-/** Mesma ideia, mas para uma linha de "outro documento" já existente (por id). */
-export async function salvarStatusDocumentoExtra(
-  estudanteId: string,
-  docId: string,
-  status: StatusDocumento,
-) {
-  const context = await requireEstudanteWriteProfile();
-  if ("error" in context) {
-    return context;
+/*
+ * O status do checklist não é mais escolhido num select: cada ação abaixo
+ * (e o envio de arquivo, em salvarArquivoDocumento) define o status como
+ * consequência — quem fez e quando ficam em conferido_por/data_envio, e a
+ * troca de status entra no histórico pelo trigger de auditoria.
+ */
+
+/** Documento entregue em papel, sem arquivo digitalizado. */
+export async function registrarEntregaFisica(estudanteId: string, alvo: AlvoDocumento) {
+  return gravarDocumento(estudanteId, alvo, (userId) => ({
+    status: "entregue",
+    forma_entrega: "fisica",
+    motivo_nao_se_aplica: null,
+    conferido_por: userId,
+    data_envio: hoje(),
+  }));
+}
+
+export async function marcarNaoSeAplica(estudanteId: string, alvo: AlvoDocumento, motivo: string) {
+  if (!motivo.trim()) {
+    return { error: "Informe o motivo." };
   }
-  const { supabase, userId } = context;
+  return gravarDocumento(estudanteId, alvo, (userId) => ({
+    status: "nao_se_aplica",
+    forma_entrega: null,
+    motivo_nao_se_aplica: motivo.trim(),
+    conferido_por: userId,
+    data_envio: hoje(),
+  }));
+}
 
-  const patch: Record<string, unknown> = { status };
-  if (status === "entregue") {
-    patch.conferido_por = userId;
-    patch.data_envio = hoje();
-  }
-
-  const { error } = await supabase.from("documentos_estudante").update(patch).eq("id", docId);
-
-  if (error) {
-    return { error: "Não foi possível atualizar o documento." };
-  }
-
-  revalidatePath(`/estudantes/${estudanteId}/editar`);
-  return { success: true } as const;
+/**
+ * Volta pra Pendente uma entrega física ou um "não se aplica" registrados
+ * por engano. Entrega por arquivo não se desfaz aqui — corrige-se enviando
+ * uma nova versão.
+ */
+export async function desfazerStatusDocumento(estudanteId: string, alvo: AlvoDocumento) {
+  return gravarDocumento(estudanteId, alvo, () => ({
+    status: "pendente",
+    forma_entrega: null,
+    motivo_nao_se_aplica: null,
+    conferido_por: null,
+    data_envio: null,
+  }));
 }
 
 /**
@@ -203,9 +218,18 @@ export async function salvarArquivoDocumento(
     return { error: "Não foi possível registrar a nova versão do documento." };
   }
 
+  // Enviar o arquivo é o que marca o documento como entregue.
   const { error: patchError } = await supabase
     .from("documentos_estudante")
-    .update({ arquivo_path: arquivoPath, arquivo_nome: arquivoNome })
+    .update({
+      arquivo_path: arquivoPath,
+      arquivo_nome: arquivoNome,
+      status: "entregue",
+      forma_entrega: "arquivo",
+      motivo_nao_se_aplica: null,
+      conferido_por: userId,
+      data_envio: hoje(),
+    })
     .eq("id", documentoId);
 
   if (patchError) {

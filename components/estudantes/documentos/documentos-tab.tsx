@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import { adicionarDocumentoExtra, removerDocumentoExtra } from "@/app/(app)/estudantes/documentos-actions";
-import { DOCUMENTO_TIPOS_FIXOS } from "@/app/(app)/estudantes/documentos-schema";
+import { DOCUMENTO_TIPOS_FIXOS, naoSeAplicaAutomatico } from "@/app/(app)/estudantes/documentos-schema";
 import type { DocumentoEstudante } from "@/app/(app)/estudantes/queries";
 
 import { DocumentoLinha } from "./documento-linha";
@@ -24,11 +24,14 @@ export function DocumentosTab({
   estudanteId,
   escolaId,
   documentos,
+  formaOrigem,
   canEdit,
 }: {
   estudanteId: string;
   escolaId: string;
   documentos: DocumentoEstudante[];
+  /** Forma de origem dos Dados escolares — alimenta o "não se aplica" automático. */
+  formaOrigem: string | null;
   canEdit: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -42,7 +45,8 @@ export function DocumentosTab({
 
   const pendentes = DOCUMENTO_TIPOS_FIXOS.filter((item) => {
     const doc = porTipo.get(item.tipo);
-    return !doc || doc.status === "pendente";
+    const pendente = !doc || doc.status === "pendente";
+    return pendente && !naoSeAplicaAutomatico(item.tipo, formaOrigem);
   }).length;
 
   function handleVisualizarAvaliacao() {
@@ -116,6 +120,13 @@ export function DocumentosTab({
                 escolaId={escolaId}
                 label={item.label}
                 status={doc?.status ?? "pendente"}
+                formaEntrega={doc?.formaEntrega ?? null}
+                motivoNaoSeAplica={doc?.motivoNaoSeAplica ?? null}
+                naoSeAplicaAutomatico={
+                  naoSeAplicaAutomatico(item.tipo, formaOrigem)
+                    ? "Primeira matrícula escolar (Forma de origem em Dados escolares)"
+                    : null
+                }
                 dataEnvio={doc?.dataEnvio ?? null}
                 conferidoPorNome={doc?.conferidoPorNome ?? null}
                 arquivoPath={doc?.arquivoPath ?? null}
@@ -212,6 +223,8 @@ export function DocumentosTab({
                 escolaId={escolaId}
                 label={doc.nomeDocumento ?? "Documento"}
                 status={doc.status}
+                formaEntrega={doc.formaEntrega}
+                motivoNaoSeAplica={doc.motivoNaoSeAplica}
                 dataEnvio={doc.dataEnvio}
                 conferidoPorNome={doc.conferidoPorNome}
                 arquivoPath={doc.arquivoPath}

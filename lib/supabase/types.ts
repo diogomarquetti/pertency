@@ -735,7 +735,9 @@ export type Database = {
           data_envio: string | null
           escola_id: string
           estudante_id: string
+          forma_entrega: string | null
           id: string
+          motivo_nao_se_aplica: string | null
           nome_documento: string | null
           status: string
           tipo: string
@@ -750,7 +752,9 @@ export type Database = {
           data_envio?: string | null
           escola_id: string
           estudante_id: string
+          forma_entrega?: string | null
           id?: string
+          motivo_nao_se_aplica?: string | null
           nome_documento?: string | null
           status?: string
           tipo: string
@@ -765,7 +769,9 @@ export type Database = {
           data_envio?: string | null
           escola_id?: string
           estudante_id?: string
+          forma_entrega?: string | null
           id?: string
+          motivo_nao_se_aplica?: string | null
           nome_documento?: string | null
           status?: string
           tipo?: string

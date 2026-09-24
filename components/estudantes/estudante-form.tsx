@@ -368,6 +368,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
             estudanteId={props.estudanteId}
             escolaId={props.escolaId}
             documentos={props.documentos}
+            formaOrigem={props.dadosEscolares?.formaOrigem || null}
             canEdit={props.canEdit}
           />
         ) : (
