@@ -134,8 +134,8 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Segundo responsável | Texto | Não | Sim | Usuário | Opcional. | Comunicação. |
 | Parentesco do segundo responsável | Lista | Condicional | Sim | Configuração | Exigir somente se segundo responsável informado. | Cadastro. |
 | Telefone do segundo responsável | Texto mascarado | Condicional | Sim | Usuário | Exigir conforme regra da escola quando segundo responsável informado. | Comunicação. |
-| Filiação | Texto | Sim | Sim | Usuário | Registro dos nomes de filiação/responsáveis legais conforme documentação. | Documentos e cadastro. |
-| Quem pode retirar o estudante | Texto/lista múltipla | Sim | Sim | Usuário | Permitir múltiplas pessoas autorizadas. | Rotina escolar e segurança. |
+| Filiação — Mãe / Pai | Texto (2 campos) | Sim (ao menos um) | Sim | Usuário/Sistema | Registro dos nomes de filiação conforme documentação. Quando um responsável tem parentesco Mãe ou Pai, o sistema sugere o nome no campo correspondente; o usuário pode alterar (filiação e responsável legal não são necessariamente a mesma pessoa). | Documentos e cadastro. |
+| Pessoas autorizadas a retirar o estudante | Seleção + lista | Sim (ao menos uma) | Sim | Usuário | Responsáveis já cadastrados aparecem como caixas de marcação (marcadas por padrão), sem redigitar nome. Outras pessoas: lista com Nome, Vínculo e Telefone, todos obrigatórios por linha. Inclusão, remoção e alteração de nome/vínculo ficam no histórico. | Rotina escolar e segurança. |
 | Contato de emergência | Texto estruturado | Sim | Sim | Usuário | Nome \+ telefone; não deve ser igual obrigatoriamente ao responsável principal. | Segurança e rotina. |
 
 ## **10.3 Regras de negócio e interface**

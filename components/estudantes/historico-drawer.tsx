@@ -1,3 +1,5 @@
+"use client";
+
 import {
   AlertTriangle,
   BookOpen,
@@ -9,10 +11,21 @@ import {
   MessageSquare,
   ShieldAlert,
   Stethoscope,
+  UserCheck,
   UserSquare,
   type LucideIcon,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { SITUACAO_OPTIONS } from "@/app/(app)/estudantes/schema";
 import {
   ENCAMINHAMENTO_OPTIONS,
@@ -53,6 +66,10 @@ const CAMPO_META: Record<string, { icon: LucideIcon; label: string }> = {
   situacao: { icon: UserSquare, label: "Situação" },
   cpf: { icon: UserSquare, label: "CPF" },
   documento_identificacao: { icon: UserSquare, label: "Documento de identificação" },
+  responsavel_principal_pode_retirar: { icon: UserCheck, label: "Responsável principal pode retirar" },
+  segundo_responsavel_pode_retirar: { icon: UserCheck, label: "Segundo responsável pode retirar" },
+  autorizado_retirada: { icon: UserCheck, label: "Pessoa autorizada a retirar" },
+  autorizado_retirada_removido: { icon: UserCheck, label: "Pessoa autorizada removida" },
   status_avaliacao: { icon: ClipboardList, label: "Status da avaliação" },
   recomendacao_elegibilidade: { icon: ClipboardList, label: "Elegibilidade" },
   parecer_equipe: { icon: MessageSquare, label: "Análise integrada" },
@@ -105,7 +122,13 @@ function formatValor(campo: string, valor: string | null, referencia: Referencia
   if (campo === "documento_status") return STATUS_DOCUMENTO_LABEL[valor] ?? valor;
   if (campo === "condicao_tipo") return TIPO_CONDICAO_LABEL[valor] ?? valor;
   if (campo === "areas_apoio") return formatArrayTexto(valor);
-  if (campo === "necessita_medicacao") return valor === "true" ? "Sim" : "Não";
+  if (
+    campo === "necessita_medicacao" ||
+    campo === "responsavel_principal_pode_retirar" ||
+    campo === "segundo_responsavel_pode_retirar"
+  ) {
+    return valor === "true" ? "Sim" : "Não";
+  }
   if (campo === "oferta_atual_id") {
     return referencia.ofertas.find((oferta) => oferta.id === valor)?.nome ?? "Oferta removida do sistema";
   }
@@ -133,7 +156,7 @@ function AuditoriaItem({ row, referencia }: { row: AuditoriaEstudanteRow; refere
         <Icon size={14} strokeWidth={2} aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <div className="text-[13.5px] font-semibold text-ink">{meta.label}</div>
+        <div className="text-[13.5px] font-semibold text-ink">{row.rotulo ?? meta.label}</div>
         <div className="text-[13px] text-ink">
           {de && para ? (
             <>
@@ -154,46 +177,54 @@ function AuditoriaItem({ row, referencia }: { row: AuditoriaEstudanteRow; refere
   );
 }
 
-export function HistoricoCard({
+/**
+ * Histórico de alterações do estudante num drawer — aberto pelo botão no
+ * card do topo do cadastro, então fica acessível em qualquer aba (o
+ * histórico já junta as 7 fontes de auditoria do módulo, não só Dados
+ * pessoais). Só existe em modo edição: antes do primeiro salvamento não há
+ * histórico.
+ */
+export function HistoricoDrawer({
   auditoria,
   referencia,
 }: {
-  auditoria: AuditoriaEstudanteRow[] | undefined;
+  auditoria: AuditoriaEstudanteRow[];
   referencia: ReferenciaAuditoria;
 }) {
   return (
-    <div className="static overflow-hidden rounded-md border border-line bg-surface shadow-sm xl:sticky xl:top-0">
-      <div className="border-b border-line px-[24px] py-[16px]">
-        <h3 className="text-highlight text-ink">Histórico de alterações</h3>
-      </div>
-      <div className="p-[24px]">
-        {auditoria === undefined ? (
-          <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
-            <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
-              <History size={22} strokeWidth={2} aria-hidden="true" />
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button type="button" variant="secondary" size="sm">
+          <History size={14} strokeWidth={2} aria-hidden="true" />
+          Histórico de alterações
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Histórico de alterações</SheetTitle>
+          <SheetDescription className="sr-only">
+            Alterações registradas no cadastro do estudante.
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          {auditoria.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
+              <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
+                <History size={22} strokeWidth={2} aria-hidden="true" />
+              </div>
+              <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
+                Nenhuma alteração registrada ainda.
+              </p>
             </div>
-            <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
-              O histórico de alterações fica disponível depois que o cadastro é salvo pela
-              primeira vez.
-            </p>
-          </div>
-        ) : auditoria.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
-            <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
-              <History size={22} strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <div className="flex flex-col">
+              {auditoria.map((row) => (
+                <AuditoriaItem key={row.id} row={row} referencia={referencia} />
+              ))}
             </div>
-            <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
-              Nenhuma alteração registrada ainda.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            {auditoria.map((row) => (
-              <AuditoriaItem key={row.id} row={row} referencia={referencia} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -19,6 +19,8 @@ export type AuditoriaEstudanteRow = {
   valorNovo: string | null;
   alteradoEm: string;
   alteradoPorNome: string | null;
+  /** Nome do registro afetado, quando o campo sozinho não basta (ex.: qual documento mudou de status). */
+  rotulo?: string | null;
 };
 
 type AuditoriaRowBruta = {
@@ -41,6 +43,28 @@ function mapAuditoriaRow(row: AuditoriaRowBruta, origem: AuditoriaOrigem): Audit
     alteradoPorNome:
       (row.usuarios as unknown as { nome_completo: string } | null)?.nome_completo ?? null,
   };
+}
+
+/**
+ * Mudança de status aponta pro documento via documento_id (cascade no
+ * delete, então sempre resolve) — vira o rótulo do evento no histórico. A
+ * remoção grava null em documento_id e guarda `coalesce(nome_documento,
+ * tipo)` em valor_anterior; aqui o tipo cru vira o rótulo legível.
+ */
+function mapAuditoriaDocumentoRow(
+  row: AuditoriaRowBruta & { documentos_estudante: unknown },
+): AuditoriaEstudanteRow {
+  const mapped = mapAuditoriaRow(row, "documento");
+  const documento = row.documentos_estudante as { tipo: string; nome_documento: string | null } | null;
+
+  if (documento) {
+    return { ...mapped, rotulo: labelDoDocumentoVinculado(documento) };
+  }
+  if (mapped.campoAlterado === "documento_removido" && mapped.valorAnterior) {
+    const tipoFixo = DOCUMENTO_TIPOS_FIXOS.find((item) => item.tipo === mapped.valorAnterior);
+    return tipoFixo ? { ...mapped, valorAnterior: tipoFixo.label } : mapped;
+  }
+  return mapped;
 }
 
 /**
@@ -75,7 +99,7 @@ export async function getAuditoriaEstudante(estudanteId: string): Promise<Audito
     supabase
       .from("documentos_estudante_auditoria")
       .select(
-        "id, campo_alterado, valor_anterior, valor_novo, alterado_em, usuarios!documentos_estudante_auditoria_alterado_por_fkey(nome_completo)",
+        "id, campo_alterado, valor_anterior, valor_novo, alterado_em, usuarios!documentos_estudante_auditoria_alterado_por_fkey(nome_completo), documentos_estudante(tipo, nome_documento)",
       )
       .eq("estudante_id", estudanteId),
     supabase
@@ -102,7 +126,7 @@ export async function getAuditoriaEstudante(estudanteId: string): Promise<Audito
     ...(estudante.data ?? []).map((row) => mapAuditoriaRow(row, "estudante")),
     ...(avaliacao.data ?? []).map((row) => mapAuditoriaRow(row, "avaliacao")),
     ...(vinculo.data ?? []).map((row) => mapAuditoriaRow(row, "vinculo")),
-    ...(documento.data ?? []).map((row) => mapAuditoriaRow(row, "documento")),
+    ...(documento.data ?? []).map((row) => mapAuditoriaDocumentoRow(row)),
     ...(contribuicao.data ?? []).map((row) => mapAuditoriaRow(row, "contribuicao")),
     ...(condicao.data ?? []).map((row) => mapAuditoriaRow(row, "condicao")),
     ...(perfil.data ?? []).map((row) => mapAuditoriaRow(row, "perfil")),

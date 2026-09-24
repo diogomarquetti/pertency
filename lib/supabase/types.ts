@@ -1058,6 +1058,51 @@ export type Database = {
           },
         ]
       }
+      estudante_autorizados_retirada: {
+        Row: {
+          created_at: string
+          escola_id: string
+          estudante_id: string
+          id: string
+          nome: string
+          telefone: string
+          vinculo: string
+        }
+        Insert: {
+          created_at?: string
+          escola_id: string
+          estudante_id: string
+          id?: string
+          nome: string
+          telefone: string
+          vinculo: string
+        }
+        Update: {
+          created_at?: string
+          escola_id?: string
+          estudante_id?: string
+          id?: string
+          nome?: string
+          telefone?: string
+          vinculo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudante_autorizados_retirada_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estudante_autorizados_retirada_estudante_id_fkey"
+            columns: ["estudante_id"]
+            isOneToOne: false
+            referencedRelation: "estudantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estudantes: {
         Row: {
           contato_emergencia_nome: string | null
@@ -1075,7 +1120,8 @@ export type Database = {
           endereco_numero: string | null
           endereco_uf: string | null
           escola_id: string
-          filiacao: string | null
+          filiacao_mae: string | null
+          filiacao_pai: string | null
           foto_url: string | null
           id: string
           nacionalidade: string | null
@@ -1084,12 +1130,13 @@ export type Database = {
           nome_social: string | null
           numero_documento: string | null
           orgao_emissor_uf: string | null
-          quem_pode_retirar: string | null
           responsavel_principal_nome: string | null
           responsavel_principal_parentesco: string | null
+          responsavel_principal_pode_retirar: boolean
           responsavel_principal_telefone: string | null
           segundo_responsavel_nome: string | null
           segundo_responsavel_parentesco: string | null
+          segundo_responsavel_pode_retirar: boolean
           segundo_responsavel_telefone: string | null
           sexo: string | null
           situacao: string
@@ -1112,7 +1159,8 @@ export type Database = {
           endereco_numero?: string | null
           endereco_uf?: string | null
           escola_id: string
-          filiacao?: string | null
+          filiacao_mae?: string | null
+          filiacao_pai?: string | null
           foto_url?: string | null
           id?: string
           nacionalidade?: string | null
@@ -1121,12 +1169,13 @@ export type Database = {
           nome_social?: string | null
           numero_documento?: string | null
           orgao_emissor_uf?: string | null
-          quem_pode_retirar?: string | null
           responsavel_principal_nome?: string | null
           responsavel_principal_parentesco?: string | null
+          responsavel_principal_pode_retirar?: boolean
           responsavel_principal_telefone?: string | null
           segundo_responsavel_nome?: string | null
           segundo_responsavel_parentesco?: string | null
+          segundo_responsavel_pode_retirar?: boolean
           segundo_responsavel_telefone?: string | null
           sexo?: string | null
           situacao?: string
@@ -1149,7 +1198,8 @@ export type Database = {
           endereco_numero?: string | null
           endereco_uf?: string | null
           escola_id?: string
-          filiacao?: string | null
+          filiacao_mae?: string | null
+          filiacao_pai?: string | null
           foto_url?: string | null
           id?: string
           nacionalidade?: string | null
@@ -1158,12 +1208,13 @@ export type Database = {
           nome_social?: string | null
           numero_documento?: string | null
           orgao_emissor_uf?: string | null
-          quem_pode_retirar?: string | null
           responsavel_principal_nome?: string | null
           responsavel_principal_parentesco?: string | null
+          responsavel_principal_pode_retirar?: boolean
           responsavel_principal_telefone?: string | null
           segundo_responsavel_nome?: string | null
           segundo_responsavel_parentesco?: string | null
+          segundo_responsavel_pode_retirar?: boolean
           segundo_responsavel_telefone?: string | null
           sexo?: string | null
           situacao?: string
@@ -2212,6 +2263,18 @@ export type Database = {
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      pode_ver_estudante_restrito: {
+        Args: { p_estudante_id: string }
+        Returns: boolean
+      }
+      professor_pode_ver_estudante: {
+        Args: { p_estudante_id: string }
+        Returns: boolean
+      }
+      profissional_complementar_pode_ver_estudante: {
+        Args: { p_estudante_id: string }
+        Returns: boolean
       }
     }
     Enums: {

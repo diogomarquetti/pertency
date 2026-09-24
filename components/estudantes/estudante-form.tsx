@@ -41,8 +41,7 @@ import { DADOS_ESCOLARES_FORM_ID, DadosEscolaresTab } from "./dados-escolares/da
 import { DocumentosTab } from "./documentos/documentos-tab";
 import { EnderecoCard } from "./endereco-card";
 import { EstudanteHeroCard } from "./estudante-hero-card";
-import { FotoCard } from "./foto-card";
-import { HistoricoCard } from "./historico-card";
+import { HistoricoDrawer } from "./historico-drawer";
 import { IdentificacaoCard } from "./identificacao-card";
 import { ResponsaveisCard } from "./responsaveis-card";
 
@@ -86,8 +85,11 @@ const EMPTY_VALUES: UpdateEstudanteValues = {
   segundoResponsavelNome: "",
   segundoResponsavelParentesco: "",
   segundoResponsavelTelefone: "",
-  filiacao: "",
-  quemPodeRetirar: "",
+  filiacaoMae: "",
+  filiacaoPai: "",
+  responsavelPrincipalPodeRetirar: true,
+  segundoResponsavelPodeRetirar: true,
+  autorizadosRetirada: [],
   contatoEmergenciaNome: "",
   contatoEmergenciaTelefone: "",
 };
@@ -158,7 +160,14 @@ export function EstudanteForm(props: EstudanteFormProps) {
       !criadoToastDisparado.current
     ) {
       criadoToastDisparado.current = true;
-      toast.success("Estudante criado com sucesso.");
+      if (searchParams.get("retirada") === "erro") {
+        toast.error(
+          "Estudante criado, mas as pessoas autorizadas a retirar não foram salvas",
+          "Confira a lista em Responsáveis e contatos e salve novamente.",
+        );
+      } else {
+        toast.success("Estudante criado com sucesso.");
+      }
       router.replace(`/estudantes/${props.estudanteId}/editar`, { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,10 +272,32 @@ export function EstudanteForm(props: EstudanteFormProps) {
         <EstudanteHeroCard
           mode={props.mode}
           nomeCompleto={nomeExibicao}
-          fotoUrl={props.mode === "edit" ? props.fotoUrlInicial : null}
+          foto={
+            props.mode === "edit"
+              ? {
+                  estudanteId: props.estudanteId,
+                  escolaId: props.escolaId,
+                  fotoUrlInicial: props.fotoUrlInicial,
+                  canEdit: props.canEdit,
+                }
+              : undefined
+          }
           situacao={situacaoExibicao}
           turmaAtualLabel={turmaAtualLabel}
           matriculaInterna={vinculoAtual?.matriculaInterna}
+          acoes={
+            props.mode === "edit" ? (
+              <HistoricoDrawer
+                auditoria={props.auditoria}
+                referencia={{
+                  ofertas: props.referenciaOfertas.ofertas,
+                  organizacoes: props.referenciaOfertas.organizacoes,
+                  turmas: props.turmasReferencia,
+                  turnos: props.turnos,
+                }}
+              />
+            ) : undefined
+          }
         />
         <TabsList className="border-t border-line px-[24px]">
           <TabsTrigger value="dados-pessoais">Dados pessoais</TabsTrigger>
@@ -300,41 +331,13 @@ export function EstudanteForm(props: EstudanteFormProps) {
       <TabsContent value="dados-pessoais">
         <Form {...form}>
           <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
-            <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
-              <fieldset disabled={!props.canEdit} className="contents">
-                <div className="flex min-w-0 flex-col gap-[24px]">
-                  <IdentificacaoCard form={form} />
-                  <EnderecoCard control={form.control} />
-                  <ResponsaveisCard control={form.control} />
-                  {props.mode === "create" ? (
-                    <FotoCard mode="create" canEdit={props.canEdit} />
-                  ) : (
-                    <FotoCard
-                      mode="edit"
-                      estudanteId={props.estudanteId}
-                      escolaId={props.escolaId}
-                      nomeCompleto={props.defaultValues.nomeCompleto}
-                      fotoUrlInicial={props.fotoUrlInicial}
-                      canEdit={props.canEdit}
-                    />
-                  )}
-                </div>
-              </fieldset>
-
-              <HistoricoCard
-                auditoria={props.mode === "edit" ? props.auditoria : undefined}
-                referencia={
-                  props.mode === "edit"
-                    ? {
-                        ofertas: props.referenciaOfertas.ofertas,
-                        organizacoes: props.referenciaOfertas.organizacoes,
-                        turmas: props.turmasReferencia,
-                        turnos: props.turnos,
-                      }
-                    : { ofertas: [], organizacoes: [], turmas: [], turnos: [] }
-                }
-              />
-            </div>
+            <fieldset disabled={!props.canEdit} className="contents">
+              <div className="flex min-w-0 flex-col gap-[24px]">
+                <IdentificacaoCard form={form} />
+                <EnderecoCard control={form.control} />
+                <ResponsaveisCard form={form} />
+              </div>
+            </fieldset>
           </form>
         </Form>
       </TabsContent>

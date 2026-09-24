@@ -199,9 +199,7 @@ export function IdentificacaoCard({ form }: { form: UseFormReturn<UpdateEstudant
           name="cpf"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                CPF <span className="font-normal text-muted">(opcional)</span>
-              </FormLabel>
+              <FormLabel>CPF</FormLabel>
               <FormControl>
                 <CpfInput value={field.value} onChange={field.onChange} />
               </FormControl>

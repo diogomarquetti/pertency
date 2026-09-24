@@ -47,9 +47,12 @@ export default async function EditarEstudantePage({
        endereco_cep, endereco_municipio, endereco_uf,
        responsavel_principal_nome, responsavel_principal_parentesco, responsavel_principal_telefone,
        segundo_responsavel_nome, segundo_responsavel_parentesco, segundo_responsavel_telefone,
-       filiacao, quem_pode_retirar, contato_emergencia_nome, contato_emergencia_telefone`,
+       filiacao_mae, filiacao_pai, contato_emergencia_nome, contato_emergencia_telefone,
+       responsavel_principal_pode_retirar, segundo_responsavel_pode_retirar,
+       estudante_autorizados_retirada(id, nome, vinculo, telefone)`,
     )
     .eq("id", id)
+    .order("created_at", { referencedTable: "estudante_autorizados_retirada" })
     .maybeSingle();
 
   if (!estudante) {
@@ -126,8 +129,16 @@ export default async function EditarEstudantePage({
     segundoResponsavelNome: estudante.segundo_responsavel_nome ?? "",
     segundoResponsavelParentesco: estudante.segundo_responsavel_parentesco ?? "",
     segundoResponsavelTelefone: estudante.segundo_responsavel_telefone ?? "",
-    filiacao: estudante.filiacao ?? "",
-    quemPodeRetirar: estudante.quem_pode_retirar ?? "",
+    filiacaoMae: estudante.filiacao_mae ?? "",
+    filiacaoPai: estudante.filiacao_pai ?? "",
+    responsavelPrincipalPodeRetirar: estudante.responsavel_principal_pode_retirar,
+    segundoResponsavelPodeRetirar: estudante.segundo_responsavel_pode_retirar,
+    autorizadosRetirada: estudante.estudante_autorizados_retirada.map((autorizado) => ({
+      registroId: autorizado.id,
+      nome: autorizado.nome,
+      vinculo: autorizado.vinculo,
+      telefone: autorizado.telefone,
+    })),
     contatoEmergenciaNome: estudante.contato_emergencia_nome ?? "",
     contatoEmergenciaTelefone: estudante.contato_emergencia_telefone ?? "",
   };

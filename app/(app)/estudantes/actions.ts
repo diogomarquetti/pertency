@@ -11,6 +11,7 @@ import {
 import {
   createEstudanteSchema,
   updateEstudanteSchema,
+  type AutorizadoRetiradaValues,
   type CreateEstudanteValues,
   type UpdateEstudanteValues,
 } from "./schema";
@@ -43,11 +44,67 @@ function toEstudanteRow(escolaId: string, data: CreateEstudanteValues | UpdateEs
     segundo_responsavel_nome: data.segundoResponsavelNome || null,
     segundo_responsavel_parentesco: data.segundoResponsavelParentesco || null,
     segundo_responsavel_telefone: data.segundoResponsavelTelefone || null,
-    filiacao: data.filiacao,
-    quem_pode_retirar: data.quemPodeRetirar,
+    filiacao_mae: data.filiacaoMae || null,
+    filiacao_pai: data.filiacaoPai || null,
+    responsavel_principal_pode_retirar: data.responsavelPrincipalPodeRetirar,
+    // Sem segundo responsável não há quem autorizar — grava false em vez de
+    // deixar uma autorização "fantasma" ligada a um nome vazio.
+    segundo_responsavel_pode_retirar:
+      !!data.segundoResponsavelNome?.trim() && data.segundoResponsavelPodeRetirar,
     contato_emergencia_nome: data.contatoEmergenciaNome,
     contato_emergencia_telefone: data.contatoEmergenciaTelefone,
   };
+}
+
+/**
+ * Sincroniza a lista de outras pessoas autorizadas com o que veio do
+ * formulário: remove as que saíram, atualiza as que já existiam (por
+ * `registroId`) e insere as novas. Diff em vez de apagar-e-recriar pra que o
+ * histórico (trigger em estudante_autorizados_retirada) registre só o que
+ * realmente mudou.
+ */
+async function syncAutorizadosRetirada(
+  supabase: SupabaseServerClient,
+  escolaId: string,
+  estudanteId: string,
+  autorizados: AutorizadoRetiradaValues[],
+) {
+  const { data: existentes, error: selectError } = await supabase
+    .from("estudante_autorizados_retirada")
+    .select("id")
+    .eq("estudante_id", estudanteId);
+  if (selectError) return false;
+
+  const idsMantidos = new Set(autorizados.map((a) => a.registroId).filter(Boolean));
+  const idsRemovidos = (existentes ?? []).map((row) => row.id).filter((id) => !idsMantidos.has(id));
+
+  if (idsRemovidos.length > 0) {
+    const { error } = await supabase
+      .from("estudante_autorizados_retirada")
+      .delete()
+      .in("id", idsRemovidos);
+    if (error) return false;
+  }
+
+  for (const autorizado of autorizados) {
+    const campos = {
+      nome: autorizado.nome.trim(),
+      vinculo: autorizado.vinculo,
+      telefone: autorizado.telefone,
+    };
+    const { error } = autorizado.registroId
+      ? await supabase
+          .from("estudante_autorizados_retirada")
+          .update(campos)
+          .eq("id", autorizado.registroId)
+          .eq("estudante_id", estudanteId)
+      : await supabase
+          .from("estudante_autorizados_retirada")
+          .insert({ ...campos, estudante_id: estudanteId, escola_id: escolaId });
+    if (error) return false;
+  }
+
+  return true;
 }
 
 /**
@@ -96,6 +153,12 @@ export async function createEstudante(values: CreateEstudanteValues) {
     return { error: "Não foi possível salvar o estudante. Tente novamente." };
   }
 
+  if (!(await syncAutorizadosRetirada(supabase, escolaId, inserted.id, data.autorizadosRetirada))) {
+    // O estudante já foi criado — segue pra edição, onde a lista pode ser
+    // corrigida, em vez de deixar o usuário recriar e duplicar o cadastro.
+    redirect(`/estudantes/${inserted.id}/editar?criado=1&retirada=erro`);
+  }
+
   revalidatePath("/estudantes");
   redirect(`/estudantes/${inserted.id}/editar?criado=1`);
 }
@@ -126,6 +189,10 @@ export async function updateEstudante(id: string, values: UpdateEstudanteValues)
 
   if (error || !updated) {
     return { error: "Não foi possível salvar as alterações." };
+  }
+
+  if (!(await syncAutorizadosRetirada(supabase, escolaId, id, data.autorizadosRetirada))) {
+    return { error: "Os dados foram salvos, mas não foi possível atualizar as pessoas autorizadas a retirar o estudante." };
   }
 
   revalidatePath("/estudantes");

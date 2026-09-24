@@ -66,6 +66,18 @@ export const PARENTESCO_OPTIONS = [
   "Outro",
 ] as const;
 
+// Outra pessoa autorizada a retirar o estudante (além dos responsáveis).
+// `registroId` é o id da linha já salva — não pode se chamar `id`, porque o
+// useFieldArray do react-hook-form usa `id` como chave interna.
+const autorizadoRetiradaSchema = z.object({
+  registroId: z.string().optional(),
+  nome: z.string().trim().min(1, "Informe o nome"),
+  vinculo: z.string().min(1, "Informe o vínculo"),
+  telefone: z.string().min(1, "Informe o telefone"),
+});
+
+export type AutorizadoRetiradaValues = z.infer<typeof autorizadoRetiradaSchema>;
+
 // CPF fica opcional nesta fase — a história permite tratá-lo como "pendência
 // documental" (regra 4 da Aba 1), mas o mecanismo de pendência é da Aba
 // Documentos. Tipo de documento/Número/Órgão emissor substituem os antigos
@@ -113,16 +125,31 @@ const estudanteFields = {
   segundoResponsavelNome: z.string().optional().or(z.literal("")),
   segundoResponsavelParentesco: z.string().optional().or(z.literal("")),
   segundoResponsavelTelefone: z.string().optional().or(z.literal("")),
-  filiacao: z.string().min(1, "Informe a filiação"),
-  quemPodeRetirar: z.string().min(1, "Informe quem pode retirar o estudante"),
+  filiacaoMae: z.string().optional().or(z.literal("")),
+  filiacaoPai: z.string().optional().or(z.literal("")),
+  responsavelPrincipalPodeRetirar: z.boolean(),
+  segundoResponsavelPodeRetirar: z.boolean(),
+  autorizadosRetirada: z.array(autorizadoRetiradaSchema),
   contatoEmergenciaNome: z.string().min(1, "Informe o nome do contato de emergência"),
   contatoEmergenciaTelefone: z.string().min(1, "Informe o telefone do contato de emergência"),
 };
 
 // Órgão emissor/UF só faz sentido pra RG — Certidão de Nascimento/Casamento
-// não têm esse campo (CA04/CA05 da HU-EST-001 v2.0).
-function withDocumentoIdentificacaoRefinement<
-  Schema extends z.ZodType<{ tipoDocumentoIdentificacao: string; orgaoEmissorUf?: string }>,
+// não têm esse campo (CA04/CA05 da HU-EST-001 v2.0). Filiação: basta um dos
+// dois nomes (Mãe ou Pai) — pode haver só um genitor na documentação.
+// Retirada: ao menos uma pessoa autorizada — responsável marcado (o segundo
+// só conta se estiver preenchido) ou outra pessoa na lista.
+function withEstudanteRefinements<
+  Schema extends z.ZodType<{
+    tipoDocumentoIdentificacao: string;
+    orgaoEmissorUf?: string;
+    filiacaoMae?: string;
+    filiacaoPai?: string;
+    responsavelPrincipalPodeRetirar: boolean;
+    segundoResponsavelNome?: string;
+    segundoResponsavelPodeRetirar: boolean;
+    autorizadosRetirada: unknown[];
+  }>,
 >(schema: Schema) {
   return schema.superRefine((data, ctx) => {
     if (data.tipoDocumentoIdentificacao === "rg" && !data.orgaoEmissorUf) {
@@ -132,15 +159,31 @@ function withDocumentoIdentificacaoRefinement<
         message: "Informe o órgão emissor/UF",
       });
     }
+    if (!data.filiacaoMae?.trim() && !data.filiacaoPai?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["filiacaoMae"],
+        message: "Informe ao menos um nome de filiação (mãe ou pai)",
+      });
+    }
+    const segundoAutorizado =
+      !!data.segundoResponsavelNome?.trim() && data.segundoResponsavelPodeRetirar;
+    if (
+      !data.responsavelPrincipalPodeRetirar &&
+      !segundoAutorizado &&
+      data.autorizadosRetirada.length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["responsavelPrincipalPodeRetirar"],
+        message: "Informe ao menos uma pessoa autorizada a retirar o estudante",
+      });
+    }
   });
 }
 
-export const createEstudanteSchema = withDocumentoIdentificacaoRefinement(
-  z.object({ ...estudanteFields }),
-);
-export const updateEstudanteSchema = withDocumentoIdentificacaoRefinement(
-  z.object({ ...estudanteFields }),
-);
+export const createEstudanteSchema = withEstudanteRefinements(z.object({ ...estudanteFields }));
+export const updateEstudanteSchema = withEstudanteRefinements(z.object({ ...estudanteFields }));
 
 export type CreateEstudanteValues = z.infer<typeof createEstudanteSchema>;
 export type UpdateEstudanteValues = z.infer<typeof updateEstudanteSchema>;

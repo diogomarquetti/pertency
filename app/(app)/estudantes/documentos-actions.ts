@@ -145,7 +145,7 @@ export async function salvarStatusDocumentoExtra(
 /**
  * Registra uma nova versão do arquivo (que já subiu pro Storage em um
  * caminho próprio, no client — mesmo padrão de
- * components/estudantes/foto-card.tsx) e só depois move o ponteiro "atual"
+ * components/estudantes/estudante-hero-card.tsx) e só depois move o ponteiro "atual"
  * em documentos_estudante. A versão é gravada ANTES do ponteiro de
  * propósito: se o update do ponteiro falhar, o registro de histórico não se
  * perde (CA20 — nunca perder versão anterior).
