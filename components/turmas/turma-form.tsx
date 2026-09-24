@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, type FieldErrors } from "react-hook-form";
+import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Card } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
 import { toast } from "@/lib/use-toast";
@@ -25,12 +26,13 @@ import type {
 
 import { EstruturaCurricularCard } from "./estrutura-curricular-card";
 import { EstudantesVinculadosCard } from "./estudantes-vinculados-card";
-import { HistoricoCard } from "./historico-card";
+import { HistoricoTurmaDrawer } from "./historico-drawer";
 import { IdentificacaoCard } from "./identificacao-card";
 import { ObservacoesStatusCard } from "./observacoes-status-card";
 import { OfertaCard } from "./oferta-card";
 import { ProfessorVinculoDrawer, type ScopePool } from "./professor-vinculo-drawer";
 import { ProfessoresVinculadosCard } from "./professores-vinculados-card";
+import { TurmaHeroCard } from "./turma-hero-card";
 
 const FORM_ID = "turma-edit-form";
 
@@ -109,6 +111,29 @@ export function TurmaForm(props: TurmaFormProps) {
 
   const { isDirty } = form.formState;
 
+  // Card de topo acompanha o que está sendo digitado, não só o valor salvo.
+  const [nome, status, ofertaId, organizacaoId, anoLetivoId, turnoId] = useWatch({
+    control: form.control,
+    name: ["nome", "status", "ofertaId", "organizacaoId", "anoLetivoId", "turnoId"],
+  });
+  const ofertaNome = props.referencia.ofertas.find((oferta) => oferta.id === ofertaId)?.nome;
+  const organizacaoNome = props.referencia.organizacoes.find((org) => org.id === organizacaoId)?.nome;
+  const ano = props.referencia.anosLetivos.find((item) => item.id === anoLetivoId)?.ano;
+  const turnoNome = props.referencia.turnos.find((turno) => turno.id === turnoId)?.nome;
+  const plural = (n: number, singular: string, pluralForm: string) =>
+    `${n} ${n === 1 ? singular : pluralForm}`;
+  const detalhesTopo = [
+    [ofertaNome, organizacaoNome].filter(Boolean).join(" — "),
+    ano ? `Ano letivo ${ano}` : null,
+    turnoNome,
+    props.mode === "edit"
+      ? plural(props.professoresVinculados.length, "professor", "professores")
+      : null,
+    props.mode === "edit"
+      ? plural(props.estudantesVinculados.length, "estudante", "estudantes")
+      : null,
+  ];
+
   useEffect(() => {
     setPageActions({
       formId: FORM_ID,
@@ -147,7 +172,21 @@ export function TurmaForm(props: TurmaFormProps) {
   return (
     <Form {...form}>
       <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
-        <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
+        <div className="flex flex-col gap-[24px]">
+          <Card className="gap-0 overflow-hidden p-0">
+            <TurmaHeroCard
+              mode={props.mode}
+              nome={nome}
+              status={status}
+              detalhes={detalhesTopo}
+              acoes={
+                props.mode === "edit" ? (
+                  <HistoricoTurmaDrawer referencia={props.referencia} auditoria={props.auditoria} />
+                ) : undefined
+              }
+            />
+          </Card>
+
           <fieldset disabled={!props.canEdit} className="contents">
             <div className="flex min-w-0 flex-col gap-[24px]">
               <IdentificacaoCard control={form.control} referencia={props.referencia} />
@@ -170,11 +209,6 @@ export function TurmaForm(props: TurmaFormProps) {
               <ObservacoesStatusCard control={form.control} />
             </div>
           </fieldset>
-
-          <HistoricoCard
-            referencia={props.referencia}
-            auditoria={props.mode === "edit" ? props.auditoria : undefined}
-          />
         </div>
       </form>
 

@@ -1,5 +1,17 @@
+"use client";
+
 import { BookOpen, Clock, History, Type as TypeIcon, Users, type LucideIcon } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { STATUS_OPTIONS } from "@/app/(app)/turmas/schema";
 import type { AuditoriaTurmaRow, ReferenciaTurmaForm } from "@/app/(app)/turmas/queries";
 
@@ -64,46 +76,50 @@ function AuditoriaItem({ row, referencia }: { row: AuditoriaTurmaRow; referencia
   );
 }
 
-export function HistoricoCard({
+/**
+ * Histórico de alterações da turma num drawer, aberto pelo botão do card de
+ * topo — mesmo padrão dos cadastros de Estudante e Usuário. Só existe em
+ * modo edição: antes do primeiro salvamento não há histórico.
+ */
+export function HistoricoTurmaDrawer({
   referencia,
   auditoria,
 }: {
   referencia: ReferenciaTurmaForm;
-  auditoria: AuditoriaTurmaRow[] | undefined;
+  auditoria: AuditoriaTurmaRow[];
 }) {
   return (
-    <div className="static overflow-hidden rounded-md border border-line bg-surface shadow-sm xl:sticky xl:top-0">
-      <div className="border-b border-line px-[24px] py-[16px]">
-        <h3 className="text-highlight text-ink">Histórico de alterações</h3>
-      </div>
-      <div className="p-[24px]">
-        {auditoria === undefined ? (
-          <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
-            <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
-              <History size={22} strokeWidth={2} aria-hidden="true" />
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button type="button" variant="secondary" size="sm">
+          <History size={14} strokeWidth={2} aria-hidden="true" />
+          Histórico de alterações
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Histórico de alterações</SheetTitle>
+          <SheetDescription className="sr-only">Alterações registradas no cadastro da turma.</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          {auditoria.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
+              <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
+                <History size={22} strokeWidth={2} aria-hidden="true" />
+              </div>
+              <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
+                Nenhuma alteração registrada ainda.
+              </p>
             </div>
-            <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
-              O histórico de alterações fica disponível depois que o cadastro é salvo pela
-              primeira vez.
-            </p>
-          </div>
-        ) : auditoria.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-[8px] py-[40px] text-center">
-            <div className="flex size-[52px] items-center justify-center rounded-full bg-brand-tint text-brand">
-              <History size={22} strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <div className="flex flex-col">
+              {auditoria.map((row) => (
+                <AuditoriaItem key={row.id} row={row} referencia={referencia} />
+              ))}
             </div>
-            <p className="max-w-[240px] text-[13px] leading-relaxed text-muted">
-              Nenhuma alteração registrada ainda.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            {auditoria.map((row) => (
-              <AuditoriaItem key={row.id} row={row} referencia={referencia} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }

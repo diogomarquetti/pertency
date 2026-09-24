@@ -177,6 +177,27 @@ function ComponentesChecklist({
   );
 }
 
+/** Subgrupo do escopo da EJA — some quando a turma não tem itens dele. */
+function GrupoEscopo({
+  titulo,
+  itens,
+  value,
+  onChange,
+}: {
+  titulo: string;
+  itens: { id: string; nome: string }[];
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  if (itens.length === 0) return null;
+  return (
+    <div className="grid gap-[6px]">
+      <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">{titulo}</span>
+      <ComponentesChecklist componentes={itens} value={value} onChange={onChange} />
+    </div>
+  );
+}
+
 /**
  * O estado do formulário vive aqui, não no componente de fora — o Radix
  * Dialog só mantém este corpo montado enquanto o Sheet está
@@ -287,43 +308,40 @@ function DrawerBody({
         )}
 
         {pool.ofertaSlug === "eja" && (
-          <div className="grid gap-2">
-            <Label>
-              Escopo de atuação <span className="font-normal text-muted">(opcional)</span>
-            </Label>
-            <span className="text-[12.5px] text-muted">
-              Áreas, unidades ocupacionais e eixos funcionais desta turma
-            </span>
-            <div className="rounded-sm border border-line px-[10px]">
-              {[...pool.areasConhecimento, ...pool.unidadesOcupacionais, ...pool.eixosFuncionais].map(
-                (label, index) => (
-                  <label
-                    key={label}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-[10px] py-[9px] text-[14px] text-ink",
-                      index > 0 && "border-t border-line",
-                    )}
-                  >
-                    <Checkbox
-                      checked={escopoEja.includes(label)}
-                      onCheckedChange={() => setEscopoEja((current) => toggleValue(current, label))}
-                    />
-                    {label}
-                  </label>
-                ),
-              )}
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <Label>
+                Escopo de atuação <span className="font-normal text-muted">(opcional)</span>
+              </Label>
+              <span className="text-[12.5px] text-muted">
+                Itens da estrutura curricular desta turma em que o professor atua
+              </span>
             </div>
-          </div>
-        )}
-
-        {pool.ofertaSlug === "eja" && pool.componentes.length > 0 && (
-          <div className="grid gap-2">
-            <Label>
-              Componentes curriculares <span className="font-normal text-muted">(opcional)</span>
-            </Label>
-            <span className="text-[12.5px] text-muted">Componentes da estrutura curricular desta turma</span>
-            <ComponentesChecklist
-              componentes={pool.componentes}
+            {/* Uma seleção só, agrupada — área "Matemática" e componente
+                "Matemática" são coisas diferentes, e os subtítulos deixam
+                isso claro. Escopo vai pra usuario_turmas.escopo_eja;
+                componentes, pra usuario_turma_componentes. */}
+            <GrupoEscopo
+              titulo="Áreas de conhecimento"
+              itens={pool.areasConhecimento.map((label) => ({ id: label, nome: label }))}
+              value={escopoEja}
+              onChange={setEscopoEja}
+            />
+            <GrupoEscopo
+              titulo="Unidades ocupacionais"
+              itens={pool.unidadesOcupacionais.map((label) => ({ id: label, nome: label }))}
+              value={escopoEja}
+              onChange={setEscopoEja}
+            />
+            <GrupoEscopo
+              titulo="Eixos funcionais"
+              itens={pool.eixosFuncionais.map((label) => ({ id: label, nome: label }))}
+              value={escopoEja}
+              onChange={setEscopoEja}
+            />
+            <GrupoEscopo
+              titulo="Componentes curriculares"
+              itens={pool.componentes}
               value={componenteIds}
               onChange={setComponenteIds}
             />
