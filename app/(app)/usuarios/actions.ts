@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
+import { requireAdminProfile } from "@/lib/supabase/require-admin-profile";
 
 import {
   createUsuarioSchema,
@@ -37,73 +37,6 @@ function isEmailInUseError(message: string | undefined) {
   if (!message) return false;
   const normalized = message.toLowerCase();
   return normalized.includes("already been registered") || normalized.includes("already exists");
-}
-
-type VinculoInput = {
-  turmaId: string;
-  componenteIds: string[];
-};
-
-/**
- * Insere as linhas de usuario_turmas + usuario_turma_componentes para um
- * usuário. Os triggers do banco (trg_usuario_turmas_audit_insert) já cuidam
- * da auditoria — nada a mais pra fazer aqui.
- */
-async function persistVinculos(
-  supabase: SupabaseServerClient,
-  usuarioId: string,
-  adminId: string,
-  vinculos: VinculoInput[],
-) {
-  for (const vinculo of vinculos) {
-    const { data: usuarioTurma, error: turmaError } = await supabase
-      .from("usuario_turmas")
-      .insert({ usuario_id: usuarioId, turma_id: vinculo.turmaId, created_by: adminId })
-      .select("id")
-      .single();
-
-    if (turmaError || !usuarioTurma) {
-      throw new Error("Não foi possível salvar um dos vínculos de turma.");
-    }
-
-    const { error: componentesError } = await supabase.from("usuario_turma_componentes").insert(
-      vinculo.componenteIds.map((componenteId) => ({
-        usuario_turma_id: usuarioTurma.id,
-        componente_id: componenteId,
-      })),
-    );
-
-    if (componentesError) {
-      throw new Error("Não foi possível salvar os componentes de um vínculo de turma.");
-    }
-  }
-}
-
-/**
- * Substitui por completo os vínculos de turma de um usuário (edição) —
- * apaga tudo e insere de novo, mais simples que diffing e já gera o rastro
- * de auditoria certo (remoção + adição) via triggers. usuario_turma_componentes
- * é apagado em cascata (ON DELETE CASCADE) junto com usuario_turmas.
- */
-async function replaceVinculos(
-  supabase: SupabaseServerClient,
-  usuarioId: string,
-  adminId: string,
-  vinculos: VinculoInput[],
-) {
-  const { data: existentes } = await supabase
-    .from("usuario_turmas")
-    .select("id")
-    .eq("usuario_id", usuarioId);
-
-  if (existentes && existentes.length > 0) {
-    await supabase
-      .from("usuario_turmas")
-      .delete()
-      .in("id", existentes.map((e) => e.id));
-  }
-
-  await persistVinculos(supabase, usuarioId, adminId, vinculos);
 }
 
 export async function createUsuario(values: CreateUsuarioValues) {
@@ -157,19 +90,6 @@ export async function createUsuario(values: CreateUsuarioValues) {
     // órfão sem perfil correspondente em `usuarios`.
     await admin.auth.admin.deleteUser(novoUsuarioId);
     return { error: "Não foi possível salvar o usuário. Tente novamente." };
-  }
-
-  if (data.vinculos.length > 0) {
-    try {
-      await persistVinculos(supabase, novoUsuarioId, adminId, data.vinculos);
-    } catch {
-      // O usuário já foi criado com sucesso — não desfazemos por causa de um
-      // vínculo de turma. O admin pode entrar em "Editar" e tentar de novo.
-      return {
-        error:
-          "Usuário criado, mas não foi possível salvar os vínculos de turma. Edite o usuário para tentar novamente.",
-      };
-    }
   }
 
   revalidatePath("/usuarios");
@@ -228,14 +148,6 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
 
   if (updateError || !updated) {
     return { error: "Não foi possível salvar as alterações." };
-  }
-
-  try {
-    await replaceVinculos(supabase, id, context.adminId, data.vinculos);
-  } catch {
-    return {
-      error: "Dados salvos, mas não foi possível atualizar os vínculos de turma.",
-    };
   }
 
   revalidatePath("/usuarios");

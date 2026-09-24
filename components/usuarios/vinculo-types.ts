@@ -1,8 +1,7 @@
 /**
- * Vínculo de turma mantido em estado local no formulário (Bloco 2) — só vira
- * escrita real no banco quando o usuário clica em Salvar (ver user-form.tsx).
- * Guarda os nomes já resolvidos para exibir na tabela sem precisar de outro
- * round-trip.
+ * Vínculo de turma de um professor, com os nomes já resolvidos para exibir
+ * no card "Turmas vinculadas" do cadastro de usuário (só consulta — o
+ * vínculo é gerenciado no Cadastro de Turma).
  */
 export type VinculoLocal = {
   turmaId: string;
@@ -12,5 +11,6 @@ export type VinculoLocal = {
   etapaCicloNome: string;
   turnoNome: string;
   turmaNome: string;
+  turmaAtiva: boolean;
   componentesNomes: string[];
 };

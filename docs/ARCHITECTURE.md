@@ -194,10 +194,11 @@ Convenção de caminho: `{escola_id}/{usuario_id}.{ext}` (`ext` é `png` ou `jpg
 qualquer arquivo já existente com esse prefixo (`{escola_id}/{usuario_id}.*`) — evita ficar com
 uma foto antiga órfã no bucket se o usuário trocar de PNG pra JPG (ou vice-versa) entre uploads.
 
-O upload em si roda inteiramente no client ([`foto-upload.tsx`](../app/(app)/usuarios/foto-upload.tsx)),
-direto contra `lib/supabase/client.ts` — sem server action, sem service role. Só existe na tela
-de edição (precisa de `usuario_id`, que não existe até o cadastro ser salvo pela primeira vez);
-na criação, o Bloco 4 mostra só uma mensagem pedindo pra salvar o cadastro primeiro. Depois de
+O upload em si roda inteiramente no client ([`avatar-foto-editavel.tsx`](../components/avatar-foto-editavel.tsx),
+compartilhado com a foto do estudante — bucket `estudantes-fotos`, mesma convenção de caminho),
+direto contra `lib/supabase/client.ts` — sem server action, sem service role. Fica no avatar do
+card de topo do cadastro (clicar na foto abre o seletor) e só existe na tela de edição (precisa
+de `usuario_id`, que não existe até o cadastro ser salvo pela primeira vez). Depois de
 cada upload/remoção bem-sucedida, o client já atualiza `usuarios.foto_url` diretamente — não
 passa pelas server actions de `createUsuario`/`updateUsuario`, então trocar de foto nunca
 bloqueia nem depende do resto do formulário ser salvo.

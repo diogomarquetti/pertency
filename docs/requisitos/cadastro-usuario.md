@@ -157,6 +157,8 @@ Regra: usuário com status **Inativo** não deve conseguir acessar o sistema.
 
 **6\. Bloco 2: Turmas vinculadas**
 
+> **Revisão (2026-09-24):** este bloco passou a ser **somente leitura**. O vínculo professor ↔ turma ↔ componentes curriculares é criado, editado e removido apenas no **Cadastro de Turma** (bloco Professores vinculados, drawer "Vincular professor"). Aqui o cadastro de usuário só lista as turmas vinculadas, com link para cada turma. Deixa de existir a regra "professor precisa de ao menos uma turma para salvar" (o professor é cadastrado primeiro e vinculado depois, na turma), e salvar o usuário não altera vínculos. O painel lateral "Adicionar turma" (seção 7) foi removido. Componentes curriculares no vínculo: obrigatórios no Ensino Fundamental, opcionais na EJA (entre os da estrutura curricular da turma), inexistentes na Educação Infantil.
+
 **Objetivo**
 
 Vincular usuários professores às turmas e componentes curriculares que poderão acessar e registrar.
@@ -201,7 +203,7 @@ Opções sugeridas:
 
 Regra: o professor só poderá acessar estudantes, registros e componentes relacionados às turmas vinculadas. 
 
-**7\. Painel lateral: Adicionar turma**
+**7\. Painel lateral: Adicionar turma** *(removido — ver revisão no Bloco 2)*
 
 **Objetivo**
 

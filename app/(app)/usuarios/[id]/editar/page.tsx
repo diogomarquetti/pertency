@@ -49,7 +49,8 @@ export default async function EditarUsuarioPage({
     etapaCicloNome:
       referencia.etapasCiclos.find((e) => e.id === vinculo.etapaCicloId)?.nome ?? "",
     turnoNome: referencia.turnos.find((t) => t.id === vinculo.turnoId)?.nome ?? "",
-    turmaNome: referencia.turmas.find((t) => t.id === vinculo.turmaId)?.nome ?? "",
+    turmaNome: vinculo.turmaNome,
+    turmaAtiva: vinculo.turmaAtiva,
     componentesNomes: referencia.componentes
       .filter((c) => vinculo.componenteIds.includes(c.id))
       .map((c) => c.nome),
@@ -69,7 +70,7 @@ export default async function EditarUsuarioPage({
         usuarioId={id}
         escolaId={escolaId ?? ""}
         referencia={referencia}
-        vinculosIniciais={vinculosIniciais}
+        vinculos={vinculosIniciais}
         fotoUrlInicial={usuario.foto_url}
         auditoria={auditoria}
         canEdit={canEdit}

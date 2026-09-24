@@ -69,18 +69,9 @@ export const STATUS_OPTIONS = [
   { value: "inativo", label: "Inativo" },
 ] as const;
 
-const vinculoSchema = z.object({
-  etapaCicloId: z.uuid(),
-  turnoId: z.uuid(),
-  turmaId: z.uuid(),
-  componenteIds: z.array(z.uuid()).min(1),
-});
-
-export type VinculoValues = z.infer<typeof vinculoSchema>;
-
-// Campos comuns aos Blocos 1 (Dados gerais) e 3 (Acesso). `vinculos` já existe
-// aqui (Bloco 2) mesmo sem UI ainda — a Fase 6 só precisa adicionar a
-// interface, o schema/validação já cobre o caso.
+// Campos dos blocos Dados gerais e Acesso. Vínculos de turma não fazem
+// parte do cadastro de usuário: são criados só no Cadastro de Turma
+// (Professores vinculados) e aqui aparecem apenas para consulta.
 //
 // Sem campo de senha: o acesso do usuário é sempre provisionado por link
 // (generateLink 'invite' na criação, 'recovery' na edição) — ver actions.ts.
@@ -93,16 +84,11 @@ const usuarioFields = {
   areaAtuacaoOutro: z.string().optional().or(z.literal("")),
   status: z.enum(["ativo", "inativo"] as const),
   emailLogin: z.email({ message: "Informe um e-mail de login válido" }),
-  // sem .default() de propósito — zod separa tipo de entrada/saída quando há
-  // default, o que quebra a inferência de tipos do react-hook-form. O
-  // formulário sempre passa `vinculos: []` explicitamente no defaultValues.
-  vinculos: z.array(vinculoSchema),
 };
 
-function withVinculoRefinement<
+function withUsuarioRefinements<
   Schema extends z.ZodType<{
     funcao: string;
-    vinculos: VinculoValues[];
     areaAtuacao?: string;
     areaAtuacaoOutro?: string;
   }>,
@@ -126,18 +112,11 @@ function withVinculoRefinement<
         message: "Especifique a área de atuação",
       });
     }
-    if (isFuncaoProfessor(data.funcao) && data.vinculos.length === 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["vinculos"],
-        message: "Professores precisam de pelo menos uma turma vinculada",
-      });
-    }
   });
 }
 
-export const createUsuarioSchema = withVinculoRefinement(z.object({ ...usuarioFields }));
-export const updateUsuarioSchema = withVinculoRefinement(z.object({ ...usuarioFields }));
+export const createUsuarioSchema = withUsuarioRefinements(z.object({ ...usuarioFields }));
+export const updateUsuarioSchema = withUsuarioRefinements(z.object({ ...usuarioFields }));
 
 export type CreateUsuarioValues = z.infer<typeof createUsuarioSchema>;
 export type UpdateUsuarioValues = z.infer<typeof updateUsuarioSchema>;

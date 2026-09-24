@@ -19,7 +19,8 @@ import type { OfertaSlug } from "@/app/(app)/turmas/schema";
 function escopoLabel(professor: ProfessorVinculado, ofertaSlug: OfertaSlug) {
   if (ofertaSlug === "ei") return "Turma inteira";
   if (ofertaSlug === "ef") return professor.componentesNomes.join(", ") || "—";
-  return professor.escopoEja.join(", ") || "—";
+  // EJA: escopo de atuação + componentes (opcionais), quando houver.
+  return [...professor.escopoEja, ...professor.componentesNomes].join(", ") || "—";
 }
 
 export function ProfessorVinculosTable({

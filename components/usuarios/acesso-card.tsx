@@ -15,6 +15,8 @@ import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
 
 type AcessoCardProps = {
   control: Control<UpdateUsuarioValues>;
+  /** Número do bloco — 3 quando o card de Turmas vinculadas aparece (professor), senão 2. */
+  numero: number;
 } & ({ mode: "create" } | { mode: "edit"; usuarioId: string });
 
 export function AcessoCard(props: AcessoCardProps) {
@@ -46,7 +48,7 @@ export function AcessoCard(props: AcessoCardProps) {
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
-        <span className="text-brand">3.</span> Acesso
+        <span className="text-brand">{props.numero}.</span> Acesso
       </h2>
 
       <FormField

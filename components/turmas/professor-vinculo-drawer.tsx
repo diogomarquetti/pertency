@@ -141,6 +141,42 @@ function ProfessorCombobox({
   );
 }
 
+function ComponentesChecklist({
+  componentes,
+  value,
+  onChange,
+}: {
+  componentes: { id: string; nome: string }[];
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  return (
+    <div className="rounded-sm border border-line px-[10px]">
+      {componentes.length === 0 ? (
+        <p className="py-[9px] text-[13px] text-muted">
+          Nenhum componente selecionado no Bloco 3 desta turma ainda.
+        </p>
+      ) : (
+        componentes.map((componente, index) => (
+          <label
+            key={componente.id}
+            className={cn(
+              "flex cursor-pointer items-center gap-[10px] py-[9px] text-[14px] text-ink",
+              index > 0 && "border-t border-line",
+            )}
+          >
+            <Checkbox
+              checked={value.includes(componente.id)}
+              onCheckedChange={() => onChange(toggleValue(value, componente.id))}
+            />
+            {componente.nome}
+          </label>
+        ))
+      )}
+    </div>
+  );
+}
+
 /**
  * O estado do formulário vive aqui, não no componente de fora — o Radix
  * Dialog só mantém este corpo montado enquanto o Sheet está
@@ -192,8 +228,10 @@ function DrawerBody({
     }
     setError(null);
 
+    // EJA também aceita componentes (opcionais) — os que a turma tiver na
+    // estrutura curricular. EI não tem componentes (campos de experiência).
     const escopo: EscopoProfessorInput = {
-      componenteIds: pool.ofertaSlug === "ef" ? componenteIds : [],
+      componenteIds: pool.ofertaSlug === "ef" || pool.ofertaSlug === "eja" ? componenteIds : [],
       escopoEja: pool.ofertaSlug === "eja" ? escopoEja : [],
     };
 
@@ -240,31 +278,11 @@ function DrawerBody({
           <div className="grid gap-2">
             <Label>Componentes curriculares</Label>
             <span className="text-[12.5px] text-muted">Selecione ao menos um</span>
-            <div className="rounded-sm border border-line px-[10px]">
-              {pool.componentes.length === 0 ? (
-                <p className="py-[9px] text-[13px] text-muted">
-                  Nenhum componente selecionado no Bloco 3 desta turma ainda.
-                </p>
-              ) : (
-                pool.componentes.map((componente, index) => (
-                  <label
-                    key={componente.id}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-[10px] py-[9px] text-[14px] text-ink",
-                      index > 0 && "border-t border-line",
-                    )}
-                  >
-                    <Checkbox
-                      checked={componenteIds.includes(componente.id)}
-                      onCheckedChange={() =>
-                        setComponenteIds((current) => toggleValue(current, componente.id))
-                      }
-                    />
-                    {componente.nome}
-                  </label>
-                ))
-              )}
-            </div>
+            <ComponentesChecklist
+              componentes={pool.componentes}
+              value={componenteIds}
+              onChange={setComponenteIds}
+            />
           </div>
         )}
 
@@ -295,6 +313,20 @@ function DrawerBody({
                 ),
               )}
             </div>
+          </div>
+        )}
+
+        {pool.ofertaSlug === "eja" && pool.componentes.length > 0 && (
+          <div className="grid gap-2">
+            <Label>
+              Componentes curriculares <span className="font-normal text-muted">(opcional)</span>
+            </Label>
+            <span className="text-[12.5px] text-muted">Componentes da estrutura curricular desta turma</span>
+            <ComponentesChecklist
+              componentes={pool.componentes}
+              value={componenteIds}
+              onChange={setComponenteIds}
+            />
           </div>
         )}
 

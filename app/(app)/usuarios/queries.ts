@@ -120,6 +120,8 @@ export async function getAuditoriaUsuario(usuarioId: string): Promise<AuditoriaR
 
 export type VinculoExistente = {
   turmaId: string;
+  turmaNome: string;
+  turmaAtiva: boolean;
   etapaCicloId: string;
   turnoId: string;
   componenteIds: string[];
@@ -135,7 +137,7 @@ export async function getVinculosUsuario(usuarioId: string): Promise<VinculoExis
 
   const { data: usuarioTurmas } = await supabase
     .from("usuario_turmas")
-    .select("id, turma_id, turmas(etapa_ciclo_id, turno_id)")
+    .select("id, turma_id, turmas(nome, status, etapa_ciclo_id, turno_id)")
     .eq("usuario_id", usuarioId);
 
   if (!usuarioTurmas || usuarioTurmas.length === 0) {
@@ -150,10 +152,19 @@ export async function getVinculosUsuario(usuarioId: string): Promise<VinculoExis
     .in("usuario_turma_id", usuarioTurmaIds);
 
   return usuarioTurmas.map((ut) => {
-    const turma = ut.turmas as unknown as { etapa_ciclo_id: string; turno_id: string } | null;
+    const turma = ut.turmas as unknown as {
+      nome: string;
+      status: string;
+      etapa_ciclo_id: string;
+      turno_id: string;
+    } | null;
 
+    // Nome e status vêm do próprio vínculo — a lista de referência só traz
+    // turmas ativas, e um vínculo com turma inativa ficaria sem nome.
     return {
       turmaId: ut.turma_id as string,
+      turmaNome: turma?.nome ?? "",
+      turmaAtiva: turma?.status === "ativa",
       etapaCicloId: turma?.etapa_ciclo_id ?? "",
       turnoId: turma?.turno_id ?? "",
       componenteIds: (componentesLinks ?? [])

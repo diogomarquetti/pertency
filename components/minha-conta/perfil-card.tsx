@@ -21,7 +21,7 @@ const FUNCAO_LABEL: Record<string, string> = Object.fromEntries(
 
 /**
  * Upload/remoção de foto self-contained aqui (mesma lógica que já existia
- * em components/usuarios/foto-card.tsx) — clicar na própria foto abre o
+ * em components/avatar-foto-editavel.tsx) — clicar na própria foto abre o
  * seletor de arquivo, reaproveitando FileUpload só restilizado (sem a
  * moldura tracejada padrão) pra virar um círculo com overlay de câmera.
  */

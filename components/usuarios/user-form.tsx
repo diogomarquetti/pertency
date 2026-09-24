@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, type FieldErrors } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Card } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
 import { toast } from "@/lib/use-toast";
@@ -20,10 +20,10 @@ import {
 import type { AuditoriaRow, ReferenciaTurmas } from "@/app/(app)/usuarios/queries";
 
 import { AcessoCard } from "./acesso-card";
-import { ContextPanel, type PanelState } from "./context-panel";
 import { DadosGeraisCard } from "./dados-gerais-card";
-import { FotoCard } from "./foto-card";
+import { HistoricoUsuarioDrawer } from "./historico-drawer";
 import { TurmasVinculadasCard } from "./turmas-vinculadas-card";
+import { UsuarioHeroCard } from "./usuario-hero-card";
 import type { VinculoLocal } from "./vinculo-types";
 
 const FORM_ID = "user-edit-form";
@@ -49,7 +49,7 @@ type UserFormProps = {
         criadoEm: string;
         atualizadoEm: string;
       };
-      vinculosIniciais: VinculoLocal[];
+      vinculos: VinculoLocal[];
       fotoUrlInicial: string | null;
       auditoria: AuditoriaRow[];
     }
@@ -57,10 +57,6 @@ type UserFormProps = {
 
 export function UserForm(props: UserFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [vinculos, setVinculos] = useState<VinculoLocal[]>(
-    props.mode === "edit" ? props.vinculosIniciais : [],
-  );
-  const [panelState, setPanelState] = useState<PanelState>({ mode: "historico" });
   const setPageActions = usePageActionsSetter();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -103,17 +99,6 @@ export function UserForm(props: UserFormProps) {
             areaAtuacaoOutro: props.defaultValues.areaAtuacaoOutro,
             status: props.defaultValues.status,
             emailLogin: props.defaultValues.emailLogin,
-            // Precisa bater com o valor real inicial (não só `[]`) — senão
-            // o efeito de espelhamento abaixo, ao sincronizar os vínculos
-            // de verdade pro form logo no mount, já deixa isDirty=true na
-            // hora, mesmo sem nenhuma ação do usuário (RHF compara o valor
-            // atual contra este default pra calcular isDirty).
-            vinculos: vinculos.map(({ etapaCicloId, turnoId, turmaId, componenteIds }) => ({
-              etapaCicloId,
-              turnoId,
-              turmaId,
-              componenteIds,
-            })),
           }
         : {
             nomeCompleto: "",
@@ -124,40 +109,24 @@ export function UserForm(props: UserFormProps) {
             areaAtuacaoOutro: "",
             status: "ativo",
             emailLogin: "",
-            vinculos: [],
           },
   });
 
-  const funcaoSelecionada = form.watch("funcao");
-  const isProfessor = isFuncaoProfessor(funcaoSelecionada);
   const { isDirty } = form.formState;
 
-  // O react-hook-form só sabe validar o schema (incluindo a regra de
-  // "professor precisa de vínculo") pelo valor que ele mesmo controla — como
-  // `vinculos` é mantido como estado local (ver comentário em onSubmit sobre
-  // por quê), precisa ser espelhado de volta pro form a cada mudança, senão
-  // a validação do zod roda contra um array sempre vazio e bloqueia o
-  // envio sem mostrar erro nenhum (não há FormField ligado a `vinculos`).
-  useEffect(() => {
-    form.setValue(
-      "vinculos",
-      vinculos.map(({ etapaCicloId, turnoId, turmaId, componenteIds }) => ({
-        etapaCicloId,
-        turnoId,
-        turmaId,
-        componenteIds,
-      })),
-      { shouldValidate: form.formState.isSubmitted, shouldDirty: true },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vinculos]);
-
-  // Trocar de função sempre volta o painel de contexto pro estado de
-  // repouso (histórico) — evita ficar com o formulário de turma aberto
-  // quando a função virou algo que não é mais professor, por exemplo.
-  useEffect(() => {
-    setPanelState({ mode: "historico" });
-  }, [funcaoSelecionada]);
+  // Card de topo acompanha o que está sendo digitado, não só o valor salvo.
+  const [
+    nomeExibicao,
+    emailExibicao,
+    funcaoSelecionada,
+    statusExibicao,
+    areaAtuacaoExibicao,
+    areaAtuacaoOutroExibicao,
+  ] = useWatch({
+    control: form.control,
+    name: ["nomeCompleto", "email", "funcao", "status", "areaAtuacao", "areaAtuacaoOutro"],
+  });
+  const isProfessor = isFuncaoProfessor(funcaoSelecionada);
 
   useEffect(() => {
     setPageActions({
@@ -172,50 +141,12 @@ export function UserForm(props: UserFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPending, props.canEdit, isDirty]);
 
-  function handleAddVinculo(vinculo: VinculoLocal) {
-    setVinculos((current) => [...current, vinculo]);
-  }
-
-  function handleReplaceVinculo(index: number, vinculo: VinculoLocal) {
-    setVinculos((current) => current.map((item, i) => (i === index ? vinculo : item)));
-  }
-
-  function handleRemoveVinculo(turmaId: string) {
-    setVinculos((current) => current.filter((v) => v.turmaId !== turmaId));
-  }
-
-  // A regra "professor precisa de vínculo" já é imposta pelo próprio schema
-  // zod (superRefine no path "vinculos", ver schema.ts) — como não existe
-  // FormField ligado a esse path (vinculos vive em estado local, não em
-  // input controlado), o erro nunca aparece inline sozinho. Sem esse
-  // segundo argumento de handleSubmit, a validação falha silenciosamente:
-  // `onSubmit` nunca é chamado e o Salvar simplesmente não faz nada.
-  function onInvalid(errors: FieldErrors<UpdateUsuarioValues>) {
-    if (errors.vinculos) {
-      toast.error(
-        errors.vinculos.message ?? "Professores precisam de pelo menos uma turma vinculada.",
-      );
-    }
-  }
-
   function onSubmit(values: UpdateUsuarioValues) {
-    const payload: UpdateUsuarioValues = {
-      ...values,
-      vinculos: isProfessor
-        ? vinculos.map(({ etapaCicloId, turnoId, turmaId, componenteIds }) => ({
-            etapaCicloId,
-            turnoId,
-            turmaId,
-            componenteIds,
-          }))
-        : [],
-    };
-
     startTransition(async () => {
       const result =
         props.mode === "create"
-          ? await createUsuario(payload)
-          : await updateUsuario(props.usuarioId, payload);
+          ? await createUsuario(values)
+          : await updateUsuario(props.usuarioId, values);
 
       // Sucesso não chega a devolver aqui — `createUsuario`/`updateUsuario`
       // terminam em `redirect()` (lança internamente, não retorna). O toast
@@ -230,61 +161,68 @@ export function UserForm(props: UserFormProps) {
 
   return (
     <Form {...form}>
-      <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
-        <div className="grid items-start gap-[24px] xl:grid-cols-[1fr_var(--panel-w)]">
+      <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <div className="flex flex-col gap-[24px]">
+          <Card className="gap-0 overflow-hidden p-0">
+            <UsuarioHeroCard
+              mode={props.mode}
+              nomeCompleto={nomeExibicao}
+              email={emailExibicao}
+              funcao={funcaoSelecionada}
+              areaAtuacao={areaAtuacaoExibicao}
+              areaAtuacaoOutro={areaAtuacaoOutroExibicao}
+              status={statusExibicao}
+              foto={
+                props.mode === "edit"
+                  ? {
+                      usuarioId: props.usuarioId,
+                      escolaId: props.escolaId,
+                      fotoUrlInicial: props.fotoUrlInicial,
+                      canEdit: props.canEdit,
+                    }
+                  : undefined
+              }
+              acoes={
+                props.mode === "edit" ? (
+                  <HistoricoUsuarioDrawer
+                    auditoria={props.auditoria}
+                    referencia={props.referencia}
+                    cadastro={
+                      !props.canEdit
+                        ? {
+                            criadoEm: props.defaultValues.criadoEm,
+                            atualizadoEm: props.defaultValues.atualizadoEm,
+                          }
+                        : undefined
+                    }
+                  />
+                ) : undefined
+              }
+            />
+          </Card>
+
           <fieldset disabled={!props.canEdit} className="contents">
-            <div className="flex min-w-0 flex-col gap-[24px]">
-              <DadosGeraisCard control={form.control} />
+            <DadosGeraisCard control={form.control} />
 
-              {isProfessor && (
-                <TurmasVinculadasCard
-                  vinculos={vinculos}
-                  onRequestAdd={() => setPanelState({ mode: "form", editingIndex: null })}
-                  onRequestEdit={(index) => setPanelState({ mode: "form", editingIndex: index })}
-                  onRemove={handleRemoveVinculo}
-                />
-              )}
+            {/* Só consulta — o vínculo é feito no Cadastro de Turma. */}
+            {isProfessor && (
+              <TurmasVinculadasCard
+                mode={props.mode}
+                vinculos={props.mode === "edit" ? props.vinculos : []}
+              />
+            )}
 
-              <div className="grid gap-[24px] sm:grid-cols-2">
-                {props.mode === "create" ? (
-                  <>
-                    <AcessoCard control={form.control} mode="create" />
-                    <FotoCard mode="create" canEdit={props.canEdit} />
-                  </>
-                ) : (
-                  <>
-                    <AcessoCard control={form.control} mode="edit" usuarioId={props.usuarioId} />
-                    <FotoCard
-                      mode="edit"
-                      usuarioId={props.usuarioId}
-                      escolaId={props.escolaId}
-                      nomeCompleto={props.defaultValues.nomeCompleto}
-                      fotoUrlInicial={props.fotoUrlInicial}
-                      canEdit={props.canEdit}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
+            {props.mode === "create" ? (
+              <AcessoCard control={form.control} mode="create" numero={isProfessor ? 3 : 2} />
+            ) : (
+              <AcessoCard
+                control={form.control}
+                mode="edit"
+                usuarioId={props.usuarioId}
+                numero={isProfessor ? 3 : 2}
+              />
+            )}
           </fieldset>
-
-          <ContextPanel
-            panelState={panelState}
-            onClose={() => setPanelState({ mode: "historico" })}
-            referencia={props.referencia}
-            vinculos={vinculos}
-            onAddVinculo={handleAddVinculo}
-            onReplaceVinculo={handleReplaceVinculo}
-            auditoria={props.mode === "edit" ? props.auditoria : undefined}
-            cadastro={
-              props.mode === "edit" && !props.canEdit
-                ? {
-                    criadoEm: props.defaultValues.criadoEm,
-                    atualizadoEm: props.defaultValues.atualizadoEm,
-                  }
-                : undefined
-            }
-          />
         </div>
       </form>
     </Form>
