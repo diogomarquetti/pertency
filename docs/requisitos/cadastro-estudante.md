@@ -215,13 +215,18 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 
 | Opção | Conteúdo | Quem pode gerar | Status permitido | Armazenamento/versionamento |
 | :---- | :---- | :---- | :---- | :---- |
-| Relatório padrão | Somente a estrutura do formulário padrão, com participantes da avaliação. | Coordenação, Direção e Administrador; Secretaria pode visualizar/baixar a versão final. | Concluída ou Reaberta com confirmação explícita. | PDF armazenado na pasta do estudante; registrar versão, data/hora e usuário gerador. |
-| Relatório completo | Formulário padrão \+ contribuições complementares \+ participantes \+ análise integrada. | Coordenação, Direção e Administrador. | Concluída ou Reaberta com confirmação explícita. | PDF armazenado na pasta do estudante; nova geração cria nova versão, sem apagar a anterior. |
+| Relatório padrão | Somente a estrutura do formulário padrão, com participantes da avaliação. | Coordenação, Direção e Administrador; Secretaria pode visualizar/baixar a versão final. | Somente Concluída (ajuste do PO após 1ª rodada de testes). Antes disso, apenas prévia com marca d'água, sem versão. | PDF armazenado na pasta do estudante; registrar versão, data/hora e usuário gerador. |
+| Relatório completo | Formulário padrão \+ contribuições complementares \+ participantes \+ análise integrada. | Coordenação, Direção e Administrador. | Somente Concluída (ajuste do PO após 1ª rodada de testes). Antes disso, apenas prévia com marca d'água, sem versão. | PDF armazenado na pasta do estudante; nova geração cria nova versão, sem apagar a anterior. |
 
 * Se a avaliação for alterada depois de um PDF gerado, marcar a versão anterior como desatualizada e manter histórico.  
 * Não sobrescrever PDF já emitido; gerar nova versão.  
 * Na geração, o sistema deve solicitar explicitamente Padrão ou Completo.  
-* O bloco final da Avaliação de Ingresso deve ser denominado Participantes da Avaliação, contendo nome, função e data do preenchimento. Assinatura digital avançada não faz parte do MVP.
+* O bloco final da Avaliação de Ingresso deve ser denominado Participantes da Avaliação, contendo nome, função e data do preenchimento. Assinatura digital avançada não faz parte do MVP.  
+* Prévia: disponível em qualquer status, gera o PDF com marca d'água "PRÉVIA", não cria versão nem entra em Documentos.  
+* Recomendação de elegibilidade, Justificativa e Encaminhamento só são editáveis com status Concluída; para concluir, Elegibilidade e Justificativa são obrigatórias. Se a avaliação for reaberta, os valores ficam guardados, mas "Não elegível" só altera a situação do estudante quando a avaliação é concluída.  
+* Relatório padrão: sem Status da avaliação e sem Encaminhamento recomendado (não existem no formulário oficial). Relatório completo inclui o Encaminhamento; "Efetivar matrícula" é exibido com o nome oficial da escola.  
+* Função exibida (Equipe responsável e Participantes): área de atuação do usuário quando preenchida, senão o perfil de acesso.  
+* Rodapé: "Documento gerado pelo Pertency em dd/mm/aaaa." (sem menção a assinatura digital).
 
 # **12\. Aba 3 – Documentos**
 

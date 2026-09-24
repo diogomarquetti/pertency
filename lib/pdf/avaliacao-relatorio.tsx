@@ -51,6 +51,22 @@ function formatDate(value: string | null | undefined) {
 }
 
 const styles = StyleSheet.create({
+  marcaDagua: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  marcaDaguaTexto: {
+    fontSize: 110,
+    fontWeight: 700,
+    color: "#C7CFD9",
+    opacity: 0.35,
+    transform: "rotate(-35deg)",
+  },
   page: { paddingVertical: 36, paddingHorizontal: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1A1F26" },
   titulo: { fontSize: 15, fontWeight: 700, marginBottom: 2 },
   subtitulo: { fontSize: 10, color: "#5B6472", marginBottom: 16 },
@@ -150,16 +166,25 @@ export type AvaliacaoRelatorioData = {
 export function AvaliacaoRelatorioPdf({
   tipo,
   data,
+  previa = false,
 }: {
   tipo: "padrao" | "completo";
   data: AvaliacaoRelatorioData;
+  /** Prévia (avaliação ainda não concluída ou só pra conferência): marca d'água em todas as páginas. */
+  previa?: boolean;
 }) {
   return (
     <Document title={`Avaliação de Ingresso — ${data.estudanteNome}`}>
       <Page size="A4" style={styles.page}>
+        {previa && (
+          <View fixed style={styles.marcaDagua}>
+            <Text style={styles.marcaDaguaTexto}>PRÉVIA</Text>
+          </View>
+        )}
         <Text style={styles.titulo}>Avaliação de Ingresso</Text>
         <Text style={styles.subtitulo}>
           Relatório {tipo === "completo" ? "completo" : "padrão"} · {data.escolaNome}
+          {previa && " · Prévia — não é o documento oficial"}
         </Text>
 
         <Secao titulo="1. Identificação">
@@ -312,7 +337,9 @@ export function AvaliacaoRelatorioPdf({
         )}
 
         <Text style={styles.rodape}>
-          Documento gerado pelo Pertency em {formatDate(new Date().toISOString())}.
+          {previa
+            ? `Prévia gerada pelo Pertency em ${formatDate(new Date().toISOString())} — não é o documento oficial.`
+            : `Documento gerado pelo Pertency em ${formatDate(new Date().toISOString())}.`}
         </Text>
       </Page>
     </Document>

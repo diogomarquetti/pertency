@@ -38,11 +38,10 @@ export const ENCAMINHAMENTO_OPTIONS = [
 
 // A Avaliação de Ingresso é um formulário longo, preenchido aos poucos pela
 // equipe pedagógica ao longo de várias sessões — diferente da Aba 1 (Dados
-// pessoais), aqui nada é obrigatório no schema. A história não pede bloqueio
-// de campo a campo, só que a recomendação final seja Elegível/Não elegível
-// quando a avaliação for concluída (isso fica a critério de quem preenche,
-// não é validado à força).
-export const avaliacaoSchema = z.object({
+// pessoais), quase nada é obrigatório no schema. A exceção é a decisão final:
+// Elegibilidade e Justificativa só são editáveis com o status "Concluída" e,
+// nesse status, passam a ser obrigatórias (ver superRefine abaixo).
+const avaliacaoFields = z.object({
   equipeResponsavelIds: z.array(z.string()),
   ofertaPretendidaId: z.string().optional().or(z.literal("")),
   organizacaoPretendidaId: z.string().optional().or(z.literal("")),
@@ -75,6 +74,29 @@ export const avaliacaoSchema = z.object({
   orientacoesPai: z.string().optional().or(z.literal("")),
   assinaturas: z.string().optional().or(z.literal("")),
 });
+
+export const avaliacaoSchema = avaliacaoFields.superRefine((data, ctx) => {
+  if (data.statusAvaliacao !== "concluida") return;
+  if (!data.recomendacaoElegibilidade) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["recomendacaoElegibilidade"],
+      message: "Informe a recomendação de elegibilidade para concluir a avaliação",
+    });
+  }
+  if (!data.justificativaElegibilidade?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["justificativaElegibilidade"],
+      message: "Informe a justificativa para concluir a avaliação",
+    });
+  }
+});
+
+/** Elegibilidade/Justificativa/Encaminhamento só são editáveis com a avaliação concluída. */
+export function decisaoFinalLiberada(statusAvaliacao: string) {
+  return statusAvaliacao === "concluida";
+}
 
 export type AvaliacaoValues = z.infer<typeof avaliacaoSchema>;
 

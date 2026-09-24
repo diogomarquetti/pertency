@@ -2,16 +2,25 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, FileText, Loader2 } from "lucide-react";
+import { ChevronDown, Eye, FileText, Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { refreshAndBlur } from "@/lib/utils";
 
-import { gerarRelatorioAvaliacao } from "@/app/(app)/estudantes/relatorios-actions";
+import {
+  gerarPreviaRelatorioAvaliacao,
+  gerarRelatorioAvaliacao,
+} from "@/app/(app)/estudantes/relatorios-actions";
 import type { RelatorioAvaliacao } from "@/app/(app)/estudantes/queries";
 
 const TIPO_LABEL: Record<string, string> = { padrao: "Padrão", completo: "Completo" };
@@ -28,18 +37,24 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
  * "Desatualizado" (CA16) é calculado aqui, comparando o `updated_at` que a
  * avaliação tinha no momento da geração com o `updated_at` atual — sem
  * trigger nem flag mantida à mão.
+ *
+ * Relatório definitivo só com a avaliação Concluída (status já salvo — o PDF
+ * sempre sai dos dados salvos). Antes disso existe só a prévia, com marca
+ * d'água, que não vira versão.
  */
 export function RelatoriosCard({
   estudanteId,
   avaliacaoId,
   relatorios,
   avaliacaoAtualizadaEm,
+  avaliacaoConcluida,
   canGerar,
 }: {
   estudanteId: string;
   avaliacaoId: string;
   relatorios: RelatorioAvaliacao[];
   avaliacaoAtualizadaEm: string;
+  avaliacaoConcluida: boolean;
   canGerar: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -54,6 +69,27 @@ export function RelatoriosCard({
       }
       toast.success(`Relatório ${TIPO_LABEL[tipo].toLowerCase()} gerado com sucesso.`);
       refreshAndBlur(router);
+    });
+  }
+
+  function handlePrevia(tipo: "padrao" | "completo") {
+    // Abre a aba já no clique (ainda dentro do gesto do usuário) — abrir só
+    // depois do await da geração faz o navegador tratar como pop-up e bloquear.
+    const aba = window.open("", "_blank");
+    startTransition(async () => {
+      const result = await gerarPreviaRelatorioAvaliacao(estudanteId, avaliacaoId, tipo);
+      if ("error" in result) {
+        aba?.close();
+        toast.error("Não foi possível gerar a prévia", result.error);
+        return;
+      }
+      const bytes = Uint8Array.from(atob(result.pdfBase64), (char) => char.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      if (aba) {
+        aba.location.href = url;
+      } else {
+        window.open(url, "_blank");
+      }
     });
   }
 
@@ -78,18 +114,40 @@ export function RelatoriosCard({
       <div className="flex items-center justify-between">
         <h2 className="text-highlight text-ink">Relatórios (PDF)</h2>
         {canGerar && (
-          <div className="flex gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={() => handleGerar("padrao")} disabled={isPending}>
-              {isPending && <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
-              Gerar relatório padrão
-            </Button>
-            <Button type="button" size="sm" onClick={() => handleGerar("completo")} disabled={isPending}>
-              {isPending && <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
-              Gerar relatório completo
-            </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" disabled={isPending}>
+                  {isPending && <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
+                  Visualizar prévia
+                  <ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => handlePrevia("padrao")}>Prévia do relatório padrão</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handlePrevia("completo")}>Prévia do relatório completo</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {avaliacaoConcluida && (
+              <>
+                <Button type="button" variant="secondary" size="sm" onClick={() => handleGerar("padrao")} disabled={isPending}>
+                  Gerar relatório padrão
+                </Button>
+                <Button type="button" size="sm" onClick={() => handleGerar("completo")} disabled={isPending}>
+                  Gerar relatório completo
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
+
+      {canGerar && !avaliacaoConcluida && (
+        <p className="text-[12.5px] text-muted">
+          O relatório definitivo é liberado quando a avaliação estiver &ldquo;Concluída&rdquo; e
+          salva. Até lá, use a prévia para conferir o conteúdo.
+        </p>
+      )}
 
       {relatorios.length === 0 ? (
         <p className="text-[13px] text-muted">Nenhum relatório gerado ainda.</p>

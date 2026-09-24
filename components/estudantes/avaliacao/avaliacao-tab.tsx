@@ -2,7 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 
@@ -83,6 +83,17 @@ export function AvaliacaoTab({
     defaultValues: (avaliacao as AvaliacaoValues | null) ?? AVALIACAO_EMPTY_VALUES,
   });
 
+  // Os erros de "concluir exige elegibilidade" ficam no bloco 5, longe do
+  // botão — o toast avisa mesmo com o campo fora da tela.
+  function onInvalid(errors: FieldErrors<AvaliacaoValues>) {
+    const firstMessage = Object.values(errors).find(
+      (error) => typeof error?.message === "string",
+    )?.message as string | undefined;
+    if (firstMessage) {
+      toast.error(firstMessage);
+    }
+  }
+
   function onSubmit(values: AvaliacaoValues) {
     startTransition(async () => {
       const result = await salvarAvaliacao(estudanteId, values);
@@ -98,7 +109,7 @@ export function AvaliacaoTab({
   return (
     <div className="flex flex-col gap-[24px]">
       <Form {...form}>
-        <form id={AVALIACAO_FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <form id={AVALIACAO_FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
           <fieldset disabled={!canEdit} className="contents">
             <div className="flex flex-col gap-[24px]">
               <AvaliacaoIdentificacaoCard
@@ -146,6 +157,7 @@ export function AvaliacaoTab({
             avaliacaoId={avaliacao.id}
             relatorios={relatorios}
             avaliacaoAtualizadaEm={avaliacao.updatedAt}
+            avaliacaoConcluida={avaliacao.statusAvaliacao === "concluida"}
             canGerar={canGerarRelatorio}
           />
         </>

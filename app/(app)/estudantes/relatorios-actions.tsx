@@ -9,27 +9,34 @@ import { AvaliacaoRelatorioPdf, type AvaliacaoRelatorioData } from "@/lib/pdf/av
 import { funcaoExibicao } from "../usuarios/schema";
 import { calcularIdade } from "./schema";
 
+type RelatorioContext = Exclude<
+  Awaited<ReturnType<typeof requireRelatorioGeracaoProfile>>,
+  { error: string }
+>;
+
 /**
- * Gera um PDF (Padrão ou Completo) da Avaliação de Ingresso — HU-EST-001
- * v2.0, seção 11.4. Cada geração cria uma nova versão (nunca sobrescreve a
- * anterior, CA16) e atualiza a linha "Avaliação de Ingresso" do checklist da
- * Aba 3 pra apontar pro PDF mais recente.
+ * Lê a avaliação (dados já salvos) e monta o conteúdo do PDF — compartilhado
+ * entre a geração oficial e a prévia, pra prévia mostrar exatamente o que o
+ * relatório definitivo vai mostrar.
  */
-export async function gerarRelatorioAvaliacao(
+type RelatorioMontado =
+  | { error: string }
+  | {
+      relatorioData: AvaliacaoRelatorioData;
+      statusAvaliacao: string;
+      avaliacaoAtualizadaEm: string;
+    };
+
+async function montarRelatorio(
+  { supabase, escolaId }: RelatorioContext,
   estudanteId: string,
   avaliacaoId: string,
   tipo: "padrao" | "completo",
-) {
-  const context = await requireRelatorioGeracaoProfile();
-  if ("error" in context) {
-    return context;
-  }
-  const { supabase, userId, escolaId } = context;
-
+): Promise<RelatorioMontado> {
   const { data: avaliacao } = await supabase
     .from("avaliacoes_ingresso")
     .select(
-      `updated_at, equipe_responsavel_ids, data_inicio, data_termino,
+      `updated_at, status_avaliacao, equipe_responsavel_ids, data_inicio, data_termino,
        historico_escolar, informacoes_familia, contexto_sociocultural, habilidades_conceituais,
        habilidades_sociais, habilidades_praticas, dimensao_participacao,
        contexto_escolar, contexto_familiar, contexto_comunitario, fatores_facilitadores,
@@ -135,9 +142,77 @@ export async function gerarRelatorioAvaliacao(
     contribuicoes,
   };
 
+  return {
+    relatorioData,
+    statusAvaliacao: avaliacao.status_avaliacao,
+    avaliacaoAtualizadaEm: avaliacao.updated_at,
+  };
+}
+
+/**
+ * Prévia do PDF (Padrão ou Completo) com marca d'água "PRÉVIA" — disponível
+ * em qualquer status, não vira versão nem entra em Documentos. Devolve o PDF
+ * em base64 pro client abrir numa aba nova.
+ */
+export async function gerarPreviaRelatorioAvaliacao(
+  estudanteId: string,
+  avaliacaoId: string,
+  tipo: "padrao" | "completo",
+) {
+  const context = await requireRelatorioGeracaoProfile();
+  if ("error" in context) {
+    return context;
+  }
+
+  const montado = await montarRelatorio(context, estudanteId, avaliacaoId, tipo);
+  if ("error" in montado) {
+    return { error: montado.error };
+  }
+
+  try {
+    const pdfBuffer = await renderToBuffer(
+      <AvaliacaoRelatorioPdf tipo={tipo} data={montado.relatorioData} previa />,
+    );
+    return { pdfBase64: pdfBuffer.toString("base64") };
+  } catch {
+    return { error: "Não foi possível gerar a prévia. Tente novamente." };
+  }
+}
+
+/**
+ * Gera um PDF (Padrão ou Completo) da Avaliação de Ingresso — HU-EST-001
+ * v2.0, seção 11.4. Só com a avaliação Concluída: antes disso a decisão de
+ * elegibilidade ainda não é final (existe a prévia pra conferir). Cada
+ * geração cria uma nova versão (nunca sobrescreve a anterior, CA16) e
+ * atualiza a linha "Avaliação de Ingresso" do checklist da Aba 3 pra apontar
+ * pro PDF mais recente.
+ */
+export async function gerarRelatorioAvaliacao(
+  estudanteId: string,
+  avaliacaoId: string,
+  tipo: "padrao" | "completo",
+) {
+  const context = await requireRelatorioGeracaoProfile();
+  if ("error" in context) {
+    return context;
+  }
+  const { supabase, userId, escolaId } = context;
+
+  const montado = await montarRelatorio(context, estudanteId, avaliacaoId, tipo);
+  if ("error" in montado) {
+    return { error: montado.error };
+  }
+  if (montado.statusAvaliacao !== "concluida") {
+    return {
+      error: "O relatório definitivo só pode ser gerado com a avaliação Concluída e salva.",
+    };
+  }
+
   let pdfBuffer: Buffer;
   try {
-    pdfBuffer = await renderToBuffer(<AvaliacaoRelatorioPdf tipo={tipo} data={relatorioData} />);
+    pdfBuffer = await renderToBuffer(
+      <AvaliacaoRelatorioPdf tipo={tipo} data={montado.relatorioData} />,
+    );
   } catch {
     return { error: "Não foi possível gerar o PDF. Tente novamente." };
   }
@@ -169,7 +244,7 @@ export async function gerarRelatorioAvaliacao(
     tipo,
     versao,
     arquivo_path: arquivoPath,
-    avaliacao_atualizada_em: avaliacao.updated_at,
+    avaliacao_atualizada_em: montado.avaliacaoAtualizadaEm,
     gerado_por: userId,
   });
 

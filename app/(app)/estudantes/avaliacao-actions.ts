@@ -42,9 +42,10 @@ function toAvaliacaoRow(escolaId: string, estudanteId: string, data: AvaliacaoVa
 
 /**
  * Salva a Avaliação de Ingresso — upsert por `estudante_id` (relação 1:1,
- * sempre existe no máximo uma por estudante). Quando a recomendação vira
- * "não elegível", já atualiza `estudantes.situacao` junto — o trigger de
- * auditoria de estudantes (Fase 1) registra essa mudança sozinho.
+ * sempre existe no máximo uma por estudante). Quando a avaliação é concluída
+ * com recomendação "não elegível", já atualiza `estudantes.situacao` junto —
+ * o trigger de auditoria de estudantes (Fase 1) registra essa mudança
+ * sozinho. Reaberta, a recomendação antiga fica guardada mas não age.
  */
 export async function salvarAvaliacao(estudanteId: string, values: AvaliacaoValues) {
   const parsed = avaliacaoSchema.safeParse(values);
@@ -70,7 +71,7 @@ export async function salvarAvaliacao(estudanteId: string, values: AvaliacaoValu
     return { error: "Não foi possível salvar a avaliação. Tente novamente." };
   }
 
-  if (data.recomendacaoElegibilidade === "nao_elegivel") {
+  if (data.statusAvaliacao === "concluida" && data.recomendacaoElegibilidade === "nao_elegivel") {
     await supabase.from("estudantes").update({ situacao: "nao_elegivel" }).eq("id", estudanteId);
   }
 
