@@ -115,6 +115,10 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
             <FormControl>
               <Textarea placeholder="Síntese conclusiva da avaliação…" {...field} />
             </FormControl>
+            <p className="text-[12.5px] text-muted">
+              Contemple perfil de desenvolvimento, potencialidades, dificuldades funcionais,
+              implicações pedagógicas e justificativa do apoio, quando aplicável.
+            </p>
             <FormMessage />
           </FormItem>
         )}

@@ -9,10 +9,29 @@ import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/r
 
 import {
   createUsuarioSchema,
+  funcaoTemAreaAtuacao,
   updateUsuarioSchema,
   type CreateUsuarioValues,
   type UpdateUsuarioValues,
 } from "./schema";
+
+/**
+ * Área de atuação só vale pros perfis que a têm (ver funcaoTemAreaAtuacao) —
+ * trocar o perfil de Profissional Complementar pra Professor, por exemplo,
+ * limpa a área em vez de deixar um valor órfão. O texto de "Outro" só é
+ * guardado quando a área é "outro".
+ */
+function areaAtuacaoColunas(data: {
+  funcao: string;
+  areaAtuacao?: string;
+  areaAtuacaoOutro?: string;
+}) {
+  const area = funcaoTemAreaAtuacao(data.funcao) && data.areaAtuacao ? data.areaAtuacao : null;
+  return {
+    area_atuacao: area,
+    area_atuacao_outro: area === "outro" ? data.areaAtuacaoOutro?.trim() || null : null,
+  };
+}
 
 function isEmailInUseError(message: string | undefined) {
   if (!message) return false;
@@ -128,6 +147,7 @@ export async function createUsuario(values: CreateUsuarioValues) {
     email: data.email,
     telefone: data.telefone || null,
     funcao: data.funcao,
+    ...areaAtuacaoColunas(data),
     status: data.status,
     created_by: adminId,
   });
@@ -199,6 +219,7 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
       email: data.email,
       telefone: data.telefone || null,
       funcao: data.funcao,
+      ...areaAtuacaoColunas(data),
       status: data.status,
     })
     .eq("id", id)

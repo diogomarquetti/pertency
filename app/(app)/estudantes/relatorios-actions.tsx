@@ -6,6 +6,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { requireRelatorioGeracaoProfile } from "@/lib/supabase/require-admin-profile";
 import { AvaliacaoRelatorioPdf, type AvaliacaoRelatorioData } from "@/lib/pdf/avaliacao-relatorio";
 
+import { funcaoExibicao } from "../usuarios/schema";
 import { calcularIdade } from "./schema";
 
 /**
@@ -28,7 +29,7 @@ export async function gerarRelatorioAvaliacao(
   const { data: avaliacao } = await supabase
     .from("avaliacoes_ingresso")
     .select(
-      `updated_at, equipe_responsavel_ids, data_inicio, data_termino, status_avaliacao,
+      `updated_at, equipe_responsavel_ids, data_inicio, data_termino,
        historico_escolar, informacoes_familia, contexto_sociocultural, habilidades_conceituais,
        habilidades_sociais, habilidades_praticas, dimensao_participacao,
        contexto_escolar, contexto_familiar, contexto_comunitario, fatores_facilitadores,
@@ -64,19 +65,16 @@ export async function gerarRelatorioAvaliacao(
 
   const equipeIds = (avaliacao.equipe_responsavel_ids as string[] | null) ?? [];
   const { data: equipe } = equipeIds.length
-    ? await supabase.from("usuarios").select("id, nome_completo, funcao").in("id", equipeIds)
-    : { data: [] as { id: string; nome_completo: string; funcao: string }[] };
-
-  const FUNCAO_LABEL: Record<string, string> = {
-    administrador: "Administrador",
-    direcao: "Direção",
-    secretaria: "Secretaria",
-    coordenacao_pedagogica: "Coordenação Pedagógica",
-    professor_regente: "Professor Regente",
-    professor_arte: "Professor de Arte",
-    profissional_complementar: "Profissional Complementar",
-    professor_educacao_fisica: "Professor de Educação Física",
-  };
+    ? await supabase
+        .from("usuarios")
+        .select("id, nome_completo, funcao, area_atuacao, area_atuacao_outro")
+        .in("id", equipeIds)
+        .order("nome_completo")
+    : { data: [] };
+  const equipeComFuncao = (equipe ?? []).map((usuario) => ({
+    nome: usuario.nome_completo,
+    funcao: funcaoExibicao(usuario),
+  }));
 
   let contribuicoes: AvaliacaoRelatorioData["contribuicoes"] = [];
   if (tipo === "completo") {
@@ -102,6 +100,7 @@ export async function gerarRelatorioAvaliacao(
 
   const relatorioData: AvaliacaoRelatorioData = {
     escolaNome: escola?.nome_usual ?? escola?.nome_oficial ?? "—",
+    escolaNomeOficial: escola?.nome_oficial ?? "escola",
     escolaMunicipio: escola?.municipio ?? "—",
     estudanteNome: estudante.nome_completo,
     dataNascimento: estudante.data_nascimento,
@@ -111,7 +110,6 @@ export async function gerarRelatorioAvaliacao(
       (avaliacao.etapas_ciclos as unknown as { nome: string } | null)?.nome ?? "—",
     dataInicio: avaliacao.data_inicio ?? "",
     dataTermino: avaliacao.data_termino ?? "",
-    statusAvaliacao: avaliacao.status_avaliacao,
     historicoEscolar: avaliacao.historico_escolar ?? "",
     informacoesFamilia: avaliacao.informacoes_familia ?? "",
     contextoSociocultural: avaliacao.contexto_sociocultural ?? "",
@@ -132,10 +130,7 @@ export async function gerarRelatorioAvaliacao(
     justificativaElegibilidade: avaliacao.justificativa_elegibilidade ?? "",
     encaminhamentoRecomendado: avaliacao.encaminhamento_recomendado ?? "",
     orientacoesPai: avaliacao.orientacoes_pai ?? "",
-    participantes: (equipe ?? []).map((usuario) => ({
-      nome: usuario.nome_completo,
-      funcao: FUNCAO_LABEL[usuario.funcao] ?? usuario.funcao,
-    })),
+    participantes: equipeComFuncao,
     dataConclusao: avaliacao.data_termino ?? new Date().toISOString(),
     contribuicoes,
   };

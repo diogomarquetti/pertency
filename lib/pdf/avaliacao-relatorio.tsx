@@ -4,12 +4,6 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 // app/(app)/estudantes/*) — este arquivo roda no lado do servidor (Server
 // Action), fora do fluxo de formulário/zod, e usar direto o mesmo par
 // valor→label evita puxar dependências de client component sem necessidade.
-const STATUS_AVALIACAO_LABEL: Record<string, string> = {
-  nao_iniciada: "Não iniciada",
-  em_andamento: "Em andamento",
-  concluida: "Concluída",
-  reaberta: "Reaberta",
-};
 
 const NIVEL_APOIO_LABEL: Record<string, string> = {
   intermitente: "Intermitente",
@@ -43,6 +37,12 @@ const ENCAMINHAMENTO_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
+// O PDF circula fora do sistema — "Efetivar matrícula" sozinho não diz onde.
+function encaminhamentoTexto(encaminhamento: string, escolaNomeOficial: string) {
+  if (encaminhamento === "efetivar_matricula") return `Efetivar matrícula na ${escolaNomeOficial}`;
+  return ENCAMINHAMENTO_LABEL[encaminhamento] ?? "—";
+}
+
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 function formatDate(value: string | null | undefined) {
@@ -74,9 +74,9 @@ const styles = StyleSheet.create({
   rodape: { position: "absolute", bottom: 24, left: 40, right: 40, fontSize: 8, color: "#8A93A0", textAlign: "center" },
 });
 
-function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Campo({ rotulo, valor, inteiro }: { rotulo: string; valor: string; inteiro?: boolean }) {
   return (
-    <View style={styles.campo}>
+    <View style={inteiro ? [styles.campo, { width: "100%" }] : styles.campo}>
       <Text style={styles.rotulo}>{rotulo}</Text>
       <Text style={styles.valor}>{valor || "—"}</Text>
     </View>
@@ -105,6 +105,7 @@ export type ContribuicaoRelatorio = {
 
 export type AvaliacaoRelatorioData = {
   escolaNome: string;
+  escolaNomeOficial: string;
   escolaMunicipio: string;
   estudanteNome: string;
   dataNascimento: string;
@@ -113,7 +114,6 @@ export type AvaliacaoRelatorioData = {
   organizacaoPretendidaNome: string;
   dataInicio: string;
   dataTermino: string;
-  statusAvaliacao: string;
   historicoEscolar: string;
   informacoesFamilia: string;
   contextoSociocultural: string;
@@ -141,9 +141,11 @@ export type AvaliacaoRelatorioData = {
 
 /**
  * PDF da Avaliação de Ingresso (HU-EST-001 v2.0, seção 11.4). `tipo`
- * "completo" soma a seção de Contribuições complementares por cima do
- * formulário padrão; "padrao" fica só com o formulário. Os blocos abaixo
- * seguem a estrutura da seção 11.2.
+ * "completo" soma o Encaminhamento recomendado e a seção de Contribuições
+ * complementares por cima do formulário padrão; "padrao" reproduz só o
+ * formulário oficial (que não tem Encaminhamento). Os blocos abaixo seguem a
+ * estrutura da seção 11.2. Status da avaliação não entra: é controle interno
+ * do sistema, não parte do formulário.
  */
 export function AvaliacaoRelatorioPdf({
   tipo,
@@ -166,6 +168,15 @@ export function AvaliacaoRelatorioPdf({
             <Campo rotulo="Município" valor={data.escolaMunicipio} />
           </View>
           <View style={styles.linha}>
+            <Campo
+              inteiro
+              rotulo="Equipe responsável pela avaliação"
+              valor={data.participantes
+                .map((participante) => `${participante.nome} (${participante.funcao})`)
+                .join(", ")}
+            />
+          </View>
+          <View style={styles.linha}>
             <Campo rotulo="Estudante" valor={data.estudanteNome} />
             <Campo
               rotulo="Data de nascimento / Idade"
@@ -178,7 +189,6 @@ export function AvaliacaoRelatorioPdf({
           </View>
           <View style={styles.linha}>
             <Campo rotulo="Data de início / término" valor={`${formatDate(data.dataInicio)} — ${formatDate(data.dataTermino)}`} />
-            <Campo rotulo="Status da avaliação" valor={STATUS_AVALIACAO_LABEL[data.statusAvaliacao] ?? data.statusAvaliacao} />
           </View>
         </Secao>
 
@@ -234,10 +244,12 @@ export function AvaliacaoRelatorioPdf({
           />
           <Text style={styles.rotulo}>Justificativa</Text>
           <Text style={styles.paragrafo}>{data.justificativaElegibilidade || "—"}</Text>
-          <Campo
-            rotulo="Encaminhamento recomendado"
-            valor={ENCAMINHAMENTO_LABEL[data.encaminhamentoRecomendado] ?? "—"}
-          />
+          {tipo === "completo" && (
+            <Campo
+              rotulo="Encaminhamento recomendado"
+              valor={encaminhamentoTexto(data.encaminhamentoRecomendado, data.escolaNomeOficial)}
+            />
+          )}
         </Secao>
 
         {data.orientacoesPai && (
@@ -300,7 +312,7 @@ export function AvaliacaoRelatorioPdf({
         )}
 
         <Text style={styles.rodape}>
-          Gerado pelo Pertency em {formatDate(new Date().toISOString())} — sem assinatura digital avançada.
+          Documento gerado pelo Pertency em {formatDate(new Date().toISOString())}.
         </Text>
       </Page>
     </Document>

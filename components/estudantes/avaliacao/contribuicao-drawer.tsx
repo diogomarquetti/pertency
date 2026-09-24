@@ -55,10 +55,25 @@ function DrawerBody({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const [profissionalId, setProfissionalId] = useState(
-    editing?.profissionalId ?? (travarProfissional ? (viewerId ?? "") : ""),
+  // A área da contribuição já vem com a área de atuação do profissional
+  // (Cadastro de Usuário), mas continua editável. Trocar de profissional só
+  // substitui a área se ela ainda for a sugerida — nunca a escolhida à mão.
+  function areaDoProfissional(id: string) {
+    return equipeElegivel.find((usuario) => usuario.id === id)?.areaAtuacao ?? "";
+  }
+
+  const profissionalInicial = editing?.profissionalId ?? (travarProfissional ? (viewerId ?? "") : "");
+  const [profissionalId, setProfissionalId] = useState(profissionalInicial);
+  const [areaContribuicao, setAreaContribuicao] = useState(
+    editing?.areaContribuicao ?? areaDoProfissional(profissionalInicial),
   );
-  const [areaContribuicao, setAreaContribuicao] = useState(editing?.areaContribuicao ?? "");
+
+  function handleProfissionalChange(id: string) {
+    if (!areaContribuicao || areaContribuicao === areaDoProfissional(profissionalId)) {
+      setAreaContribuicao(areaDoProfissional(id));
+    }
+    setProfissionalId(id);
+  }
   const [observacoes, setObservacoes] = useState(editing?.observacoes ?? "");
   const [implicacoesParticipacao, setImplicacoesParticipacao] = useState(
     editing?.implicacoesParticipacao ?? "",
@@ -122,14 +137,14 @@ function DrawerBody({
               {equipeElegivel.find((usuario) => usuario.id === viewerId)?.nome ?? "Você"}
             </div>
           ) : (
-            <Select value={profissionalId} onValueChange={setProfissionalId}>
+            <Select value={profissionalId} onValueChange={handleProfissionalChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione…" />
               </SelectTrigger>
               <SelectContent>
                 {equipeElegivel.map((usuario) => (
                   <SelectItem key={usuario.id} value={usuario.id}>
-                    {usuario.nome}
+                    {usuario.nome} · {usuario.funcao}
                   </SelectItem>
                 ))}
               </SelectContent>

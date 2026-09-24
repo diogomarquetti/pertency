@@ -42,6 +42,8 @@ type UserFormProps = {
         email: string;
         telefone: string;
         funcao: string;
+        areaAtuacao: string;
+        areaAtuacaoOutro: string;
         status: "ativo" | "inativo";
         emailLogin: string;
         criadoEm: string;
@@ -97,6 +99,8 @@ export function UserForm(props: UserFormProps) {
             email: props.defaultValues.email,
             telefone: props.defaultValues.telefone,
             funcao: props.defaultValues.funcao,
+            areaAtuacao: props.defaultValues.areaAtuacao,
+            areaAtuacaoOutro: props.defaultValues.areaAtuacaoOutro,
             status: props.defaultValues.status,
             emailLogin: props.defaultValues.emailLogin,
             // Precisa bater com o valor real inicial (não só `[]`) — senão
@@ -116,6 +120,8 @@ export function UserForm(props: UserFormProps) {
             email: "",
             telefone: "",
             funcao: "" as never,
+            areaAtuacao: "",
+            areaAtuacaoOutro: "",
             status: "ativo",
             emailLogin: "",
             vinculos: [],

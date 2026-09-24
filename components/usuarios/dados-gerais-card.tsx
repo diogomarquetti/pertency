@@ -1,4 +1,4 @@
-import type { Control } from "react-hook-form";
+import { useWatch, type Control } from "react-hook-form";
 
 import { Card } from "@/components/ui/card";
 import {
@@ -19,10 +19,19 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-import { FUNCAO_OPTIONS } from "@/app/(app)/usuarios/schema";
+import { AREA_ATUACAO_OPTIONS } from "@/lib/area-atuacao";
+import {
+  FUNCAO_OPTIONS,
+  funcaoExigeAreaAtuacao,
+  funcaoTemAreaAtuacao,
+} from "@/app/(app)/usuarios/schema";
 import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
 
 export function DadosGeraisCard({ control }: { control: Control<UpdateUsuarioValues> }) {
+  const [funcao, areaAtuacao] = useWatch({ control, name: ["funcao", "areaAtuacao"] });
+  const mostrarAreaAtuacao = funcaoTemAreaAtuacao(funcao);
+  const areaObrigatoria = funcaoExigeAreaAtuacao(funcao);
+
   return (
     <Card className="gap-4 p-[24px]">
       <div className="flex items-center justify-between">
@@ -117,6 +126,52 @@ export function DadosGeraisCard({ control }: { control: Control<UpdateUsuarioVal
             </FormItem>
           )}
         />
+
+        {mostrarAreaAtuacao && (
+          <FormField
+            control={control}
+            name="areaAtuacao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Área de atuação{" "}
+                  {!areaObrigatoria && <span className="font-normal text-muted">(opcional)</span>}
+                </FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a área" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {AREA_ATUACAO_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {mostrarAreaAtuacao && areaAtuacao === "outro" && (
+          <FormField
+            control={control}
+            name="areaAtuacaoOutro"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Qual área?</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex.: Nutrição" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
       </div>
     </Card>
   );

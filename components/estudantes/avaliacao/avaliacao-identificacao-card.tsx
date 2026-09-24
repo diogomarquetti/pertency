@@ -72,7 +72,10 @@ export function AvaliacaoIdentificacaoCard({
                         checked={field.value.includes(usuario.id)}
                         onCheckedChange={() => field.onChange(toggleValue(field.value, usuario.id))}
                       />
-                      {usuario.nome}
+                      <span>
+                        {usuario.nome}{" "}
+                        <span className="text-[13px] text-muted">· {usuario.funcao}</span>
+                      </span>
                     </label>
                   ))}
                 </>

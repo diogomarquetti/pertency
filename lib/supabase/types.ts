@@ -1985,6 +1985,8 @@ export type Database = {
       }
       usuarios: {
         Row: {
+          area_atuacao: string | null
+          area_atuacao_outro: string | null
           created_at: string
           created_by: string | null
           email: string
@@ -1999,6 +2001,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_atuacao?: string | null
+          area_atuacao_outro?: string | null
           created_at?: string
           created_by?: string | null
           email: string
@@ -2013,6 +2017,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_atuacao?: string | null
+          area_atuacao_outro?: string | null
           created_at?: string
           created_by?: string | null
           email?: string

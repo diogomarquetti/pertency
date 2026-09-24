@@ -1,16 +1,9 @@
 import { z } from "zod";
 
-export const AREA_CONTRIBUICAO_OPTIONS = [
-  { value: "servico_social", label: "Serviço Social" },
-  { value: "psicologia", label: "Psicologia" },
-  { value: "fonoaudiologia", label: "Fonoaudiologia" },
-  { value: "fisioterapia", label: "Fisioterapia" },
-  { value: "terapia_ocupacional", label: "Terapia Ocupacional" },
-  { value: "pedagogia", label: "Pedagogia" },
-  { value: "arte", label: "Arte" },
-  { value: "educacao_fisica", label: "Educação Física" },
-  { value: "outro", label: "Outro" },
-] as const;
+import { AREA_ATUACAO_OPTIONS } from "@/lib/area-atuacao";
+
+// Mesma lista da "Área de atuação" do Cadastro de Usuário — ver lib/area-atuacao.ts.
+export const AREA_CONTRIBUICAO_OPTIONS = AREA_ATUACAO_OPTIONS;
 
 export const contribuicaoSchema = z.object({
   profissionalId: z.string().min(1, "Selecione o profissional"),

@@ -78,6 +78,7 @@ Registrar as informações básicas do profissional e definir sua função no si
 | E-mail | E-mail | Sim | Contato, notificações e sugestão para login |
 | Telefone | Telefone com máscara | Conforme regra da escola | Contato institucional interno |
 | Função no sistema | Lista suspensa | Sim | Definir permissões automáticas |
+| Área de atuação | Lista suspensa (+ texto se "Outro") | Sim para Profissional Complementar; opcional para Administrador e Direção; não exibido nos demais perfis | Identificar a função real da pessoa em relatórios (ex.: "Fonoaudiologia" em vez de "Profissional Complementar"). Mesma lista da Área da Contribuição complementar. |
 | Status do usuário | Lista suspensa | Sim | Controlar se o usuário pode acessar o sistema |
 
 **Nome completo**

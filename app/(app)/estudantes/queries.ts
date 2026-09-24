@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
+import { funcaoExibicao } from "../usuarios/schema";
 import { DOCUMENTO_TIPOS_FIXOS } from "./documentos-schema";
 
 export type AuditoriaOrigem =
@@ -135,7 +136,13 @@ export async function getAuditoriaEstudante(estudanteId: string): Promise<Audito
   return linhas.sort((a, b) => (a.alteradoEm < b.alteradoEm ? 1 : -1));
 }
 
-export type UsuarioElegivel = { id: string; nome: string };
+export type UsuarioElegivel = {
+  id: string;
+  nome: string;
+  /** Mesma regra do relatório: área de atuação quando houver, senão o perfil. */
+  funcao: string;
+  areaAtuacao: string | null;
+};
 
 /** Usuários ativos da escola — pool da "Equipe responsável" da Avaliação de Ingresso. */
 export async function getEquipeElegivel(): Promise<UsuarioElegivel[]> {
@@ -143,11 +150,16 @@ export async function getEquipeElegivel(): Promise<UsuarioElegivel[]> {
 
   const { data } = await supabase
     .from("usuarios")
-    .select("id, nome_completo")
+    .select("id, nome_completo, funcao, area_atuacao, area_atuacao_outro")
     .eq("status", "ativo")
     .order("nome_completo");
 
-  return (data ?? []).map((usuario) => ({ id: usuario.id, nome: usuario.nome_completo }));
+  return (data ?? []).map((usuario) => ({
+    id: usuario.id,
+    nome: usuario.nome_completo,
+    funcao: funcaoExibicao(usuario),
+    areaAtuacao: usuario.area_atuacao,
+  }));
 }
 
 export type ReferenciaOfertas = {
