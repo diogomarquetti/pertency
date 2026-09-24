@@ -280,14 +280,15 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Forma de ingresso | Lista | Sim | Configuração | Avaliação de Ingresso, Transferência recebida, Rematrícula/continuidade quando aplicável, Outro. |
 | Oferta atual | Lista | Sim para ativo | Ofertas ativas | Educação Infantil, Ensino Fundamental ou EJA Fase I. |
 | Organização atual | Lista filtrada | Sim para ativo | Configuração da oferta | Exibir somente organizações compatíveis. |
-| Turno | Lista | Sim para ativo | Turnos ativos | Filtrar turmas por turno. |
+| Turno | Lista | Sim para ativo | Turnos ativos | Filtrar turmas por turno. Trocar organização ou turno limpa a turma se ela deixar de ser compatível. |
 | Turma | Lista filtrada | Sim para ativo | Cadastro de Turmas | Compatível com ano letivo, oferta, organização e turno. |
 | Número de matrícula | Texto | Condicional | Usuário | Permitir número utilizado no SERE ou outro número oficial; unicidade conforme regra da escola. |
 | Utiliza transporte escolar? | Sim/Não | Sim para ativo | Usuário | Utilizado em listagens e organização interna; não abre módulo de rota no MVP. |
-| Rede de origem | Lista | Condicional | Configuração | Ex.: municipal, estadual, particular, especializada, outra. |
-| Escola de origem | Texto/busca | Condicional | Usuário | Obrigatória quando houver instituição de origem. |
-| Histórico/forma de transferência | Lista/texto controlado | Condicional | Usuário | Ex.: primeira matrícula, escola regular, outra escola especializada, outro. |
-| Data de transferência/desligamento | Data | Condicional | Usuário | Obrigatória ao alterar para Transferido/Desligado. |
+| Forma de origem | Lista | Sim para ativo | Usuário | Primeira matrícula escolar; Transferência de escola da rede municipal / estadual / particular; Transferência de outra escola especializada; Outro. "Primeira matrícula" dispensa os três campos abaixo. |
+| Rede de origem | Texto | Não | Usuário | Exibido só quando a Forma de origem não é "Primeira matrícula". |
+| Escola de origem | Texto | Não | Usuário | Exibido só quando a Forma de origem não é "Primeira matrícula". |
+| Informações sobre a transferência | Texto curto | Não | Usuário | Antes "Histórico de transferência" (renomeado para não confundir com o documento Histórico Escolar). Exibido só quando a Forma de origem não é "Primeira matrícula". |
+| Data de transferência/desligamento | Data | Condicional | Usuário | Obrigatória ao alterar para Transferido, Desligado ou Inativo (bloco Encerramento). |
 | Motivo da transferência/desligamento | Lista | Condicional | Configuração | Obrigatório junto com a data. |
 | Observações escolares | Texto longo | Não | Usuário | Informações escolares relevantes, não repetir campos estruturados. |
 

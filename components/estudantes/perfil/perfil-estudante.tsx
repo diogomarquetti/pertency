@@ -64,7 +64,7 @@ export function PerfilEstudante({
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-muted">
                 {idade !== null && <span>Idade {idade} anos</span>}
                 {turmaAtualLabel && <span>Turma atual {turmaAtualLabel}</span>}
-                {matriculaInterna && <span>Matrícula interna {matriculaInterna}</span>}
+                {matriculaInterna && <span>Nº de matrícula {matriculaInterna}</span>}
                 {ingresso && <span>Ingresso {ingresso}</span>}
               </div>
             </div>

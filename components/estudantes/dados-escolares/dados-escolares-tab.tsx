@@ -2,7 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { salvarDadosEscolares } from "@/app/(app)/estudantes/dados-escolares-act
 import {
   DADOS_ESCOLARES_EMPTY_VALUES,
   dadosEscolaresSchema,
+  situacaoTemEncerramento,
   type DadosEscolaresValues,
 } from "@/app/(app)/estudantes/dados-escolares-schema";
 import type {
@@ -27,7 +28,8 @@ import type {
 } from "@/app/(app)/estudantes/queries";
 import { HistoricoVinculosCard } from "./historico-vinculos-card";
 import { ObservacoesCard } from "./observacoes-card";
-import { OrigemEncerramentoCard } from "./origem-encerramento-card";
+import { EncerramentoCard } from "./encerramento-card";
+import { OrigemCard } from "./origem-card";
 import { VinculoEscolarCard } from "./vinculo-escolar-card";
 
 export const DADOS_ESCOLARES_FORM_ID = "dados-escolares-form";
@@ -127,6 +129,22 @@ export function DadosEscolaresTab({
     },
   });
 
+  // Numeração dos blocos acompanha o que está visível: Encerramento só
+  // existe pra Transferido/Desligado/Inativo e empurra Observações pra 4.
+  const situacao = useWatch({ control: form.control, name: "situacao" });
+  const mostrarEncerramento = situacaoTemEncerramento(situacao);
+
+  // Campos obrigatórios ficam espalhados pelos blocos, longe do botão —
+  // o toast avisa mesmo com o campo fora da tela.
+  function onInvalid(errors: FieldErrors<DadosEscolaresValues>) {
+    const firstMessage = Object.values(errors).find(
+      (error) => typeof error?.message === "string",
+    )?.message as string | undefined;
+    if (firstMessage) {
+      toast.error(firstMessage);
+    }
+  }
+
   function onSubmit(values: DadosEscolaresValues) {
     startTransition(async () => {
       const result = await salvarDadosEscolares(estudanteId, values);
@@ -141,7 +159,7 @@ export function DadosEscolaresTab({
 
   return (
     <Form {...form}>
-      <form id={DADOS_ESCOLARES_FORM_ID} onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      <form id={DADOS_ESCOLARES_FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
         <fieldset disabled={!canEdit} className="contents">
           <div className="flex flex-col gap-[24px]">
             <VinculoEscolarCard
@@ -153,8 +171,9 @@ export function DadosEscolaresTab({
               anosLetivos={anosLetivos}
               vinculosEscolaresAnuais={vinculosEscolaresAnuais}
             />
-            <OrigemEncerramentoCard form={form} />
-            <ObservacoesCard form={form} />
+            <OrigemCard form={form} />
+            {mostrarEncerramento && <EncerramentoCard form={form} numero={3} />}
+            <ObservacoesCard form={form} numero={mostrarEncerramento ? 4 : 3} />
             <HistoricoVinculosCard vinculosEscolaresAnuais={vinculosEscolaresAnuais} />
 
             {canEdit && (

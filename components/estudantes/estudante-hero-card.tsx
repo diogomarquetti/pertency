@@ -164,7 +164,7 @@ export function EstudanteHeroCard({
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
             <Badge variant={SITUACAO_BADGE[situacao]}>{SITUACAO_LABEL[situacao] ?? situacao}</Badge>
             <span>· Turma: {turmaAtualLabel || "—"}</span>
-            <span>· Matrícula: {matriculaInterna || "—"}</span>
+            <span>· Nº de matrícula: {matriculaInterna || "—"}</span>
             {podeEditarFoto && fotoUrl && (
               <button
                 type="button"

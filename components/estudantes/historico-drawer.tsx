@@ -80,7 +80,7 @@ const CAMPO_META: Record<string, { icon: LucideIcon; label: string }> = {
   organizacao_atual_id: { icon: Building2, label: "Organização" },
   turno_id: { icon: Building2, label: "Turno" },
   turma_id: { icon: BookOpen, label: "Turma" },
-  matricula_interna: { icon: BookOpen, label: "Matrícula interna" },
+  matricula_interna: { icon: BookOpen, label: "Número de matrícula" },
   documento_status: { icon: FileText, label: "Status do documento" },
   documento_removido: { icon: FileText, label: "Documento removido" },
   contribuicao_observacoes: { icon: Stethoscope, label: "Observações da contribuição" },

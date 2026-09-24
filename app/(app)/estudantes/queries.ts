@@ -365,6 +365,7 @@ export async function getDocumentosEstudante(estudanteId: string): Promise<Docum
 export type DadosEscolares = {
   dataIngresso: string;
   formaIngresso: string;
+  formaOrigem: string;
   redeOrigem: string;
   escolaOrigem: string;
   historicoTransferencia: string;
@@ -385,7 +386,7 @@ export async function getDadosEscolares(estudanteId: string): Promise<DadosEscol
   const { data } = await supabase
     .from("dados_escolares")
     .select(
-      `data_ingresso, forma_ingresso, rede_origem, escola_origem, historico_transferencia,
+      `data_ingresso, forma_ingresso, forma_origem, rede_origem, escola_origem, historico_transferencia,
        data_encerramento, motivo_encerramento, observacoes`,
     )
     .eq("estudante_id", estudanteId)
@@ -396,6 +397,7 @@ export async function getDadosEscolares(estudanteId: string): Promise<DadosEscol
   return {
     dataIngresso: data.data_ingresso ?? "",
     formaIngresso: data.forma_ingresso ?? "",
+    formaOrigem: data.forma_origem ?? "",
     redeOrigem: data.rede_origem ?? "",
     escolaOrigem: data.escola_origem ?? "",
     historicoTransferencia: data.historico_transferencia ?? "",
@@ -432,12 +434,19 @@ export async function getAnosLetivosReferencia(): Promise<AnoLetivoOption[]> {
   return data ?? [];
 }
 
-export type TurmaOption = { id: string; nome: string; ofertaId: string; anoLetivoId: string };
+export type TurmaOption = {
+  id: string;
+  nome: string;
+  ofertaId: string;
+  organizacaoId: string;
+  turnoId: string;
+  anoLetivoId: string;
+};
 
 /**
  * Turmas ativas da escola — trazidas todas de uma vez (mesmo padrão de
  * `organizacoes`/`matrizes` em getReferenciaTurmaForm) e filtradas no client
- * por oferta atual + ano letivo do vínculo sendo editado (CA22/CA23 da
+ * por oferta, organização, turno e ano letivo do vínculo sendo editado (CA22/CA23 da
  * HU-EST-001 v2.0: turma compatível com oferta, organização, turno **e ano
  * letivo**).
  */
@@ -446,7 +455,7 @@ export async function getTurmasReferencia(): Promise<TurmaOption[]> {
 
   const { data } = await supabase
     .from("turmas")
-    .select("id, nome, oferta_id, ano_letivo_id")
+    .select("id, nome, oferta_id, etapa_ciclo_id, turno_id, ano_letivo_id")
     .eq("status", "ativa")
     .order("nome");
 
@@ -454,6 +463,8 @@ export async function getTurmasReferencia(): Promise<TurmaOption[]> {
     id: turma.id as string,
     nome: turma.nome as string,
     ofertaId: turma.oferta_id as string,
+    organizacaoId: turma.etapa_ciclo_id as string,
+    turnoId: turma.turno_id as string,
     anoLetivoId: turma.ano_letivo_id as string,
   }));
 }

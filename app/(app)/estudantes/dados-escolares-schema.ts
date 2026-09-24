@@ -13,6 +13,20 @@ export const FORMA_INGRESSO_OPTIONS = [
   { value: "outro", label: "Outro" },
 ] as const;
 
+export const FORMA_ORIGEM_OPTIONS = [
+  { value: "primeira_matricula", label: "Primeira matrícula escolar" },
+  { value: "transferencia_municipal", label: "Transferência de escola da rede municipal" },
+  { value: "transferencia_estadual", label: "Transferência de escola da rede estadual" },
+  { value: "transferencia_particular", label: "Transferência de escola particular" },
+  { value: "transferencia_especializada", label: "Transferência de outra escola especializada" },
+  { value: "outro", label: "Outro" },
+] as const;
+
+/** Rede/Escola de origem e Informações sobre a transferência só existem quando houve escola anterior. */
+export function formaOrigemTemDetalhes(formaOrigem: string | undefined) {
+  return !!formaOrigem && formaOrigem !== "primeira_matricula";
+}
+
 // A história pede lista (origem "Configuração"), mas não enumera as opções —
 // lista provisória até existir um módulo de Configurações que a parametrize
 // por escola (mesmo tratamento dado a FORMA_INGRESSO_OPTIONS).
@@ -23,6 +37,14 @@ export const MOTIVO_ENCERRAMENTO_OPTIONS = [
   { value: "decisao_pedagogica", label: "Decisão pedagógica da escola" },
   { value: "outro", label: "Outro" },
 ] as const;
+
+// Situações que encerram o vínculo — exibem o bloco Encerramento, com data e
+// motivo obrigatórios.
+const SITUACOES_COM_ENCERRAMENTO = new Set(["transferido", "desligado", "inativo"]);
+
+export function situacaoTemEncerramento(situacao: string) {
+  return SITUACOES_COM_ENCERRAMENTO.has(situacao);
+}
 
 // Campos deste objeto se dividem em dois destinos de persistência (ver
 // dados-escolares-actions.ts): fatos únicos da trajetória (situacao,
@@ -46,6 +68,7 @@ const dadosEscolaresFields = {
   turmaId: z.string().optional().or(z.literal("")),
   matriculaInterna: z.string().optional().or(z.literal("")),
   utilizaTransporte: z.boolean(),
+  formaOrigem: z.string().optional().or(z.literal("")),
   redeOrigem: z.string().optional().or(z.literal("")),
   escolaOrigem: z.string().optional().or(z.literal("")),
   historicoTransferencia: z.string().optional().or(z.literal("")),
@@ -55,10 +78,10 @@ const dadosEscolaresFields = {
 };
 
 // Regra 3 da história: estudante Ativo precisa de oferta atual, organização
-// atual, turno, turma, matrícula interna e data de matrícula efetiva.
-// Regra do bloco "Ensino Fundamental": etapa do ciclo obrigatória nessa
-// oferta. Bloco "Encerramento": obrigatório quando a situação é
-// transferido/desligado.
+// atual, turno, turma, número de matrícula (coluna `matricula_interna`) e
+// data de matrícula efetiva, forma de origem. Regra do bloco "Ensino Fundamental": etapa do
+// ciclo obrigatória nessa oferta. Bloco "Encerramento": obrigatório quando a
+// situação é transferido/desligado/inativo.
 export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superRefine((data, ctx) => {
   if (data.situacao === "ativo") {
     const camposObrigatorios: [keyof typeof dadosEscolaresFields, string][] = [
@@ -67,8 +90,9 @@ export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superR
       ["organizacaoAtualId", "Selecione a organização atual"],
       ["turnoId", "Selecione o turno"],
       ["turmaId", "Selecione a turma"],
-      ["matriculaInterna", "Informe a matrícula interna"],
+      ["matriculaInterna", "Informe o número de matrícula"],
       ["dataMatriculaEfetiva", "Informe a data de matrícula efetiva"],
+      ["formaOrigem", "Selecione a forma de origem"],
     ];
     for (const [campo, mensagem] of camposObrigatorios) {
       if (!data[campo]) {
@@ -81,7 +105,7 @@ export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superR
     ctx.addIssue({ code: "custom", path: ["etapaDoCiclo"], message: "Selecione a etapa do ciclo" });
   }
 
-  if (data.situacao === "transferido" || data.situacao === "desligado") {
+  if (situacaoTemEncerramento(data.situacao)) {
     if (!data.dataEncerramento) {
       ctx.addIssue({ code: "custom", path: ["dataEncerramento"], message: "Informe a data de encerramento" });
     }
@@ -117,6 +141,7 @@ export const DADOS_ESCOLARES_EMPTY_VALUES: DadosEscolaresValues = {
   turmaId: "",
   matriculaInterna: "",
   utilizaTransporte: false,
+  formaOrigem: "",
   redeOrigem: "",
   escolaOrigem: "",
   historicoTransferencia: "",

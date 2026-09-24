@@ -48,7 +48,7 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
             <TableRow>
               <TableHead>Estudante</TableHead>
               <TableHead>Situação</TableHead>
-              <TableHead>Matrícula interna</TableHead>
+              <TableHead>Nº de matrícula</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>

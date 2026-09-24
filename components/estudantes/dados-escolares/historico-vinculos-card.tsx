@@ -35,7 +35,7 @@ export function HistoricoVinculosCard({
               {vinculo.etapaDoCiclo ? ` — ${vinculo.etapaDoCiclo}` : ""}
               {vinculo.turmaNome ? ` · Turma ${vinculo.turmaNome}` : ""}
               {vinculo.turnoNome ? ` · ${vinculo.turnoNome}` : ""}
-              {vinculo.matriculaInterna ? ` · Matrícula ${vinculo.matriculaInterna}` : ""}
+              {vinculo.matriculaInterna ? ` · Nº de matrícula ${vinculo.matriculaInterna}` : ""}
             </span>
           </div>
         ))}

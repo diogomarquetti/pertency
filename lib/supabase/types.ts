@@ -604,6 +604,7 @@ export type Database = {
           escola_origem: string | null
           estudante_id: string
           forma_ingresso: string | null
+          forma_origem: string | null
           historico_transferencia: string | null
           id: string
           motivo_encerramento: string | null
@@ -620,6 +621,7 @@ export type Database = {
           escola_origem?: string | null
           estudante_id: string
           forma_ingresso?: string | null
+          forma_origem?: string | null
           historico_transferencia?: string | null
           id?: string
           motivo_encerramento?: string | null
@@ -636,6 +638,7 @@ export type Database = {
           escola_origem?: string | null
           estudante_id?: string
           forma_ingresso?: string | null
+          forma_origem?: string | null
           historico_transferencia?: string | null
           id?: string
           motivo_encerramento?: string | null

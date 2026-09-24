@@ -4,20 +4,28 @@ import { revalidatePath } from "next/cache";
 
 import { requireEstudanteWriteProfile } from "@/lib/supabase/require-admin-profile";
 
-import { dadosEscolaresSchema, type DadosEscolaresValues } from "./dados-escolares-schema";
+import {
+  dadosEscolaresSchema,
+  formaOrigemTemDetalhes,
+  type DadosEscolaresValues,
+} from "./dados-escolares-schema";
 
 // `situacao` não vira coluna aqui: continua vivendo em `estudantes`
 // (regravada à parte, abaixo). Só os fatos "de uma vez" da trajetória —
-// nada que dependa do ano letivo.
+// nada que dependa do ano letivo. Detalhes da origem (rede, escola,
+// informações) são limpos quando não houve escola anterior — trocar pra
+// "Primeira matrícula" não deixa dado órfão escondido na tela.
 function toDadosEscolaresRow(escolaId: string, estudanteId: string, data: DadosEscolaresValues) {
+  const temDetalhesOrigem = formaOrigemTemDetalhes(data.formaOrigem);
   return {
     estudante_id: estudanteId,
     escola_id: escolaId,
     data_ingresso: data.dataIngresso || null,
     forma_ingresso: data.formaIngresso || null,
-    rede_origem: data.redeOrigem || null,
-    escola_origem: data.escolaOrigem || null,
-    historico_transferencia: data.historicoTransferencia || null,
+    forma_origem: data.formaOrigem || null,
+    rede_origem: temDetalhesOrigem ? data.redeOrigem || null : null,
+    escola_origem: temDetalhesOrigem ? data.escolaOrigem || null : null,
+    historico_transferencia: temDetalhesOrigem ? data.historicoTransferencia || null : null,
     data_encerramento: data.dataEncerramento || null,
     motivo_encerramento: data.motivoEncerramento || null,
     observacoes: data.observacoes || null,
