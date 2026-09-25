@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Eye, FileText, Loader2, Plus } from "lucide-react";
+import { AlertTriangle, Eye, Loader2, Plus } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { refreshAndBlur } from "@/lib/utils";
@@ -138,19 +138,16 @@ export function DocumentosTab({
           })}
 
           <div className="flex items-center justify-between gap-3 border-b border-line py-[14px] last:border-b-0">
-            <div className="flex items-center gap-3">
-              <FileText size={18} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
-              <div>
-                <div className="font-semibold text-ink">Avaliação de Ingresso</div>
-                <div className="mt-[2px] text-[12.5px] text-muted">
-                  {avaliacaoDoc
-                    ? `${avaliacaoDoc.arquivoNome ?? "PDF gerado"}${
-                        avaliacaoDoc.dataEnvio
-                          ? ` · gerado em ${dateFormatter.format(new Date(avaliacaoDoc.dataEnvio))}`
-                          : ""
-                      }`
-                    : "Gerada pelo sistema — ainda não gerada. Use \"Relatórios (PDF)\" na Aba 2."}
-                </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-ink">Avaliação de Ingresso</div>
+              <div className="mt-[2px] text-[12.5px] text-muted">
+                {avaliacaoDoc
+                  ? `${avaliacaoDoc.arquivoNome ?? "PDF gerado"}${
+                      avaliacaoDoc.dataEnvio
+                        ? ` · gerado em ${dateFormatter.format(new Date(avaliacaoDoc.dataEnvio))}`
+                        : ""
+                    }`
+                  : "Gerada pelo sistema — ainda não gerada. Use \"Relatórios (PDF)\" na Aba 2."}
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
