@@ -6,9 +6,9 @@ import type { PerfilEstudanteResumo } from "@/app/(app)/estudantes/queries";
 
 function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-line py-[10px] first:border-t-0 first:pt-0">
+    <div className="flex flex-col gap-[2px] border-t border-line py-[10px] first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <span className="text-[13px] text-muted">{rotulo}</span>
-      <span className="text-right text-[13.5px] font-semibold text-ink">{valor || "—"}</span>
+      <span className="text-[13.5px] font-semibold text-ink sm:text-right">{valor || "—"}</span>
     </div>
   );
 }
@@ -26,7 +26,7 @@ export function DadosContatoCard({ estudante }: { estudante: PerfilEstudanteResu
 
   return (
     <Card className="gap-3 p-[24px]">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="flex items-center gap-2 text-highlight text-ink">
           <User size={16} strokeWidth={2} className="text-muted" aria-hidden="true" />
           Dados e contato

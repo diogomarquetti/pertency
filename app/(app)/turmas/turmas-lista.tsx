@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, Pencil, Plus, Search } from "lucide-react";
+import { ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
 
 import { toast } from "@/lib/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ListCard,
+  ListCardAction,
+  ListCardLink,
+  ListCardList,
+} from "@/components/ui/list-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { OFERTA_OPTIONS, STATUS_OPTIONS } from "./schema";
@@ -84,8 +90,8 @@ export function TurmasLista({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Search
               size={16}
               strokeWidth={2}
@@ -96,13 +102,13 @@ export function TurmasLista({
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
               placeholder="Buscar por nome da turma"
-              className="w-[340px] pl-[38px]"
+              className="w-full pl-[38px] sm:w-[340px]"
               aria-label="Buscar turma"
             />
           </div>
 
           <Select value={ofertaFiltro} onValueChange={setOfertaFiltro}>
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-full sm:w-[220px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -127,53 +133,73 @@ export function TurmasLista({
       </div>
 
       {turmasFiltradas.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Turma</TableHead>
-              <TableHead>Oferta</TableHead>
-              <TableHead>Turno</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {turmasFiltradas.map((turma) => (
-              <TableRow key={turma.id}>
-                <TableCell>
-                  <div className="font-semibold text-ink">{turma.nome}</div>
-                  <div className="text-[12.5px] text-muted">{turma.anoLetivo}</div>
-                </TableCell>
-                <TableCell>{turma.ofertaNome}</TableCell>
-                <TableCell>{turma.turnoNome}</TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_BADGE[turma.status]}>{STATUS_LABEL[turma.status]}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="secondary" size="sm" icon asChild>
-                          <Link
-                            href={`/turmas/${turma.id}/editar`}
-                            aria-label={canEdit ? "Editar turma" : "Visualizar turma"}
-                          >
-                            {canEdit ? (
-                              <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                            ) : (
-                              <Eye size={14} strokeWidth={2} aria-hidden="true" />
-                            )}
-                          </Link>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </TableCell>
+        <>
+          <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Turma</TableHead>
+                <TableHead>Oferta</TableHead>
+                <TableHead>Turno</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
               </TableRow>
+            </TableHeader>
+            <TableBody>
+              {turmasFiltradas.map((turma) => (
+                <TableRow key={turma.id}>
+                  <TableCell>
+                    <div className="font-semibold text-ink">{turma.nome}</div>
+                    <div className="text-[12.5px] text-muted">{turma.anoLetivo}</div>
+                  </TableCell>
+                  <TableCell>{turma.ofertaNome}</TableCell>
+                  <TableCell>{turma.turnoNome}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_BADGE[turma.status]}>{STATUS_LABEL[turma.status]}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="secondary" size="sm" icon asChild>
+                            <Link
+                              href={`/turmas/${turma.id}/editar`}
+                              aria-label={canEdit ? "Editar turma" : "Visualizar turma"}
+                            >
+                              {canEdit ? (
+                                <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                              ) : (
+                                <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                              )}
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          </div>
+          <ListCardList className="md:hidden">
+            {turmasFiltradas.map((turma) => (
+              <ListCard key={turma.id}>
+                <div className="min-w-0 flex-1">
+                  <ListCardLink href={`/turmas/${turma.id}/editar`}>{turma.nome}</ListCardLink>
+                  <div className="truncate text-[12.5px] text-muted">
+                    {turma.ofertaNome} · {turma.turnoNome} · {turma.anoLetivo}
+                  </div>
+                  <Badge variant={STATUS_BADGE[turma.status]} className="mt-1">
+                    {STATUS_LABEL[turma.status]}
+                  </Badge>
+                </div>
+                <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+              </ListCard>
             ))}
-          </TableBody>
-        </Table>
+          </ListCardList>
+        </>
       ) : turmas.length === 0 ? (
         <div className="rounded-md border border-line bg-surface px-[24px] py-[48px] text-center">
           <p className="text-sm font-medium text-ink">Nenhuma turma cadastrada ainda</p>

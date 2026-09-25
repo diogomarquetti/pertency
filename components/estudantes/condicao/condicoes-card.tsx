@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ListCard, ListCardAction, ListCardList } from "@/components/ui/list-card";
 import {
   Table,
   TableBody,
@@ -68,7 +69,7 @@ export function CondicoesCard({
 
   return (
     <Card className="gap-3 p-[24px]">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="flex items-baseline gap-2 text-highlight text-ink">
           <span className="text-brand">1.</span> Condições e documentos relacionados
         </h2>
@@ -83,60 +84,107 @@ export function CondicoesCard({
       {condicoes.length === 0 ? (
         <p className="text-[13px] text-muted">Nenhuma condição registrada ainda.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Condição</TableHead>
-              <TableHead>Documento vinculado</TableHead>
-              <TableHead>Observações</TableHead>
-              {canEdit && <TableHead className="text-right">Ações</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {condicoes.map((condicao) => (
-              <TableRow key={condicao.id}>
-                <TableCell className="font-semibold">
-                  {TIPO_LABEL[condicao.tipoCondicao] ?? condicao.tipoCondicao}
-                </TableCell>
-                <TableCell>{condicao.documentoLabel || "—"}</TableCell>
-                {/* Texto completo (e CID, quando houver) fica no drawer de edição. */}
-                <TableCell className="max-w-[360px]">
-                  <span className="line-clamp-2" title={condicao.observacoes || undefined}>
-                    {condicao.observacoes || "—"}
-                  </span>
-                </TableCell>
-                {canEdit && (
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        icon
-                        aria-label="Editar condição"
-                        onClick={() => handleEditar(condicao)}
-                        disabled={isPending}
-                      >
-                        <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        icon
-                        aria-label="Remover condição"
-                        onClick={() => handleRemover(condicao.id)}
-                        disabled={isPending}
-                      >
-                        <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                )}
+        <>
+          <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Condição</TableHead>
+                <TableHead>Documento vinculado</TableHead>
+                <TableHead>Observações</TableHead>
+                {canEdit && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
+            </TableHeader>
+            <TableBody>
+              {condicoes.map((condicao) => (
+                <TableRow key={condicao.id}>
+                  <TableCell className="font-semibold">
+                    {TIPO_LABEL[condicao.tipoCondicao] ?? condicao.tipoCondicao}
+                  </TableCell>
+                  <TableCell>{condicao.documentoLabel || "—"}</TableCell>
+                  {/* Texto completo (e CID, quando houver) fica no drawer de edição. */}
+                  <TableCell className="max-w-[360px]">
+                    <span className="line-clamp-2" title={condicao.observacoes || undefined}>
+                      {condicao.observacoes || "—"}
+                    </span>
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon
+                          aria-label="Editar condição"
+                          onClick={() => handleEditar(condicao)}
+                          disabled={isPending}
+                        >
+                          <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon
+                          aria-label="Remover condição"
+                          onClick={() => handleRemover(condicao.id)}
+                          disabled={isPending}
+                        >
+                          <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          </div>
+          <ListCardList className="md:hidden">
+            {condicoes.map((condicao) => (
+              <ListCard key={condicao.id} className="items-start hover:bg-surface">
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-ink">
+                    {TIPO_LABEL[condicao.tipoCondicao] ?? condicao.tipoCondicao}
+                  </div>
+                  <div className="text-[12.5px] text-muted">
+                    Documento: {condicao.documentoLabel || "—"}
+                  </div>
+                  {condicao.observacoes && (
+                    <p className="mt-1 line-clamp-2 text-[13px] text-ink">{condicao.observacoes}</p>
+                  )}
+                </div>
+                {canEdit && (
+                  <ListCardAction>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      icon
+                      aria-label="Editar condição"
+                      onClick={() => handleEditar(condicao)}
+                      disabled={isPending}
+                    >
+                      <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      icon
+                      aria-label="Remover condição"
+                      onClick={() => handleRemover(condicao.id)}
+                      disabled={isPending}
+                    >
+                      <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
+                    </Button>
+                  </ListCardAction>
+                )}
+              </ListCard>
             ))}
-          </TableBody>
-        </Table>
+          </ListCardList>
+        </>
       )}
 
       <CondicaoDrawer

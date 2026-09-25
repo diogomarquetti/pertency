@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
-import { PageActionsProvider } from "@/components/layout/page-actions-context";
+import { PageActionButtons } from "@/components/layout/page-action-buttons";
+import { PageActionsProvider, usePageActions } from "@/components/layout/page-actions-context";
 import { PageTitleProvider } from "@/components/layout/page-title-context";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -47,14 +48,33 @@ export function AppShell({
               userEmail={userEmail}
               onMenuClick={() => setMobileNavOpen(true)}
             />
-            <main className="min-h-0 flex-1 overflow-y-auto bg-bg px-4 py-4 md:px-6 md:py-6">
+            <main className="min-h-0 flex-1 overflow-y-auto bg-bg px-2 py-4 md:px-6 md:py-6">
               {children}
             </main>
+            <MobileActionBar />
           </div>
         </div>
 
         <Toaster />
       </PageActionsProvider>
     </PageTitleProvider>
+  );
+}
+
+/**
+ * No mobile, o par Cancelar/Salvar da página sai da topbar e fica numa
+ * barra no rodapé (irmã do <main>, não `fixed` — o <main> encolhe e o
+ * conteúdo nunca fica escondido atrás dela).
+ */
+function MobileActionBar() {
+  const actions = usePageActions();
+  if (!actions) return null;
+
+  return (
+    <PageActionButtons
+      actions={actions}
+      className="shrink-0 border-t border-line bg-surface px-2 pt-[12px] pb-[max(12px,env(safe-area-inset-bottom))] md:hidden"
+      buttonClassName="flex-1"
+    />
   );
 }

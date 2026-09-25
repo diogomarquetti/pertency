@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, Pencil, Search, UserPlus } from "lucide-react";
+import { ChevronRight, Eye, Pencil, Search, UserPlus } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { toast } from "@/lib/use-toast";
@@ -26,6 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ListCard,
+  ListCardAction,
+  ListCardLink,
+  ListCardList,
+} from "@/components/ui/list-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { FUNCAO_OPTIONS } from "./schema";
@@ -87,8 +93,8 @@ export function UsuariosLista({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Search
               size={16}
               strokeWidth={2}
@@ -99,13 +105,13 @@ export function UsuariosLista({
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
               placeholder="Buscar por nome ou e-mail"
-              className="w-[340px] pl-[38px]"
+              className="w-full pl-[38px] sm:w-[340px]"
               aria-label="Buscar usuário"
             />
           </div>
 
           <Select value={funcaoFiltro} onValueChange={setFuncaoFiltro}>
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-full sm:w-[220px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -130,69 +136,100 @@ export function UsuariosLista({
       </div>
 
       {usuariosFiltrados.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Função</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {usuariosFiltrados.map((usuario) => (
-              <TableRow key={usuario.id}>
-                <TableCell>
-                  <div className="flex items-center gap-[10px]">
-                    <Avatar size="sm">
-                      {usuario.foto_url && (
-                        <AvatarImage src={usuario.foto_url} alt={usuario.nome_completo} />
-                      )}
-                      <AvatarFallback>{getInitials(usuario.nome_completo)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold text-ink">
-                        {usuario.nome_completo}
-                      </div>
-                      <div className="text-[12.5px] text-muted">{usuario.email}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="brand" dot={false}>
-                    {FUNCAO_LABEL[usuario.funcao] ?? usuario.funcao}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={usuario.status === "ativo" ? "success" : "neutral"}>
-                    {usuario.status === "ativo" ? "Ativo" : "Inativo"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="secondary" size="sm" icon asChild>
-                          <Link
-                            href={`/usuarios/${usuario.id}/editar`}
-                            aria-label={canEdit ? "Editar usuário" : "Visualizar usuário"}
-                          >
-                            {canEdit ? (
-                              <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                            ) : (
-                              <Eye size={14} strokeWidth={2} aria-hidden="true" />
-                            )}
-                          </Link>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </TableCell>
+        <>
+          <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Usuário</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
               </TableRow>
+            </TableHeader>
+            <TableBody>
+              {usuariosFiltrados.map((usuario) => (
+                <TableRow key={usuario.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-[10px]">
+                      <Avatar size="sm">
+                        {usuario.foto_url && (
+                          <AvatarImage src={usuario.foto_url} alt={usuario.nome_completo} />
+                        )}
+                        <AvatarFallback>{getInitials(usuario.nome_completo)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold text-ink">
+                          {usuario.nome_completo}
+                        </div>
+                        <div className="text-[12.5px] text-muted">{usuario.email}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="brand" dot={false}>
+                      {FUNCAO_LABEL[usuario.funcao] ?? usuario.funcao}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={usuario.status === "ativo" ? "success" : "neutral"}>
+                      {usuario.status === "ativo" ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="secondary" size="sm" icon asChild>
+                            <Link
+                              href={`/usuarios/${usuario.id}/editar`}
+                              aria-label={canEdit ? "Editar usuário" : "Visualizar usuário"}
+                            >
+                              {canEdit ? (
+                                <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                              ) : (
+                                <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                              )}
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          </div>
+          <ListCardList className="md:hidden">
+            {usuariosFiltrados.map((usuario) => (
+              <ListCard key={usuario.id}>
+                <Avatar size="md">
+                  {usuario.foto_url && (
+                    <AvatarImage src={usuario.foto_url} alt={usuario.nome_completo} />
+                  )}
+                  <AvatarFallback>{getInitials(usuario.nome_completo)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <ListCardLink href={`/usuarios/${usuario.id}/editar`}>
+                    {usuario.nome_completo}
+                  </ListCardLink>
+                  <div className="truncate text-[12.5px] text-muted">{usuario.email}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    <Badge variant="brand" dot={false}>
+                      {FUNCAO_LABEL[usuario.funcao] ?? usuario.funcao}
+                    </Badge>
+                    <Badge variant={usuario.status === "ativo" ? "success" : "neutral"}>
+                      {usuario.status === "ativo" ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                </div>
+                <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+              </ListCard>
             ))}
-          </TableBody>
-        </Table>
+          </ListCardList>
+        </>
       ) : usuarios.length === 0 ? (
         <div className="rounded-md border border-line bg-surface px-[24px] py-[48px] text-center">
           <p className="text-sm font-medium text-ink">

@@ -32,7 +32,7 @@ export function ConfiguracaoCard({
         </div>
         <div className="flex min-w-0 flex-col gap-[4px]">
           <p className="text-[12.5px] font-semibold tracking-[0.02em] text-muted uppercase">{tipo}</p>
-          <h2 className="truncate text-highlight text-ink">{titulo}</h2>
+          <h2 className="line-clamp-2 text-highlight break-words text-ink">{titulo}</h2>
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-[13.5px] text-muted">{descricao}</p>
             {status && <Badge variant={status.variant}>{status.label}</Badge>}

@@ -36,7 +36,7 @@ export function IdentificacaoCard({ form }: { form: UseFormReturn<UpdateEstudant
 
   return (
     <Card className="gap-4 p-[24px]">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-baseline gap-2 text-highlight text-ink">
           <span className="text-brand">1.</span> Identificação
         </h2>
@@ -44,10 +44,10 @@ export function IdentificacaoCard({ form }: { form: UseFormReturn<UpdateEstudant
           control={form.control}
           name="situacao"
           render={({ field }) => (
-            <FormItem className="space-y-0">
+            <FormItem className="w-full space-y-0 sm:w-auto">
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger className="w-full sm:w-[220px]">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>

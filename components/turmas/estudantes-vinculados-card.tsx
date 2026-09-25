@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ExternalLink, Info } from "lucide-react";
+import { ChevronRight, ExternalLink, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ListCard, ListCardLink, ListCardList } from "@/components/ui/list-card";
 import {
   Table,
   TableBody,
@@ -43,41 +44,63 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
       {estudantes.length === 0 ? (
         <p className="text-sm text-muted">Nenhum estudante vinculado a esta turma ainda.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Estudante</TableHead>
-              <TableHead>Situação</TableHead>
-              <TableHead>Nº de matrícula</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Estudante</TableHead>
+                <TableHead>Situação</TableHead>
+                <TableHead>Nº de matrícula</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {estudantes.map((estudante) => (
+                <TableRow key={estudante.estudanteId}>
+                  <TableCell className="font-semibold text-ink">{estudante.nome}</TableCell>
+                  <TableCell>
+                    <Badge variant={SITUACAO_BADGE[estudante.situacao]}>
+                      {SITUACAO_LABEL[estudante.situacao] ?? estudante.situacao}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{estudante.matriculaInterna || "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Button variant="secondary" size="sm" icon asChild>
+                        <Link
+                          href={`/estudantes/${estudante.estudanteId}/editar`}
+                          aria-label={`Ver cadastro de ${estudante.nome}`}
+                        >
+                          <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          </div>
+          <ListCardList className="md:hidden">
             {estudantes.map((estudante) => (
-              <TableRow key={estudante.estudanteId}>
-                <TableCell className="font-semibold text-ink">{estudante.nome}</TableCell>
-                <TableCell>
-                  <Badge variant={SITUACAO_BADGE[estudante.situacao]}>
+              <ListCard key={estudante.estudanteId}>
+                <div className="min-w-0 flex-1">
+                  <ListCardLink href={`/estudantes/${estudante.estudanteId}/editar`}>
+                    {estudante.nome}
+                  </ListCardLink>
+                  <div className="text-[12.5px] text-muted">
+                    Nº de matrícula: {estudante.matriculaInterna || "—"}
+                  </div>
+                  <Badge variant={SITUACAO_BADGE[estudante.situacao]} className="mt-1">
                     {SITUACAO_LABEL[estudante.situacao] ?? estudante.situacao}
                   </Badge>
-                </TableCell>
-                <TableCell>{estudante.matriculaInterna || "—"}</TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <Button variant="secondary" size="sm" icon asChild>
-                      <Link
-                        href={`/estudantes/${estudante.estudanteId}/editar`}
-                        aria-label={`Ver cadastro de ${estudante.nome}`}
-                      >
-                        <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
-                      </Link>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                </div>
+                <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+              </ListCard>
             ))}
-          </TableBody>
-        </Table>
+          </ListCardList>
+        </>
       )}
 
       <div className="flex gap-[10px] rounded-md bg-brand-tint px-[14px] py-[12px] text-brand-ink">

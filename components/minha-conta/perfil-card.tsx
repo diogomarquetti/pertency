@@ -125,7 +125,7 @@ export function PerfilCard({
         </FileUpload>
 
         <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-          <h2 className="truncate text-highlight text-ink">{perfil.nomeCompleto}</h2>
+          <h2 className="line-clamp-2 text-highlight break-words text-ink">{perfil.nomeCompleto}</h2>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-muted">
             <span className="flex min-w-0 items-center gap-[6px]">
               <Mail size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
@@ -155,7 +155,7 @@ export function PerfilCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 gap-2 lg:flex-col">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:shrink-0 lg:flex-col">
         <Button type="button" variant="secondary" size="sm" onClick={onEditarDados}>
           <Pencil size={14} strokeWidth={2} aria-hidden="true" />
           Editar dados pessoais

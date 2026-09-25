@@ -68,7 +68,7 @@ export function EstudanteHeroCard({
         onFile={enviar}
       />
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-[160px]">
         <h1 className="truncate text-highlight text-ink">{titulo}</h1>
 
         {mode === "edit" && situacao && (

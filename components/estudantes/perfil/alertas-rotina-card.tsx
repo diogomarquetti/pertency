@@ -66,7 +66,7 @@ export function AlertasRotinaCard({
 
   return (
     <Card className="gap-3 p-[24px]">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="flex items-center gap-2 text-highlight text-ink">
           <AlertTriangle size={16} strokeWidth={2} className="text-warning" aria-hidden="true" />
           Alertas para a rotina

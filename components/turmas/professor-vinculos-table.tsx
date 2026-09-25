@@ -4,6 +4,7 @@ import { Info, Pencil, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ListCard, ListCardAction, ListCardList } from "@/components/ui/list-card";
 import {
   Table,
   TableBody,
@@ -43,59 +44,101 @@ export function ProfessorVinculosTable({
     );
   }
 
+  function handleRemove(professor: ProfessorVinculado) {
+    if (window.confirm(`Remover o vínculo com "${professor.nome}"?`)) {
+      onRemove(professor);
+    }
+  }
+
   return (
     <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Professor</TableHead>
-            <TableHead>Função / escopo</TableHead>
-            <TableHead>Status do vínculo</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {professores.map((professor) => (
-            <TableRow key={professor.id}>
-              <TableCell className="font-semibold text-ink">{professor.nome}</TableCell>
-              <TableCell>{escopoLabel(professor, ofertaSlug)}</TableCell>
-              <TableCell>
-                <Badge variant={professor.status === "ativo" ? "success" : "neutral"}>
-                  {professor.status === "ativo" ? "Ativo" : "Inativo"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex justify-end gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    icon
-                    aria-label="Editar vínculo"
-                    onClick={() => onEdit(professor)}
-                  >
-                    <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    icon
-                    aria-label="Remover vínculo"
-                    onClick={() => {
-                      if (window.confirm(`Remover o vínculo com "${professor.nome}"?`)) {
-                        onRemove(professor);
-                      }
-                    }}
-                  >
-                    <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
-                  </Button>
-                </div>
-              </TableCell>
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Professor</TableHead>
+              <TableHead>Função / escopo</TableHead>
+              <TableHead>Status do vínculo</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {professores.map((professor) => (
+              <TableRow key={professor.id}>
+                <TableCell className="font-semibold text-ink">{professor.nome}</TableCell>
+                <TableCell>{escopoLabel(professor, ofertaSlug)}</TableCell>
+                <TableCell>
+                  <Badge variant={professor.status === "ativo" ? "success" : "neutral"}>
+                    {professor.status === "ativo" ? "Ativo" : "Inativo"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      icon
+                      aria-label="Editar vínculo"
+                      onClick={() => onEdit(professor)}
+                    >
+                      <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      icon
+                      aria-label="Remover vínculo"
+                      onClick={() => handleRemove(professor)}
+                    >
+                      <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <ListCardList className="md:hidden">
+        {professores.map((professor) => (
+          <ListCard key={professor.id} className="items-start hover:bg-surface">
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-semibold text-ink">{professor.nome}</div>
+              <div className="text-[12.5px] text-muted">{escopoLabel(professor, ofertaSlug)}</div>
+              <Badge
+                variant={professor.status === "ativo" ? "success" : "neutral"}
+                className="mt-1"
+              >
+                {professor.status === "ativo" ? "Ativo" : "Inativo"}
+              </Badge>
+            </div>
+            <ListCardAction>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon
+                aria-label="Editar vínculo"
+                onClick={() => onEdit(professor)}
+              >
+                <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon
+                aria-label="Remover vínculo"
+                onClick={() => handleRemove(professor)}
+              >
+                <Trash2 size={14} strokeWidth={2} className="text-danger" aria-hidden="true" />
+              </Button>
+            </ListCardAction>
+          </ListCard>
+        ))}
+      </ListCardList>
       <div className="mt-3 flex gap-[10px] rounded-md bg-brand-tint px-[14px] py-[12px] text-brand-ink">
         <Info size={15} strokeWidth={2} className="mt-[1px] shrink-0 text-brand" aria-hidden="true" />
         <p className="text-[13px] leading-relaxed">

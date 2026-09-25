@@ -111,7 +111,7 @@ export function RelatoriosCard({
 
   return (
     <Card className="gap-3 p-[24px]">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="text-highlight text-ink">Relatórios (PDF)</h2>
         {canGerar && (
           <div className="flex flex-wrap justify-end gap-2">

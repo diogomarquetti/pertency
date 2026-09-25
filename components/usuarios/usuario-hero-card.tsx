@@ -68,7 +68,7 @@ export function UsuarioHeroCard({
         onFile={enviar}
       />
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-[160px]">
         <h1 className="truncate text-highlight text-ink">{titulo}</h1>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
