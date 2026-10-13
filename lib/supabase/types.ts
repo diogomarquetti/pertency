@@ -2299,6 +2299,7 @@ export type Database = {
         | "secretaria"
         | "coordenacao_pedagogica"
         | "professor_regente"
+        | "professor_regente_2"
         | "professor_arte"
         | "professor_educacao_fisica"
         | "profissional_complementar"
@@ -2436,6 +2437,7 @@ export const Constants = {
         "secretaria",
         "coordenacao_pedagogica",
         "professor_regente",
+        "professor_regente_2",
         "professor_arte",
         "professor_educacao_fisica",
         "profissional_complementar",

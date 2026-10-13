@@ -6,8 +6,13 @@ export const FUNCAO_OPTIONS = [
   { value: "administrador", label: "Administrador" },
   { value: "direcao", label: "Direção" },
   { value: "secretaria", label: "Secretaria" },
-  { value: "coordenacao_pedagogica", label: "Coordenação Pedagógica" },
-  { value: "professor_regente", label: "Professor(a) Regente" },
+  // Valor `coordenacao_pedagogica` mantido (usado em toda a RLS); o perfil
+  // foi renomeado pra Pedagogo(a) a pedido do cliente piloto.
+  { value: "coordenacao_pedagogica", label: "Pedagogo(a)" },
+  // Regente 1 e 2 têm as mesmas permissões — a escola só controla os dois
+  // separadamente. `professor_regente` é o Regente 1.
+  { value: "professor_regente", label: "Professor(a) Regente 1" },
+  { value: "professor_regente_2", label: "Professor(a) Regente 2" },
   { value: "professor_arte", label: "Professor(a) de Arte" },
   { value: "professor_educacao_fisica", label: "Professor(a) de Educação Física" },
   { value: "profissional_complementar", label: "Profissional Complementar" },
@@ -20,6 +25,7 @@ const FUNCAO_VALUES = FUNCAO_OPTIONS.map((option) => option.value) as [
 
 const PROFESSOR_FUNCOES = new Set([
   "professor_regente",
+  "professor_regente_2",
   "professor_arte",
   "professor_educacao_fisica",
 ]);
@@ -32,10 +38,10 @@ export const FUNCAO_LABEL: Record<string, string> = Object.fromEntries(
   FUNCAO_OPTIONS.map((option) => [option.value, option.label]),
 );
 
-// Perfis cujo nome não diz o que a pessoa faz — ganham o campo "Área de
-// atuação". Obrigatório só pra Profissional Complementar (o perfil é vago
-// demais sozinho); pra Administrador/Direção é opcional.
-const FUNCOES_COM_AREA_ATUACAO = new Set(["profissional_complementar", "administrador", "direcao"]);
+// "Área de atuação" só existe pra Profissional Complementar — o perfil é vago
+// demais sozinho, então ali o campo é obrigatório. Pros demais perfis o
+// campo some (pedido do cliente piloto).
+const FUNCOES_COM_AREA_ATUACAO = new Set(["profissional_complementar"]);
 
 export function funcaoTemAreaAtuacao(funcao: string) {
   return FUNCOES_COM_AREA_ATUACAO.has(funcao);
@@ -48,7 +54,7 @@ export function funcaoExigeAreaAtuacao(funcao: string) {
 /**
  * Como a função da pessoa aparece em relatórios (Equipe responsável,
  * Participantes da Avaliação): a área de atuação quando preenchida
- * ("Fonoaudiologia"), senão o perfil de acesso ("Coordenação Pedagógica").
+ * ("Fonoaudiologia"), senão o perfil de acesso ("Pedagogo(a)").
  */
 export function funcaoExibicao(usuario: {
   funcao: string;

@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { TIPO_CONDICAO_OPTIONS } from "@/app/(app)/estudantes/condicoes-schema";
 import { isFuncaoProfessor } from "@/app/(app)/usuarios/schema";
+
+const TIPO_CONDICAO_LABEL: Record<string, string> = Object.fromEntries(
+  TIPO_CONDICAO_OPTIONS.map((opcao) => [opcao.value, opcao.label]),
+);
 
 export type ReferenciaTurmaForm = {
   anosLetivos: { id: string; ano: number; status: string }[];
@@ -171,20 +176,23 @@ export type EstudanteVinculado = {
   estudanteId: string;
   nome: string;
   situacao: string;
-  matriculaInterna: string;
+  /** Nomes das condições registradas (Aba 5) — pode ter mais de uma. */
+  deficiencias: string[];
 };
 
 /**
  * Estudantes com vínculo escolar anual apontando pra esta turma (Bloco 5) —
  * só leitura aqui; o vínculo em si é criado/editado do lado do Cadastro de
- * Estudante (Aba 4, Dados escolares), não daqui.
+ * Estudante (Aba 4, Dados escolares), não daqui. A deficiência vem das
+ * condições do estudante; por ora visível a todos os perfis que veem a turma
+ * (a RLS de condicoes_estudante já restringe professor aos próprios alunos).
  */
 export async function getEstudantesVinculados(turmaId: string): Promise<EstudanteVinculado[]> {
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("vinculos_escolares_anuais")
-    .select("matricula_interna, estudantes(id, nome_completo, situacao)")
+    .select("estudantes(id, nome_completo, situacao, condicoes_estudante(tipo_condicao, created_at))")
     .eq("turma_id", turmaId);
 
   return (data ?? [])
@@ -193,13 +201,16 @@ export async function getEstudantesVinculados(turmaId: string): Promise<Estudant
         id: string;
         nome_completo: string;
         situacao: string;
+        condicoes_estudante: { tipo_condicao: string; created_at: string }[] | null;
       } | null;
       if (!estudante) return null;
       return {
         estudanteId: estudante.id,
         nome: estudante.nome_completo,
         situacao: estudante.situacao,
-        matriculaInterna: (row.matricula_interna as string | null) ?? "",
+        deficiencias: (estudante.condicoes_estudante ?? [])
+          .sort((a, b) => a.created_at.localeCompare(b.created_at))
+          .map((condicao) => TIPO_CONDICAO_LABEL[condicao.tipo_condicao] ?? condicao.tipo_condicao),
       };
     })
     .filter((row): row is EstudanteVinculado => row !== null)

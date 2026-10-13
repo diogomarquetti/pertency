@@ -51,7 +51,7 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
               <TableRow>
                 <TableHead>Estudante</TableHead>
                 <TableHead>Situação</TableHead>
-                <TableHead>Nº de matrícula</TableHead>
+                <TableHead>Deficiência</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -64,7 +64,7 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
                       {SITUACAO_LABEL[estudante.situacao] ?? estudante.situacao}
                     </Badge>
                   </TableCell>
-                  <TableCell>{estudante.matriculaInterna || "—"}</TableCell>
+                  <TableCell>{estudante.deficiencias.join(", ") || "—"}</TableCell>
                   <TableCell>
                     <div className="flex justify-end">
                       <Button variant="secondary" size="sm" icon asChild>
@@ -90,7 +90,7 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
                     {estudante.nome}
                   </ListCardLink>
                   <div className="text-[12.5px] text-muted">
-                    Nº de matrícula: {estudante.matriculaInterna || "—"}
+                    Deficiência: {estudante.deficiencias.join(", ") || "—"}
                   </div>
                   <Badge variant={SITUACAO_BADGE[estudante.situacao]} className="mt-1">
                     {SITUACAO_LABEL[estudante.situacao] ?? estudante.situacao}
@@ -106,7 +106,7 @@ export function EstudantesVinculadosCard({ estudantes }: { estudantes: Estudante
       <div className="flex gap-[10px] rounded-md bg-brand-tint px-[14px] py-[12px] text-brand-ink">
         <Info size={15} strokeWidth={2} className="mt-[1px] shrink-0 text-brand" aria-hidden="true" />
         <p className="text-[13px] leading-relaxed">
-          Vínculos são criados pela Secretaria/Coordenação na Aba 4 (Dados escolares) do
+          Vínculos são criados pela Secretaria/Pedagogo(a) na Aba 4 (Dados escolares) do
           cadastro do estudante — não é possível adicionar ou remover um estudante por aqui.
         </p>
       </div>

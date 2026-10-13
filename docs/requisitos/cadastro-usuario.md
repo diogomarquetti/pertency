@@ -39,10 +39,13 @@ A escola especializada terá diferentes profissionais utilizando o Pertency. Cad
 | Administrador | Configurações gerais, cadastros e permissões |
 | Direção | Acompanhamento da gestão, cadastros e relatórios |
 | Secretaria | Cadastro de estudantes, documentos e dados escolares |
-| Coordenação Pedagógica | Avaliação de Ingresso, PAI, planejamentos e registros |
-| Professor(a) Regente | Acesso às turmas vinculadas e registros pedagógicos |
+| Pedagogo(a) | Avaliação de Ingresso, PAI, planejamentos e registros |
+| Professor(a) Regente 1 | Acesso às turmas vinculadas e registros pedagógicos |
+| Professor(a) Regente 2 | Mesmas permissões do Regente 1 |
 | Professor(a) de Arte | Acesso às turmas e registros do componente Arte |
 | Professor(a) de Educação Física | Acesso às turmas e registros do componente Educação Física |
+
+> **Revisão (2026-10-13, cliente piloto):** Coordenação Pedagógica passou a se chamar **Pedagogo(a)**, com as mesmas permissões (no banco, o valor continua `coordenacao_pedagogica`). Professor(a) Regente foi dividido em **Regente 1** (o perfil existente, `professor_regente`) e **Regente 2** (`professor_regente_2`) — permissões idênticas; a escola só controla os dois separadamente.
 
 A função selecionada no cadastro deve determinar automaticamente as permissões. Não deve existir, no MVP, um campo separado chamado **perfil de acesso**. 
 
@@ -78,7 +81,7 @@ Registrar as informações básicas do profissional e definir sua função no si
 | E-mail | E-mail | Sim | Contato, notificações e sugestão para login |
 | Telefone | Telefone com máscara | Conforme regra da escola | Contato institucional interno |
 | Função no sistema | Lista suspensa | Sim | Definir permissões automáticas |
-| Área de atuação | Lista suspensa (+ texto se "Outro") | Sim para Profissional Complementar; opcional para Administrador e Direção; não exibido nos demais perfis | Identificar a função real da pessoa em relatórios (ex.: "Fonoaudiologia" em vez de "Profissional Complementar"). Mesma lista da Área da Contribuição complementar. |
+| Área de atuação | Lista suspensa (+ texto se "Outro") | Sim para Profissional Complementar; não exibido nos demais perfis | Identificar a função real da pessoa em relatórios (ex.: "Fonoaudiologia" em vez de "Profissional Complementar"). Mesma lista da Área da Contribuição complementar. |
 | Status do usuário | Lista suspensa | Sim | Controlar se o usuário pode acessar o sistema |
 
 **Nome completo**
@@ -133,9 +136,11 @@ Opções sugeridas para o MVP:
 
 * Secretaria; 
 
-* Coordenação Pedagógica; 
+* Pedagogo(a); 
 
-* Professor(a) Regente; 
+* Professor(a) Regente 1; 
+
+* Professor(a) Regente 2; 
 
 * Professor(a) de Arte; 
 
@@ -165,13 +170,13 @@ Vincular usuários professores às turmas e componentes curriculares que poderã
 
 Esse bloco deve aparecer principalmente para:
 
-* Professor(a) Regente; 
+* Professor(a) Regente 1 e Regente 2; 
 
 * Professor(a) de Arte; 
 
 * Professor(a) de Educação Física. 
 
-Para Administrador, Direção, Secretaria e Coordenação Pedagógica, o bloco pode ficar oculto, desabilitado ou não obrigatório, porque esses perfis acessam a escola de forma mais ampla. 
+Para Administrador, Direção, Secretaria e Pedagogo(a), o bloco pode ficar oculto, desabilitado ou não obrigatório, porque esses perfis acessam a escola de forma mais ampla. 
 
 **Campos da tabela**
 
@@ -316,7 +321,7 @@ Regra: a foto é opcional e não deve bloquear o salvamento do cadastro.
 
 14. O professor só poderá acessar os estudantes, registros e componentes relacionados às turmas vinculadas. 
 
-15. Administrador, Direção, Secretaria e Coordenação Pedagógica não precisam de vínculo com turma para acessar suas áreas. 
+15. Administrador, Direção, Secretaria e Pedagogo(a) não precisam de vínculo com turma para acessar suas áreas. 
 
 16. A senha provisória deve permitir primeiro acesso ou redefinição de senha. 
 
@@ -376,7 +381,7 @@ Regra: a foto é opcional e não deve bloquear o salvamento do cadastro.
 
 * Pode editar usuários somente se autorizado pela escola. 
 
-**Coordenação Pedagógica**
+**Pedagogo(a)**
 
 * Pode visualizar usuários. 
 
@@ -386,7 +391,7 @@ Regra: a foto é opcional e não deve bloquear o salvamento do cadastro.
 
 * Pode acompanhar professores da equipe avaliadora. 
 
-**Professor(a) Regente**
+**Professor(a) Regente 1 e Regente 2** (permissões idênticas)
 
 * Pode acessar as turmas vinculadas. 
 
