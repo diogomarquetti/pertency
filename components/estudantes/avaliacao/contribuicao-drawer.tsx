@@ -173,7 +173,6 @@ function DrawerBody({
           <Textarea
             value={observacoes}
             onChange={(event) => setObservacoes(event.target.value)}
-            placeholder="Contribuição objetiva, vinculada à participação e ao contexto escolar…"
           />
         </div>
 
