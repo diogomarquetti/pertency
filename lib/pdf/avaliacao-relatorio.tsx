@@ -24,8 +24,7 @@ const AREA_CONTRIBUICAO_LABEL: Record<string, string> = {
   fisioterapia: "Fisioterapia",
   terapia_ocupacional: "Terapia Ocupacional",
   pedagogia: "Pedagogia",
-  arte: "Arte",
-  educacao_fisica: "Educação Física",
+  medicina: "Médico",
   outro: "Outro",
 };
 

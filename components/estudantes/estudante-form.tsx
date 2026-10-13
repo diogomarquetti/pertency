@@ -369,6 +369,8 @@ export function EstudanteForm(props: EstudanteFormProps) {
             escolaId={props.escolaId}
             documentos={props.documentos}
             formaOrigem={props.dadosEscolares?.formaOrigem || null}
+            responsavelPrincipalNome={props.defaultValues.responsavelPrincipalNome ?? ""}
+            segundoResponsavelNome={props.defaultValues.segundoResponsavelNome ?? ""}
             canEdit={props.canEdit}
           />
         ) : (
@@ -400,7 +402,6 @@ export function EstudanteForm(props: EstudanteFormProps) {
             estudanteId={props.estudanteId}
             condicoes={props.condicoes}
             perfilFuncional={props.perfilFuncional}
-            documentosDisponiveis={props.documentos.filter((doc) => doc.arquivoPath)}
             canEdit={props.canEditCondicao}
             onPendingChange={setCondicaoPending}
           />

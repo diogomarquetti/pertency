@@ -20,7 +20,7 @@ import { toast } from "@/lib/use-toast";
 
 import { removerCondicao } from "@/app/(app)/estudantes/condicoes-actions";
 import { TIPO_CONDICAO_OPTIONS } from "@/app/(app)/estudantes/condicoes-schema";
-import type { CondicaoEstudante, DocumentoEstudante } from "@/app/(app)/estudantes/queries";
+import type { CondicaoEstudante } from "@/app/(app)/estudantes/queries";
 
 import { CondicaoDrawer } from "./condicao-drawer";
 
@@ -32,12 +32,10 @@ const TIPO_LABEL: Record<string, string> = Object.fromEntries(
 export function CondicoesCard({
   estudanteId,
   condicoes,
-  documentosDisponiveis,
   canEdit,
 }: {
   estudanteId: string;
   condicoes: CondicaoEstudante[];
-  documentosDisponiveis: DocumentoEstudante[];
   canEdit: boolean;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -71,7 +69,7 @@ export function CondicoesCard({
     <Card className="gap-3 p-[24px]">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="flex items-baseline gap-2 text-highlight text-ink">
-          <span className="text-brand">1.</span> Condições e documentos relacionados
+          <span className="text-brand">1.</span> Condições
         </h2>
         {canEdit && (
           <Button type="button" variant="secondary" size="sm" onClick={handleAdicionar}>
@@ -90,7 +88,7 @@ export function CondicoesCard({
             <TableHeader>
               <TableRow>
                 <TableHead>Condição</TableHead>
-                <TableHead>Documento vinculado</TableHead>
+                <TableHead>CID</TableHead>
                 <TableHead>Observações</TableHead>
                 {canEdit && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
@@ -101,8 +99,8 @@ export function CondicoesCard({
                   <TableCell className="font-semibold">
                     {TIPO_LABEL[condicao.tipoCondicao] ?? condicao.tipoCondicao}
                   </TableCell>
-                  <TableCell>{condicao.documentoLabel || "—"}</TableCell>
-                  {/* Texto completo (e CID, quando houver) fica no drawer de edição. */}
+                  <TableCell className="whitespace-nowrap">{condicao.cid || "—"}</TableCell>
+                  {/* Texto completo fica no drawer de edição. */}
                   <TableCell className="max-w-[360px]">
                     <span className="line-clamp-2" title={condicao.observacoes || undefined}>
                       {condicao.observacoes || "—"}
@@ -149,7 +147,7 @@ export function CondicoesCard({
                     {TIPO_LABEL[condicao.tipoCondicao] ?? condicao.tipoCondicao}
                   </div>
                   <div className="text-[12.5px] text-muted">
-                    Documento: {condicao.documentoLabel || "—"}
+                    CID: {condicao.cid || "—"}
                   </div>
                   {condicao.observacoes && (
                     <p className="mt-1 line-clamp-2 text-[13px] text-ink">{condicao.observacoes}</p>
@@ -192,7 +190,6 @@ export function CondicoesCard({
         onOpenChange={setDrawerOpen}
         estudanteId={estudanteId}
         editing={editing}
-        documentosDisponiveis={documentosDisponiveis}
       />
     </Card>
   );

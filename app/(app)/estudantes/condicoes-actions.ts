@@ -34,7 +34,6 @@ export async function salvarCondicao(
     estudante_id: estudanteId,
     escola_id: escolaId,
     tipo_condicao: data.tipoCondicao,
-    documento_id: data.documentoId || null,
     observacoes: data.observacoes || null,
     cid: data.cid || null,
   };

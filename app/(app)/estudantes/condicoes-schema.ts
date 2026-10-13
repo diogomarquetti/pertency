@@ -15,7 +15,6 @@ export const TIPO_CONDICAO_OPTIONS = [
 
 export const condicaoSchema = z.object({
   tipoCondicao: z.string().min(1, "Selecione o tipo de condição"),
-  documentoId: z.string().optional().or(z.literal("")),
   observacoes: z.string().optional().or(z.literal("")),
   cid: z.string().optional().or(z.literal("")),
 });
@@ -24,7 +23,6 @@ export type CondicaoValues = z.infer<typeof condicaoSchema>;
 
 export const CONDICAO_EMPTY_VALUES: CondicaoValues = {
   tipoCondicao: "",
-  documentoId: "",
   observacoes: "",
   cid: "",
 };

@@ -19,6 +19,7 @@ export const RECURSO_CAA_OPTIONS = [
 export const AVD_CHECKLIST_OPTIONS = [
   "Vestir-se",
   "Uso do banheiro",
+  "Controle de esfíncteres",
   "Organização de materiais",
   "Organização da rotina",
   "Orientação no ambiente",

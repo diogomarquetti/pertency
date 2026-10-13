@@ -610,8 +610,6 @@ export async function getRelatoriosAvaliacao(avaliacaoId: string): Promise<Relat
 export type CondicaoEstudante = {
   id: string;
   tipoCondicao: string;
-  documentoId: string;
-  documentoLabel: string | null;
   observacoes: string;
   cid: string;
   criadoEm: string;
@@ -623,33 +621,21 @@ export async function getCondicoesEstudante(estudanteId: string): Promise<Condic
 
   const { data } = await supabase
     .from("condicoes_estudante")
-    .select(
-      `id, tipo_condicao, documento_id, observacoes, cid, created_at,
-       documentos_estudante(nome_documento, tipo)`,
-    )
+    .select("id, tipo_condicao, observacoes, cid, created_at")
     .eq("estudante_id", estudanteId)
     .order("created_at", { ascending: false });
 
-  return (data ?? []).map((row) => {
-    const documento = row.documentos_estudante as unknown as {
-      nome_documento: string | null;
-      tipo: string;
-    } | null;
-    return {
-      id: row.id as string,
-      tipoCondicao: row.tipo_condicao as string,
-      documentoId: (row.documento_id as string | null) ?? "",
-      documentoLabel: documento ? labelDoDocumentoVinculado(documento) : null,
-      observacoes: (row.observacoes as string | null) ?? "",
-      cid: (row.cid as string | null) ?? "",
-      criadoEm: row.created_at as string,
-    };
-  });
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    tipoCondicao: row.tipo_condicao as string,
+    observacoes: (row.observacoes as string | null) ?? "",
+    cid: (row.cid as string | null) ?? "",
+    criadoEm: row.created_at as string,
+  }));
 }
 
-// Mesma resolução de nome usada em condicao-drawer.tsx ao popular o select
-// de "Documento vinculado" — mantém o rótulo consistente entre adicionar e
-// visualizar.
+// Rótulo de um documento do checklist (fixo, "outro" ou Avaliação de Ingresso)
+// — usado no histórico de alterações dos documentos.
 function labelDoDocumentoVinculado(documento: { nome_documento: string | null; tipo: string }) {
   if (documento.tipo === "outro") return documento.nome_documento ?? "Documento";
   if (documento.tipo === "avaliacao_ingresso") return "Avaliação de Ingresso";

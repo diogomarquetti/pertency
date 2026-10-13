@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+import { gerarTermoAutorizacaoImagem } from "@/app/(app)/estudantes/autorizacao-imagem-actions";
 import { adicionarDocumentoExtra, removerDocumentoExtra } from "@/app/(app)/estudantes/documentos-actions";
 import { DOCUMENTO_TIPOS_FIXOS, naoSeAplicaAutomatico } from "@/app/(app)/estudantes/documentos-schema";
 import type { DocumentoEstudante } from "@/app/(app)/estudantes/queries";
@@ -25,6 +26,8 @@ export function DocumentosTab({
   escolaId,
   documentos,
   formaOrigem,
+  responsavelPrincipalNome,
+  segundoResponsavelNome,
   canEdit,
 }: {
   estudanteId: string;
@@ -32,6 +35,8 @@ export function DocumentosTab({
   documentos: DocumentoEstudante[];
   /** Forma de origem dos Dados escolares — alimenta o "não se aplica" automático. */
   formaOrigem: string | null;
+  responsavelPrincipalNome: string;
+  segundoResponsavelNome: string;
   canEdit: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -42,12 +47,45 @@ export function DocumentosTab({
   const porTipo = new Map(documentos.filter((doc) => doc.tipo !== "outro").map((doc) => [doc.tipo, doc]));
   const extras = documentos.filter((doc) => doc.tipo === "outro");
   const avaliacaoDoc = porTipo.get("avaliacao_ingresso");
+  const contextoNaoSeAplica = { formaOrigem, temSegundoResponsavel: !!segundoResponsavelNome.trim() };
 
   const pendentes = DOCUMENTO_TIPOS_FIXOS.filter((item) => {
     const doc = porTipo.get(item.tipo);
     const pendente = !doc || doc.status === "pendente";
-    return pendente && !naoSeAplicaAutomatico(item.tipo, formaOrigem);
+    return pendente && !naoSeAplicaAutomatico(item.tipo, contextoNaoSeAplica);
   }).length;
+
+  // O nome do responsável vai no rótulo pra deixar claro de quem é o documento.
+  function labelDoTipo(tipo: string, label: string) {
+    const nome =
+      tipo === "rg_cpf_responsavel_principal"
+        ? responsavelPrincipalNome
+        : tipo === "rg_cpf_segundo_responsavel"
+          ? segundoResponsavelNome
+          : "";
+    return nome.trim() ? `${label} — ${nome.trim()}` : label;
+  }
+
+  function handleGerarTermoImagem() {
+    // Mesmo racional de handlePrevia em relatorios-card.tsx: abrir a aba ainda
+    // dentro do gesto do usuário, senão o navegador bloqueia como pop-up.
+    const aba = window.open("", "_blank");
+    startTransition(async () => {
+      const result = await gerarTermoAutorizacaoImagem(estudanteId);
+      if ("error" in result) {
+        aba?.close();
+        toast.error("Não foi possível gerar o termo", result.error);
+        return;
+      }
+      const bytes = Uint8Array.from(atob(result.pdfBase64), (char) => char.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      if (aba) {
+        aba.location.href = url;
+      } else {
+        window.open(url, "_blank");
+      }
+    });
+  }
 
   function handleVisualizarAvaliacao() {
     if (!avaliacaoDoc?.arquivoPath) return;
@@ -118,15 +156,12 @@ export function DocumentosTab({
                 tipo={item.tipo}
                 estudanteId={estudanteId}
                 escolaId={escolaId}
-                label={item.label}
+                label={labelDoTipo(item.tipo, item.label)}
                 status={doc?.status ?? "pendente"}
                 formaEntrega={doc?.formaEntrega ?? null}
                 motivoNaoSeAplica={doc?.motivoNaoSeAplica ?? null}
-                naoSeAplicaAutomatico={
-                  naoSeAplicaAutomatico(item.tipo, formaOrigem)
-                    ? "Primeira matrícula escolar (Forma de origem em Dados escolares)"
-                    : null
-                }
+                naoSeAplicaAutomatico={naoSeAplicaAutomatico(item.tipo, contextoNaoSeAplica)}
+                onGerarModelo={item.tipo === "autorizacao_imagem" ? handleGerarTermoImagem : undefined}
                 dataEnvio={doc?.dataEnvio ?? null}
                 conferidoPorNome={doc?.conferidoPorNome ?? null}
                 arquivoPath={doc?.arquivoPath ?? null}

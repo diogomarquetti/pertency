@@ -44,6 +44,8 @@ type DocumentoLinhaProps = {
   arquivoNome: string | null;
   versoesAnteriores: DocumentoVersaoEstudante[];
   canEdit: boolean;
+  /** Documento com modelo padrão gerado pelo sistema (ex.: autorização de imagem). */
+  onGerarModelo?: () => void;
 } & ({ kind: "fixo"; tipo: DocumentoTipoFixo } | { kind: "extra"; docId: string; onRemove: () => void });
 
 /**
@@ -207,6 +209,9 @@ export function DocumentoLinha(props: DocumentoLinhaProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {props.onGerarModelo && (
+                  <DropdownMenuItem onSelect={props.onGerarModelo}>Gerar termo para assinatura</DropdownMenuItem>
+                )}
                 {!entregue && (
                   <DropdownMenuItem
                     onSelect={() => executar(() => registrarEntregaFisica(props.estudanteId, alvo))}

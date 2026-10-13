@@ -3,7 +3,8 @@
  * complementar (Avaliação de Ingresso) e na "Área de atuação" do Cadastro de
  * Usuário, pra não existirem duas listas pra mesma coisa. Os valores batem
  * com as constraints `check` de `avaliacao_contribuicoes.area_contribuicao` e
- * `usuarios.area_atuacao`. Nome da área (neutro em gênero), não da profissão.
+ * `usuarios.area_atuacao`. Nome da área (neutro em gênero), não da profissão —
+ * exceto "Médico", rótulo pedido pelo cliente piloto (o valor gravado é `medicina`).
  */
 export const AREA_ATUACAO_OPTIONS = [
   { value: "servico_social", label: "Serviço Social" },
@@ -12,8 +13,7 @@ export const AREA_ATUACAO_OPTIONS = [
   { value: "fisioterapia", label: "Fisioterapia" },
   { value: "terapia_ocupacional", label: "Terapia Ocupacional" },
   { value: "pedagogia", label: "Pedagogia" },
-  { value: "arte", label: "Arte" },
-  { value: "educacao_fisica", label: "Educação Física" },
+  { value: "medicina", label: "Médico" },
   { value: "outro", label: "Outro" },
 ] as const;
 

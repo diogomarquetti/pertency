@@ -17,7 +17,7 @@ import {
   perfilFuncionalSchema,
   type PerfilFuncionalValues,
 } from "@/app/(app)/estudantes/perfil-funcional-schema";
-import type { CondicaoEstudante, DocumentoEstudante, PerfilFuncionalEstudante } from "@/app/(app)/estudantes/queries";
+import type { CondicaoEstudante, PerfilFuncionalEstudante } from "@/app/(app)/estudantes/queries";
 
 import { AlertasCard } from "./alertas-card";
 import { CondicoesCard } from "./condicoes-card";
@@ -35,14 +35,12 @@ export function CondicaoTab({
   estudanteId,
   condicoes,
   perfilFuncional,
-  documentosDisponiveis,
   canEdit,
   onPendingChange,
 }: {
   estudanteId: string;
   condicoes: CondicaoEstudante[];
   perfilFuncional: PerfilFuncionalEstudante | null;
-  documentosDisponiveis: DocumentoEstudante[];
   canEdit: boolean;
   onPendingChange?: (pending: boolean) => void;
 }) {
@@ -84,7 +82,6 @@ export function CondicaoTab({
       <CondicoesCard
         estudanteId={estudanteId}
         condicoes={condicoes}
-        documentosDisponiveis={documentosDisponiveis}
         canEdit={canEdit}
       />
 

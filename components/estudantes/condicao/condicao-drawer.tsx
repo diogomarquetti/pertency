@@ -28,33 +28,23 @@ import { toast } from "@/lib/use-toast";
 
 import { salvarCondicao } from "@/app/(app)/estudantes/condicoes-actions";
 import { TIPO_CONDICAO_OPTIONS } from "@/app/(app)/estudantes/condicoes-schema";
-import type { CondicaoEstudante, DocumentoEstudante } from "@/app/(app)/estudantes/queries";
-import { DOCUMENTO_TIPOS_FIXOS } from "@/app/(app)/estudantes/documentos-schema";
-
-function labelDoDocumento(doc: DocumentoEstudante) {
-  if (doc.tipo === "outro") return doc.nomeDocumento ?? "Documento";
-  if (doc.tipo === "avaliacao_ingresso") return "Avaliação de Ingresso";
-  return DOCUMENTO_TIPOS_FIXOS.find((item) => item.tipo === doc.tipo)?.label ?? doc.tipo;
-}
+import type { CondicaoEstudante } from "@/app/(app)/estudantes/queries";
 
 /** Mesmo racional de contribuicao-drawer.tsx: estado vive no corpo montado
  * só enquanto o Sheet está aberto (Presence do Radix). */
 function DrawerBody({
   estudanteId,
   editing,
-  documentosDisponiveis,
   onOpenChange,
 }: {
   estudanteId: string;
   editing: CondicaoEstudante | null;
-  documentosDisponiveis: DocumentoEstudante[];
   onOpenChange: (open: boolean) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const [tipoCondicao, setTipoCondicao] = useState(editing?.tipoCondicao ?? "");
-  const [documentoId, setDocumentoId] = useState(editing?.documentoId ?? "");
   const [observacoes, setObservacoes] = useState(editing?.observacoes ?? "");
   const [cid, setCid] = useState(editing?.cid ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +59,7 @@ function DrawerBody({
     startTransition(async () => {
       const result = await salvarCondicao(
         estudanteId,
-        { tipoCondicao, documentoId, observacoes, cid },
+        { tipoCondicao, observacoes, cid },
         editing?.id,
       );
 
@@ -105,27 +95,6 @@ function DrawerBody({
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="grid gap-2">
-          <Label>
-            Documento vinculado <span className="font-normal text-muted">(opcional)</span>
-          </Label>
-          <Select value={documentoId} onValueChange={setDocumentoId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Nenhum" />
-            </SelectTrigger>
-            <SelectContent>
-              {documentosDisponiveis.map((doc) => (
-                <SelectItem key={doc.id} value={doc.id}>
-                  {labelDoDocumento(doc)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-[12px] text-muted">
-            Referencia um documento já existente na aba Documentos — não duplica upload.
-          </p>
         </div>
 
         <div className="grid gap-2">
@@ -172,13 +141,11 @@ export function CondicaoDrawer({
   onOpenChange,
   estudanteId,
   editing,
-  documentosDisponiveis,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   estudanteId: string;
   editing: CondicaoEstudante | null;
-  documentosDisponiveis: DocumentoEstudante[];
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -186,7 +153,6 @@ export function CondicaoDrawer({
         <DrawerBody
           estudanteId={estudanteId}
           editing={editing}
-          documentosDisponiveis={documentosDisponiveis}
           onOpenChange={onOpenChange}
         />
       </SheetContent>
