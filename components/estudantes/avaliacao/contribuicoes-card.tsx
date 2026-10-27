@@ -41,6 +41,7 @@ export function ContribuicoesCard({
   viewerCanEditQualquer,
   viewerCanEditContribuicaoPropria,
   canEdit,
+  travada,
 }: {
   estudanteId: string;
   avaliacaoId: string;
@@ -50,8 +51,10 @@ export function ContribuicoesCard({
   viewerCanEditQualquer: boolean;
   viewerCanEditContribuicaoPropria: boolean;
   canEdit: boolean;
+  /** Versão Concluída/Retificada/Cancelada: contribuições só leitura (o banco também recusa). */
+  travada: boolean;
 }) {
-  const podeAdicionar = canEdit || viewerCanEditContribuicaoPropria;
+  const podeAdicionar = !travada && (canEdit || viewerCanEditContribuicaoPropria);
   // Quem só tem viewerCanEditContribuicaoPropria (não canEdit) é o
   // profissional complementar mexendo na própria — trava o campo
   // "Profissional" no drawer pra evitar tentar (e ser barrado por engano)
@@ -96,6 +99,12 @@ export function ContribuicoesCard({
         )}
       </div>
 
+      {travada && (
+        <p className="text-[12.5px] text-muted">
+          Avaliação fechada: as contribuições desta versão não podem mais ser alteradas.
+        </p>
+      )}
+
       {contribuicoes.length === 0 ? (
         <p className="text-[13px] text-muted">Nenhuma contribuição registrada ainda.</p>
       ) : (
@@ -104,7 +113,7 @@ export function ContribuicoesCard({
             const autorOuQualquer =
               viewerCanEditQualquer || contribuicao.profissionalId === viewerId;
             const podeEditar = podeAdicionar && autorOuQualquer;
-            const podeExcluir = canEdit && autorOuQualquer;
+            const podeExcluir = !travada && canEdit && autorOuQualquer;
 
             return (
               <div

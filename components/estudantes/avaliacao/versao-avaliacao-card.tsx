@@ -31,7 +31,8 @@ function formatData(valor: string | null) {
 
 // PROVISÓRIO: validar com P.O — fluxo de retificação (versão N+1 em edição; a
 // anterior só vira Retificada quando a nova é concluída) e cancelamento (só
-// Rascunho/Em andamento, com justificativa).
+// Rascunho/Em andamento, com justificativa). Retificar e cancelar: Pedagogo(a),
+// Direção e Administrador (decidido pelo P.O).
 /**
  * Topo da Avaliação de Ingresso: qual versão está aberta, de onde ela veio
  * (retificação/cancelamento, com justificativa), as outras versões e as
@@ -47,7 +48,7 @@ export function VersaoAvaliacaoCard({
   estudanteId: string;
   versao: AvaliacaoIngresso;
   versoes: AvaliacaoIngresso[];
-  /** Pedagogo(a), Direção e Administrador — ver pode_fechar_avaliacao(). */
+  /** Retificar/cancelar: Pedagogo(a), Direção e Administrador — ver pode_fechar_avaliacao(). */
   podeFechar: boolean;
   onSelecionarVersao: (id: string) => void;
 }) {

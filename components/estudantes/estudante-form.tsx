@@ -122,6 +122,8 @@ type EstudanteFormProps = {
       viewerCanEditQualquerContribuicao: boolean;
       viewerCanEditContribuicaoPropria: boolean;
       canGerarRelatorio: boolean;
+      /** Pedagogo(a) e Administrador. Direção só retifica e cancela. */
+      canConcluirAvaliacao: boolean;
       condicoes: CondicaoEstudante[];
       perfilFuncional: PerfilFuncionalEstudante | null;
       canEditCondicao: boolean;
@@ -360,6 +362,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
             viewerCanEditQualquerContribuicao={props.viewerCanEditQualquerContribuicao}
             viewerCanEditContribuicaoPropria={props.viewerCanEditContribuicaoPropria}
             canGerarRelatorio={props.canGerarRelatorio}
+            canConcluirAvaliacao={props.canConcluirAvaliacao}
             canEdit={props.canEdit}
             onPendingChange={setAvaliacaoPending}
             onSomenteLeituraChange={setAvaliacaoSomenteLeitura}

@@ -39,7 +39,7 @@ export function AvaliacaoIdentificacaoCard({
   form: UseFormReturn<AvaliacaoValues>;
   equipeElegivel: UsuarioElegivel[];
   referenciaOfertas: ReferenciaOfertas;
-  /** Concluir: Pedagogo(a), Direção e Administrador — ver pode_fechar_avaliacao(). */
+  /** Concluir: Pedagogo(a) e Administrador — ver pode_concluir_avaliacao(). */
   podeConcluir: boolean;
 }) {
   const ofertaPretendidaId = form.watch("ofertaPretendidaId");

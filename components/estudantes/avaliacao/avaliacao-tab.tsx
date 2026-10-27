@@ -67,6 +67,7 @@ export function AvaliacaoTab({
   viewerCanEditQualquerContribuicao,
   viewerCanEditContribuicaoPropria,
   canGerarRelatorio,
+  canConcluirAvaliacao,
   canEdit,
   onPendingChange,
   onSomenteLeituraChange,
@@ -81,6 +82,7 @@ export function AvaliacaoTab({
   viewerCanEditQualquerContribuicao: boolean;
   viewerCanEditContribuicaoPropria: boolean;
   canGerarRelatorio: boolean;
+  canConcluirAvaliacao: boolean;
   canEdit: boolean;
   onPendingChange?: (pending: boolean) => void;
   onSomenteLeituraChange?: (somenteLeitura: boolean) => void;
@@ -139,7 +141,7 @@ export function AvaliacaoTab({
         avaliacao={avaliacao}
         equipeElegivel={equipeElegivel}
         referenciaOfertas={referenciaOfertas}
-        podeConcluir={canGerarRelatorio}
+        podeConcluir={canConcluirAvaliacao}
         canEdit={versaoEditavel}
         onPendingChange={onPendingChange}
       />
@@ -158,6 +160,7 @@ export function AvaliacaoTab({
             viewerCanEditQualquer={viewerCanEditQualquerContribuicao}
             viewerCanEditContribuicaoPropria={viewerCanEditContribuicaoPropria}
             canEdit={canEdit}
+            travada={!avaliacaoEditavel(avaliacao.statusAvaliacao)}
           />
           <RelatoriosCard
             estudanteId={estudanteId}

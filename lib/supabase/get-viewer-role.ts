@@ -39,8 +39,9 @@ export async function getViewerCanEditEstudante(): Promise<boolean> {
   return !!data && ESTUDANTE_WRITE_FUNCOES.has(data.funcao);
 }
 
-// PROVISÓRIO: validar com P.O — os mesmos perfis que geram PDF concluem, retificam
-// e cancelam a Avaliação de Ingresso (no banco: pode_fechar_avaliacao()).
+// Os mesmos perfis que geram PDF retificam e cancelam a Avaliação de Ingresso
+// (no banco: pode_fechar_avaliacao()). Concluir é só Pedagogo(a) e
+// Administrador — ver getViewerCanConcluirAvaliacao().
 const RELATORIO_GERACAO_FUNCOES = new Set(["administrador", "coordenacao_pedagogica", "direcao"]);
 
 /** Mesma ideia de getViewerCanEditEstudante(), para o botão de gerar PDF da Avaliação. */
@@ -57,6 +58,24 @@ export async function getViewerCanGerarRelatorio(): Promise<boolean> {
     .maybeSingle();
 
   return !!data && RELATORIO_GERACAO_FUNCOES.has(data.funcao);
+}
+
+const CONCLUSAO_AVALIACAO_FUNCOES = new Set(["administrador", "coordenacao_pedagogica"]);
+
+/** Quem pode concluir a Avaliação de Ingresso (no banco: pode_concluir_avaliacao()). */
+export async function getViewerCanConcluirAvaliacao(): Promise<boolean> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("usuarios")
+    .select("funcao")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return !!data && CONCLUSAO_AVALIACAO_FUNCOES.has(data.funcao);
 }
 
 /** Mesma ideia de getViewerCanEditEstudante(), pra Contribuições complementares (Onda 4, fatia 2). */

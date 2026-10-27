@@ -8,6 +8,7 @@ import {
   getViewerCanEditCondicao,
   getViewerCanEditContribuicaoPropria,
   getViewerCanEditEstudante,
+  getViewerCanConcluirAvaliacao,
   getViewerCanGerarRelatorio,
 } from "@/lib/supabase/get-viewer-role";
 
@@ -75,6 +76,7 @@ export default async function EditarEstudantePage({
     perfilFuncional,
     canEdit,
     canGerarRelatorio,
+    canConcluirAvaliacao,
     viewerCanEditCondicaoRole,
     viewerCanEditContribuicaoPropria,
     viewer,
@@ -93,6 +95,7 @@ export default async function EditarEstudantePage({
     getPerfilFuncionalEstudante(id),
     getViewerCanEditEstudante(),
     getViewerCanGerarRelatorio(),
+    getViewerCanConcluirAvaliacao(),
     getViewerCanEditCondicao(),
     getViewerCanEditContribuicaoPropria(),
     getCurrentUser(),
@@ -179,6 +182,7 @@ export default async function EditarEstudantePage({
         viewerCanEditQualquerContribuicao={canGerarRelatorio}
         viewerCanEditContribuicaoPropria={viewerCanEditContribuicaoPropria}
         canGerarRelatorio={canGerarRelatorio}
+        canConcluirAvaliacao={canConcluirAvaliacao}
         condicoes={condicoes}
         perfilFuncional={perfilFuncional}
         canEditCondicao={canEditCondicao}

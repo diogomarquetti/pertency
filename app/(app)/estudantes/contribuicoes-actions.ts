@@ -66,6 +66,9 @@ export async function salvarContribuicao(
     : await supabase.from("avaliacao_contribuicoes").insert({ ...row, created_by: userId });
 
   if (error) {
+    if (error.code === "23514") {
+      return { error: "A avaliação já foi concluída: as contribuições não podem mais ser alteradas." };
+    }
     return { error: "Não foi possível salvar a contribuição. Tente novamente." };
   }
 
@@ -83,6 +86,9 @@ export async function removerContribuicao(estudanteId: string, contribuicaoId: s
   const { error } = await supabase.from("avaliacao_contribuicoes").delete().eq("id", contribuicaoId);
 
   if (error) {
+    if (error.code === "23514") {
+      return { error: "A avaliação já foi concluída: as contribuições não podem mais ser alteradas." };
+    }
     return { error: "Não foi possível remover a contribuição." };
   }
 
