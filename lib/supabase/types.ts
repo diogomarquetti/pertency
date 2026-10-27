@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -251,7 +251,12 @@ export type Database = {
         Row: {
           areas_apoio: string[] | null
           assinaturas: string | null
+          avaliacao_origem_id: string | null
           barreiras_identificadas: string | null
+          cancelada_em: string | null
+          cancelada_por: string | null
+          concluida_em: string | null
+          concluida_por: string | null
           contexto_comunitario: string | null
           contexto_escolar: string | null
           contexto_familiar: string | null
@@ -272,7 +277,9 @@ export type Database = {
           historico_escolar: string | null
           id: string
           informacoes_familia: string | null
+          justificativa_cancelamento: string | null
           justificativa_elegibilidade: string | null
+          justificativa_retificacao: string | null
           necessidades_especificas: string | null
           nivel_apoio: string | null
           oferta_pretendida_id: string | null
@@ -280,13 +287,21 @@ export type Database = {
           orientacoes_pai: string | null
           parecer_equipe: string | null
           recomendacao_elegibilidade: string | null
+          retificacao_solicitada_em: string | null
+          retificacao_solicitada_por: string | null
           status_avaliacao: string
           updated_at: string
+          versao: number
         }
         Insert: {
           areas_apoio?: string[] | null
           assinaturas?: string | null
+          avaliacao_origem_id?: string | null
           barreiras_identificadas?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          concluida_em?: string | null
+          concluida_por?: string | null
           contexto_comunitario?: string | null
           contexto_escolar?: string | null
           contexto_familiar?: string | null
@@ -307,7 +322,9 @@ export type Database = {
           historico_escolar?: string | null
           id?: string
           informacoes_familia?: string | null
+          justificativa_cancelamento?: string | null
           justificativa_elegibilidade?: string | null
+          justificativa_retificacao?: string | null
           necessidades_especificas?: string | null
           nivel_apoio?: string | null
           oferta_pretendida_id?: string | null
@@ -315,13 +332,21 @@ export type Database = {
           orientacoes_pai?: string | null
           parecer_equipe?: string | null
           recomendacao_elegibilidade?: string | null
+          retificacao_solicitada_em?: string | null
+          retificacao_solicitada_por?: string | null
           status_avaliacao?: string
           updated_at?: string
+          versao?: number
         }
         Update: {
           areas_apoio?: string[] | null
           assinaturas?: string | null
+          avaliacao_origem_id?: string | null
           barreiras_identificadas?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          concluida_em?: string | null
+          concluida_por?: string | null
           contexto_comunitario?: string | null
           contexto_escolar?: string | null
           contexto_familiar?: string | null
@@ -342,7 +367,9 @@ export type Database = {
           historico_escolar?: string | null
           id?: string
           informacoes_familia?: string | null
+          justificativa_cancelamento?: string | null
           justificativa_elegibilidade?: string | null
+          justificativa_retificacao?: string | null
           necessidades_especificas?: string | null
           nivel_apoio?: string | null
           oferta_pretendida_id?: string | null
@@ -350,10 +377,34 @@ export type Database = {
           orientacoes_pai?: string | null
           parecer_equipe?: string | null
           recomendacao_elegibilidade?: string | null
+          retificacao_solicitada_em?: string | null
+          retificacao_solicitada_por?: string | null
           status_avaliacao?: string
           updated_at?: string
+          versao?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "avaliacoes_ingresso_avaliacao_origem_id_fkey"
+            columns: ["avaliacao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes_ingresso"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_ingresso_cancelada_por_fkey"
+            columns: ["cancelada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_ingresso_concluida_por_fkey"
+            columns: ["concluida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "avaliacoes_ingresso_created_by_fkey"
             columns: ["created_by"]
@@ -371,7 +422,7 @@ export type Database = {
           {
             foreignKeyName: "avaliacoes_ingresso_estudante_id_fkey"
             columns: ["estudante_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "estudantes"
             referencedColumns: ["id"]
           },
@@ -387,6 +438,13 @@ export type Database = {
             columns: ["organizacao_pretendida_id"]
             isOneToOne: false
             referencedRelation: "etapas_ciclos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_ingresso_retificacao_solicitada_por_fkey"
+            columns: ["retificacao_solicitada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -1304,6 +1362,7 @@ export type Database = {
       }
       etapas_ciclos: {
         Row: {
+          codigo: string | null
           escola_id: string
           id: string
           nome: string
@@ -1311,6 +1370,7 @@ export type Database = {
           ordem: number | null
         }
         Insert: {
+          codigo?: string | null
           escola_id: string
           id?: string
           nome: string
@@ -1318,6 +1378,7 @@ export type Database = {
           ordem?: number | null
         }
         Update: {
+          codigo?: string | null
           escola_id?: string
           id?: string
           nome?: string
@@ -1472,18 +1533,66 @@ export type Database = {
           },
         ]
       }
+      matriz_componentes: {
+        Row: {
+          area: string
+          componente_id: string
+          matriz_id: string
+          ordem: number
+        }
+        Insert: {
+          area: string
+          componente_id: string
+          matriz_id: string
+          ordem?: number
+        }
+        Update: {
+          area?: string
+          componente_id?: string
+          matriz_id?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matriz_componentes_componente_id_fkey"
+            columns: ["componente_id"]
+            isOneToOne: false
+            referencedRelation: "componentes_curriculares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matriz_componentes_matriz_id_fkey"
+            columns: ["matriz_id"]
+            isOneToOne: false
+            referencedRelation: "matrizes_curriculares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matrizes_curriculares: {
         Row: {
+          campos_experiencias: string[] | null
+          ciclo: number | null
+          direitos_aprendizagem: string[] | null
+          eixos_estruturantes: string[] | null
           id: string
           nome: string
           oferta_id: string
         }
         Insert: {
+          campos_experiencias?: string[] | null
+          ciclo?: number | null
+          direitos_aprendizagem?: string[] | null
+          eixos_estruturantes?: string[] | null
           id?: string
           nome: string
           oferta_id: string
         }
         Update: {
+          campos_experiencias?: string[] | null
+          ciclo?: number | null
+          direitos_aprendizagem?: string[] | null
+          eixos_estruturantes?: string[] | null
           id?: string
           nome?: string
           oferta_id?: string
@@ -1708,12 +1817,42 @@ export type Database = {
           },
         ]
       }
+      turma_cronograma: {
+        Row: {
+          dias_semana: number[]
+          hora_fim: string
+          hora_inicio: string
+          turma_id: string
+        }
+        Insert: {
+          dias_semana: number[]
+          hora_fim: string
+          hora_inicio: string
+          turma_id: string
+        }
+        Update: {
+          dias_semana?: number[]
+          hora_fim?: string
+          hora_inicio?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turma_cronograma_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: true
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turmas: {
         Row: {
           ano_letivo_id: string
           areas_conhecimento: string[] | null
           campos_experiencias: string[] | null
           capacidade: number | null
+          ciclo: number | null
           created_at: string
           data_fim: string | null
           data_inicio: string
@@ -1722,6 +1861,8 @@ export type Database = {
           escola_id: string
           etapa_ciclo_id: string
           etapa_do_ciclo: string | null
+          etapas: number[] | null
+          forma_funcionamento: string
           id: string
           matriz_curricular_id: string
           nome: string
@@ -1737,6 +1878,7 @@ export type Database = {
           areas_conhecimento?: string[] | null
           campos_experiencias?: string[] | null
           capacidade?: number | null
+          ciclo?: number | null
           created_at?: string
           data_fim?: string | null
           data_inicio: string
@@ -1745,6 +1887,8 @@ export type Database = {
           escola_id: string
           etapa_ciclo_id: string
           etapa_do_ciclo?: string | null
+          etapas?: number[] | null
+          forma_funcionamento?: string
           id?: string
           matriz_curricular_id: string
           nome: string
@@ -1760,6 +1904,7 @@ export type Database = {
           areas_conhecimento?: string[] | null
           campos_experiencias?: string[] | null
           capacidade?: number | null
+          ciclo?: number | null
           created_at?: string
           data_fim?: string | null
           data_inicio?: string
@@ -1768,6 +1913,8 @@ export type Database = {
           escola_id?: string
           etapa_ciclo_id?: string
           etapa_do_ciclo?: string | null
+          etapas?: number[] | null
+          forma_funcionamento?: string
           id?: string
           matriz_curricular_id?: string
           nome?: string
@@ -2274,11 +2421,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancelar_avaliacao_ingresso: {
+        Args: { p_avaliacao_id: string; p_justificativa: string }
+        Returns: undefined
+      }
       get_escola_id: { Args: never; Returns: string }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      meus_estudantes_por_turma: {
+        Args: never
+        Returns: {
+          estudante_id: string
+          estudante_nome: string
+          turma_id: string
+        }[]
+      }
+      ocupacao_turmas: {
+        Args: never
+        Returns: {
+          capacidade: number
+          nome: string
+          ocupados: number
+          turma_id: string
+        }[]
+      }
+      pode_concluir_avaliacao: { Args: never; Returns: boolean }
+      pode_fechar_avaliacao: { Args: never; Returns: boolean }
       pode_ver_estudante_restrito: {
         Args: { p_estudante_id: string }
         Returns: boolean
@@ -2290,6 +2460,10 @@ export type Database = {
       profissional_complementar_pode_ver_estudante: {
         Args: { p_estudante_id: string }
         Returns: boolean
+      }
+      retificar_avaliacao_ingresso: {
+        Args: { p_avaliacao_id: string; p_justificativa: string }
+        Returns: string
       }
     }
     Enums: {

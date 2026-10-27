@@ -45,3 +45,23 @@ export function naoSeAplicaAutomatico(
   }
   return null;
 }
+
+/**
+ * Tipos fixos ainda pendentes num cadastro: sem registro ou com status
+ * "Pendente", menos os que o sistema deduz como "Não se aplica". Usado pela
+ * aba Documentos e pela homepage (lib/pendencias) — mesma regra nos dois.
+ */
+// PROVISÓRIO: validar com P.O — quais documentos são obrigatórios. Hoje
+// todos os tipos fixos contam (inclusive laudo e relatório anterior).
+export function documentosPendentes(
+  documentos: { tipo: string; status: string }[],
+  contexto: { formaOrigem: string | null | undefined; temSegundoResponsavel: boolean },
+): DocumentoTipoFixo[] {
+  const porTipo = new Map(documentos.filter((doc) => doc.tipo !== "outro").map((doc) => [doc.tipo, doc]));
+
+  return DOCUMENTO_TIPOS_FIXOS.filter((item) => {
+    const doc = porTipo.get(item.tipo);
+    const pendente = !doc || doc.status === "pendente";
+    return pendente && !naoSeAplicaAutomatico(item.tipo, contexto);
+  }).map((item) => item.tipo);
+}

@@ -41,8 +41,9 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
   const statusAvaliacao = useWatch({ control, name: "statusAvaliacao" });
   const decisaoBloqueada = !decisaoFinalLiberada(statusAvaliacao);
 
+  // id="parecer": âncora do link "Escrever parecer" da homepage.
   return (
-    <Card className="gap-4 p-[24px]">
+    <Card id="parecer" className="scroll-mt-2 gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
         <span className="text-brand">5.</span> Necessidades e parecer
       </h2>

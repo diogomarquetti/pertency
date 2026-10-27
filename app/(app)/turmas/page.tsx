@@ -1,11 +1,17 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { createClient } from "@/lib/supabase/server";
 import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getTurmasAtivas } from "@/lib/pendencias/fontes/turmas";
 
-import { TurmasLista, type TurmaListItem } from "./turmas-lista";
+import { TurmasLista, type FiltroPendencia, type TurmaListItem } from "./turmas-lista";
 
-export default async function TurmasPage() {
+export default async function TurmasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pendencia?: string }>;
+}) {
   const supabase = await createClient();
+  const { pendencia } = await searchParams;
   const [{ data: turmas }, canEdit] = await Promise.all([
     supabase
       .from("turmas")
@@ -32,10 +38,24 @@ export default async function TurmasPage() {
     };
   });
 
+  // Filtro vindo da homepage ("Revisar organização da oferta").
+  let filtroPendencia: FiltroPendencia | null = null;
+  if (pendencia === "organizacao") {
+    const turmasAtivas = await getTurmasAtivas();
+    filtroPendencia = {
+      label: "Organização a revisar",
+      motivoPorTurma: Object.fromEntries(
+        turmasAtivas
+          .filter((turma) => turma.organizacaoDescontinuada)
+          .map((turma) => [turma.id, `Organização descontinuada: ${turma.organizacaoNome}`]),
+      ),
+    };
+  }
+
   return (
     <div>
       <PageTitle value="Turmas" />
-      <TurmasLista turmas={items} canEdit={canEdit} />
+      <TurmasLista turmas={items} canEdit={canEdit} filtroPendencia={filtroPendencia} />
     </div>
   );
 }

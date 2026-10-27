@@ -44,8 +44,9 @@ export function ProfessoresVinculadosCard({
     });
   }
 
+  // id="professores": âncora do link "Vincular professores" da homepage.
   return (
-    <Card className="gap-4 p-[24px]">
+    <Card id="professores" className="scroll-mt-2 gap-4 p-[24px]">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="flex items-baseline gap-2 text-highlight text-ink">
           <span className="text-brand">{numero}.</span> Professores vinculados

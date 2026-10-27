@@ -734,17 +734,40 @@ export async function getPerfilFuncionalEstudante(
 
   const { data } = await supabase
     .from("perfil_funcional_estudante")
-    .select(
-      `meio_comunicacao, recursos_caa, apoio_alimentacao, apoio_higiene, apoio_locomocao,
-       apoio_avd, apoio_avd_checklist, alergias_restricoes, necessita_medicacao,
-       medicacao_detalhes, recursos_acessibilidade, outras_informacoes, situacoes_atencao,
-       o_que_ajuda, seguranca_cuidados`,
-    )
+    .select(PERFIL_FUNCIONAL_COLUNAS)
     .eq("estudante_id", estudanteId)
     .maybeSingle();
 
   if (!data) return null;
 
+  return mapPerfilFuncional(data);
+}
+
+/** Colunas lidas de perfil_funcional_estudante — também usadas pelo painel "Sua turma" da homepage. */
+export const PERFIL_FUNCIONAL_COLUNAS = `meio_comunicacao, recursos_caa, apoio_alimentacao, apoio_higiene, apoio_locomocao,
+       apoio_avd, apoio_avd_checklist, alergias_restricoes, necessita_medicacao,
+       medicacao_detalhes, recursos_acessibilidade, outras_informacoes, situacoes_atencao,
+       o_que_ajuda, seguranca_cuidados`;
+
+type PerfilFuncionalRow = {
+  meio_comunicacao: string | null;
+  recursos_caa: string[] | null;
+  apoio_alimentacao: boolean | null;
+  apoio_higiene: boolean | null;
+  apoio_locomocao: boolean | null;
+  apoio_avd: boolean | null;
+  apoio_avd_checklist: string[] | null;
+  alergias_restricoes: string | null;
+  necessita_medicacao: boolean | null;
+  medicacao_detalhes: string | null;
+  recursos_acessibilidade: string[] | null;
+  outras_informacoes: string | null;
+  situacoes_atencao: string | null;
+  o_que_ajuda: string | null;
+  seguranca_cuidados: string | null;
+};
+
+export function mapPerfilFuncional(data: PerfilFuncionalRow): PerfilFuncionalEstudante {
   return {
     meioComunicacao: data.meio_comunicacao ?? "",
     recursosCaa: data.recursos_caa ?? [],

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
+import { ChevronRight, Eye, Pencil, Plus, Search, X } from "lucide-react";
 
 import { toast } from "@/lib/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -55,12 +55,24 @@ export type TurmaListItem = {
   anoLetivo: number;
 };
 
+/**
+ * Filtro aplicado por link da homepage (ex.: ?pendencia=organizacao) — a
+ * página já resolve quem entra; aqui só mostra o chip e o motivo por linha.
+ */
+export type FiltroPendencia = {
+  label: string;
+  /** Turmas que entram no filtro → motivo exibido na linha. */
+  motivoPorTurma: Record<string, string>;
+};
+
 export function TurmasLista({
   turmas,
   canEdit,
+  filtroPendencia = null,
 }: {
   turmas: TurmaListItem[];
   canEdit: boolean;
+  filtroPendencia?: FiltroPendencia | null;
 }) {
   const [busca, setBusca] = useState("");
   const [ofertaFiltro, setOfertaFiltro] = useState(TODAS_OFERTAS);
@@ -83,9 +95,10 @@ export function TurmasLista({
     return turmas.filter((turma) => {
       const combinaBusca = !termo || turma.nome.toLowerCase().includes(termo);
       const combinaOferta = ofertaFiltro === TODAS_OFERTAS || turma.ofertaSlug === ofertaFiltro;
-      return combinaBusca && combinaOferta;
+      const combinaPendencia = !filtroPendencia || turma.id in filtroPendencia.motivoPorTurma;
+      return combinaBusca && combinaOferta && combinaPendencia;
     });
-  }, [turmas, busca, ofertaFiltro]);
+  }, [turmas, busca, ofertaFiltro, filtroPendencia]);
 
   return (
     <div>
@@ -120,6 +133,19 @@ export function TurmasLista({
               ))}
             </SelectContent>
           </Select>
+
+          {filtroPendencia && (
+            <Badge variant="brand" dot={false} className="gap-1 py-[6px]">
+              {filtroPendencia.label}
+              <Link
+                href="/turmas"
+                aria-label="Remover filtro"
+                className="-mr-[2px] rounded-full hover:text-ink"
+              >
+                <X size={14} strokeWidth={2} aria-hidden="true" />
+              </Link>
+            </Badge>
+          )}
         </div>
 
         {canEdit && (
@@ -150,7 +176,9 @@ export function TurmasLista({
                 <TableRow key={turma.id}>
                   <TableCell>
                     <div className="font-semibold text-ink">{turma.nome}</div>
-                    <div className="text-[12.5px] text-muted">{turma.anoLetivo}</div>
+                    <div className="text-[12.5px] text-muted">
+                      {filtroPendencia?.motivoPorTurma[turma.id] ?? turma.anoLetivo}
+                    </div>
                   </TableCell>
                   <TableCell>{turma.ofertaNome}</TableCell>
                   <TableCell>{turma.turnoNome}</TableCell>
@@ -191,6 +219,11 @@ export function TurmasLista({
                   <div className="truncate text-[12.5px] text-muted">
                     {turma.ofertaNome} · {turma.turnoNome} · {turma.anoLetivo}
                   </div>
+                  {filtroPendencia?.motivoPorTurma[turma.id] && (
+                    <div className="truncate text-[12.5px] text-muted">
+                      {filtroPendencia.motivoPorTurma[turma.id]}
+                    </div>
+                  )}
                   <Badge variant={STATUS_BADGE[turma.status]} className="mt-1">
                     {STATUS_LABEL[turma.status]}
                   </Badge>
@@ -211,7 +244,9 @@ export function TurmasLista({
         <div className="rounded-md border border-line bg-surface px-[24px] py-[48px] text-center">
           <p className="text-sm font-medium text-ink">Nenhuma turma encontrada</p>
           <p className="mt-1 text-[13px] text-muted">
-            Ajuste a busca ou o filtro de oferta e tente novamente.
+            {filtroPendencia
+              ? "Nenhuma turma com essa pendência. Remova o filtro para ver todas."
+              : "Ajuste a busca ou o filtro de oferta e tente novamente."}
           </p>
         </div>
       )}

@@ -202,3 +202,95 @@ de `usuario_id`, que não existe até o cadastro ser salvo pela primeira vez). D
 cada upload/remoção bem-sucedida, o client já atualiza `usuarios.foto_url` diretamente — não
 passa pelas server actions de `createUsuario`/`updateUsuario`, então trocar de foto nunca
 bloqueia nem depende do resto do formulário ser salvo.
+
+## Homepage de pendências — Início (registrado em 2026-10-27)
+
+Requisito: `docs/requisitos/inicio-pendencias.md`. Protótipo aprovado:
+`docs/prototipos/pertency-inicio.html`.
+
+### Pendência é calculada na leitura, não guardada
+
+Não existe tabela de pendências. Cada pendência é consequência do estado atual dos cadastros
+e some sozinha quando o estado muda — não há o que "marcar como resolvido" nem job para
+manter sincronizado. Tudo roda no servidor, com o client normal (`lib/supabase/server.ts`),
+então **a RLS do usuário logado vale para tudo**: ninguém vê pendência de dado que não pode ler.
+
+- `lib/pendencias/index.ts` — `getPendencias()` (em `cache()` do React, uma vez por
+  requisição) devolve `{ usuario, resolver, acompanhar }` já ordenados (atrasada → atenção →
+  normal; dentro da mesma severidade, a mais antiga primeiro). Só roda os tipos em que o
+  perfil logado resolve ou acompanha, em `Promise.allSettled`: um tipo que falha é logado e
+  some da lista, sem derrubar a página.
+- `lib/pendencias/tipos/*.ts` — um arquivo por tipo (`TipoPendencia`): quem resolve, quem
+  acompanha, a regra em texto (mostrada em "Por que estou vendo isto?"), prazo ou severidade
+  fixa, e `carregar()`, que devolve as ocorrências.
+- `lib/pendencias/registro.ts` — a lista dos tipos ativos.
+- `lib/pendencias/fontes/*.ts` — consultas compartilhadas, também em `cache()`: uma consulta de
+  "estudantes em ingresso" alimenta 5 tipos e a Fila de ingresso; o mesmo vale para turmas,
+  documentos e cadastro institucional. Por isso o custo é por fonte, não por tipo nem por item.
+- `lib/pendencias/perfis.ts` — mapa `usuarios.funcao` → perfil do catálogo
+  (`coordenacao_pedagogica` → Pedagogo(a); os quatro papéis de professor → Professor(a)).
+
+**Resolver × acompanhar:** se o perfil está em `resolve`, o item vai para "Para você resolver";
+se está em `acompanha`, para "Acompanhar". Tipo com `porUsuario: true` (hoje só
+`contribuicao_pendente`) só vai para "resolver" de quem é dono da ocorrência.
+
+**Tipo novo** (ex.: PAI vencido): criar `lib/pendencias/tipos/<tipo>.ts`, uma fonte em
+`fontes/` se precisar de consulta nova, e incluir o tipo em `registro.ts`. A homepage não muda.
+
+### Regras provisórias num lugar só
+
+Todos os prazos ficam em `lib/pendencias/prazos.ts` (e o limite de ocupação,
+`OCUPACAO_ALERTA_PERCENTUAL`), marcados `// PROVISÓRIO: validar com P.O`. Tipo com prazo
+provisório mostra a marca "PROVISÓRIO · validar prazo com P.O" na explicação da regra.
+Outras regras provisórias ficam junto da regra compartilhada que já existia — ex.:
+`documentosPendentes()` em `app/(app)/estudantes/documentos-schema.ts`, usada tanto pela aba
+Documentos quanto pela homepage, para as duas nunca divergirem. Pela mesma razão,
+`cadastro_institucional_incompleto` valida com os próprios `escolaSchema`/`mantenedoraSchema`
+dos formulários de Configurações.
+
+### Links da homepage
+
+Cada pendência leva direto ao lugar de resolver: abas do estudante por `?aba=`
+(`avaliacao`, `documentos`, `dados-escolares`, `condicao`), cards por âncora
+(`#parecer`, `#contribuicoes`, `#professores`, `#acesso`, com `scroll-mt-2`) e listas filtradas
+por `?pendencia=` (`/estudantes?pendencia=documentos`, `/turmas?pendencia=organizacao`).
+
+### Coluna lateral por perfil
+
+`lib/pendencias/paineis.ts` (`PAINEIS_POR_PERFIL`) e `components/inicio/coluna-lateral.tsx`:
+Fila de ingresso (Secretaria, Pedagogo(a), Direção), Ocupação das turmas (Direção), Sua turma
+(Professor(a)) e Configuração da escola (Administrador). Profissional complementar não tem
+painel. Mesmo princípio dos tipos: um painel que falha some sozinho.
+
+Dois painéis precisam de dados que a RLS de `vinculos_escolares_anuais` (só Admin, Secretaria
+e Coordenação) não libera, então usam funções `SECURITY DEFINER` da migration
+`supabase/migrations/20261027120000_inicio_rpcs.sql`, que devolvem só o necessário e sempre
+escopadas a `get_escola_id()`:
+
+- `ocupacao_turmas()` — só totais por turma ativa (ocupa vaga quem está Ativo com vínculo na
+  turma), nenhum dado de estudante.
+- `meus_estudantes_por_turma()` — estudantes Ativos das turmas em que `auth.uid()` tem vínculo
+  ativo. Os alertas de rotina são lidos à parte, pela RLS normal de
+  `perfil_funcional_estudante`, com o mesmo `montarAlertas()` do Perfil do Estudante
+  (`app/(app)/estudantes/perfil-funcional-alertas.ts`) — nada clínico (sem CID nem diagnóstico).
+
+### Fora do escopo por enquanto
+
+- Itens adiados do catálogo: `dados_pessoais_incompletos` (o formulário já não salva estudante
+  incompleto), ciência da família e `vaga_disputada` (a avaliação guarda oferta pretendida,
+  não turma).
+- Item 11 do catálogo foi substituído por `usuario_sem_primeiro_acesso`
+  (`usuarios.senha_definida = false`).
+- Sino de notificações: segue sem ação e sem indicador.
+- Bug conhecido, anterior a este módulo: a Direção vê "Estudantes vinculados" vazio na tela da
+  turma, pela mesma RLS de `vinculos_escolares_anuais`.
+
+### Seed de desenvolvimento
+
+`pnpm seed:pendencias` (`scripts/seed-pendencias-dev.ts`) monta a "Escola Especializada
+Caminhos" do protótipo, com um usuário por perfil (`@caminhos.pertency.test`) e um caso para
+cada tipo de pendência e painel. É uma escola à parte — como toda a RLS é por escola, nada dela
+aparece para outras escolas — e sai inteira com `pnpm seed:pendencias --reset`. O script
+recusa rodar sem `PERTENCY_ALLOW_SEED=1`, `SUPABASE_DEV_PROJECT_REF` batendo com a URL do
+Supabase e `SEED_DEV_PASSWORD` no `.env.local`, e recusa em `NODE_ENV`/`VERCEL_ENV` de
+produção. Hoje roda no próprio projeto Pertency (não existe projeto de dev separado).

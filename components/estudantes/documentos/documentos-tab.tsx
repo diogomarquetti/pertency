@@ -14,7 +14,11 @@ import { Input } from "@/components/ui/input";
 
 import { gerarTermoAutorizacaoImagem } from "@/app/(app)/estudantes/autorizacao-imagem-actions";
 import { adicionarDocumentoExtra, removerDocumentoExtra } from "@/app/(app)/estudantes/documentos-actions";
-import { DOCUMENTO_TIPOS_FIXOS, naoSeAplicaAutomatico } from "@/app/(app)/estudantes/documentos-schema";
+import {
+  DOCUMENTO_TIPOS_FIXOS,
+  documentosPendentes,
+  naoSeAplicaAutomatico,
+} from "@/app/(app)/estudantes/documentos-schema";
 import type { DocumentoEstudante } from "@/app/(app)/estudantes/queries";
 
 import { DocumentoLinha } from "./documento-linha";
@@ -49,11 +53,7 @@ export function DocumentosTab({
   const avaliacaoDoc = porTipo.get("avaliacao_ingresso");
   const contextoNaoSeAplica = { formaOrigem, temSegundoResponsavel: !!segundoResponsavelNome.trim() };
 
-  const pendentes = DOCUMENTO_TIPOS_FIXOS.filter((item) => {
-    const doc = porTipo.get(item.tipo);
-    const pendente = !doc || doc.status === "pendente";
-    return pendente && !naoSeAplicaAutomatico(item.tipo, contextoNaoSeAplica);
-  }).length;
+  const pendentes = documentosPendentes(documentos, contextoNaoSeAplica).length;
 
   // O nome do responsável vai no rótulo pra deixar claro de quem é o documento.
   function labelDoTipo(tipo: string, label: string) {

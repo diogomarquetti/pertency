@@ -87,8 +87,9 @@ export function ContribuicoesCard({
     });
   }
 
+  // id="contribuicoes": âncora do link "Contribuir" da homepage.
   return (
-    <Card className="gap-3 p-[24px]">
+    <Card id="contribuicoes" className="scroll-mt-2 gap-3 p-[24px]">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="text-highlight text-ink">Contribuições complementares</h2>
         {podeAdicionar && (

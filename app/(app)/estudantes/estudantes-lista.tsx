@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
+import { ChevronRight, Eye, Pencil, Plus, Search, X } from "lucide-react";
 
 import { getInitials } from "@/lib/utils";
 import { toast } from "@/lib/use-toast";
@@ -46,12 +46,24 @@ export type EstudanteListItem = {
   fotoUrl: string | null;
 };
 
+/**
+ * Filtro aplicado por link da homepage (ex.: ?pendencia=documentos) — a
+ * página já resolve quem entra; aqui só mostra o chip e o detalhe por linha.
+ */
+export type FiltroPendencia = {
+  label: string;
+  /** Estudantes que entram no filtro → texto curto do que está pendente. */
+  contagemPorEstudante: Record<string, string>;
+};
+
 export function EstudantesLista({
   estudantes,
   canEdit,
+  filtroPendencia = null,
 }: {
   estudantes: EstudanteListItem[];
   canEdit: boolean;
+  filtroPendencia?: FiltroPendencia | null;
 }) {
   const [busca, setBusca] = useState("");
   const [situacaoFiltro, setSituacaoFiltro] = useState(TODAS_SITUACOES);
@@ -75,9 +87,10 @@ export function EstudantesLista({
       const combinaBusca = !termo || estudante.nomeCompleto.toLowerCase().includes(termo);
       const combinaSituacao =
         situacaoFiltro === TODAS_SITUACOES || estudante.situacao === situacaoFiltro;
-      return combinaBusca && combinaSituacao;
+      const combinaPendencia = !filtroPendencia || estudante.id in filtroPendencia.contagemPorEstudante;
+      return combinaBusca && combinaSituacao && combinaPendencia;
     });
-  }, [estudantes, busca, situacaoFiltro]);
+  }, [estudantes, busca, situacaoFiltro, filtroPendencia]);
 
   return (
     <div>
@@ -112,6 +125,19 @@ export function EstudantesLista({
               ))}
             </SelectContent>
           </Select>
+
+          {filtroPendencia && (
+            <Badge variant="brand" dot={false} className="gap-1 py-[6px]">
+              {filtroPendencia.label}
+              <Link
+                href="/estudantes"
+                aria-label="Remover filtro"
+                className="-mr-[2px] rounded-full hover:text-ink"
+              >
+                <X size={14} strokeWidth={2} aria-hidden="true" />
+              </Link>
+            </Badge>
+          )}
         </div>
 
         {canEdit && (
@@ -149,7 +175,14 @@ export function EstudantesLista({
                           )}
                           <AvatarFallback>{getInitials(estudante.nomeCompleto)}</AvatarFallback>
                         </Avatar>
-                        <div className="font-semibold text-ink">{estudante.nomeCompleto}</div>
+                        <div>
+                          <div className="font-semibold text-ink">{estudante.nomeCompleto}</div>
+                          {filtroPendencia?.contagemPorEstudante[estudante.id] && (
+                            <div className="text-[12.5px] text-muted">
+                              {filtroPendencia.contagemPorEstudante[estudante.id]}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{idade !== null ? `${idade} anos` : "—"}</TableCell>
@@ -212,6 +245,11 @@ export function EstudantesLista({
                       {idade !== null && (
                         <span className="text-[12.5px] text-muted">{idade} anos</span>
                       )}
+                      {filtroPendencia?.contagemPorEstudante[estudante.id] && (
+                        <span className="text-[12.5px] text-muted">
+                          {filtroPendencia.contagemPorEstudante[estudante.id]}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {canEdit ? (
@@ -241,7 +279,9 @@ export function EstudantesLista({
         <div className="rounded-md border border-line bg-surface px-[24px] py-[48px] text-center">
           <p className="text-sm font-medium text-ink">Nenhum estudante encontrado</p>
           <p className="mt-1 text-[13px] text-muted">
-            Ajuste a busca ou o filtro de situação e tente novamente.
+            {filtroPendencia
+              ? "Nenhum estudante com essa pendência. Remova o filtro para ver todos."
+              : "Ajuste a busca ou o filtro de situação e tente novamente."}
           </p>
         </div>
       )}

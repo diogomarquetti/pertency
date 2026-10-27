@@ -45,8 +45,9 @@ export function AcessoCard(props: AcessoCardProps) {
     setTimeout(() => setCopiado(false), 2000);
   }
 
+  // id="acesso": destino da pendência usuario_sem_primeiro_acesso na homepage.
   return (
-    <Card className="gap-4 p-[24px]">
+    <Card id="acesso" className="scroll-mt-2 gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
         <span className="text-brand">{props.numero}.</span> Acesso
       </h2>
