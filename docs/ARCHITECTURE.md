@@ -262,8 +262,10 @@ Fila de ingresso (Secretaria, Pedagogo(a), Direção), Ocupação das turmas (Di
 (Professor(a)) e Configuração da escola (Administrador). Profissional complementar não tem
 painel. Mesmo princípio dos tipos: um painel que falha some sozinho.
 
-Dois painéis precisam de dados que a RLS de `vinculos_escolares_anuais` (só Admin, Secretaria
-e Coordenação) não libera, então usam funções `SECURITY DEFINER` da migration
+Dois painéis precisam de dados que a RLS de `vinculos_escolares_anuais` não libera para todos
+os perfis (o professor não lê; a Direção também não lia até a migration
+`20261028090000_vinculos_select_direcao.sql`, que corrigiu "Estudantes vinculados" vazio para
+ela na tela da turma), então usam funções `SECURITY DEFINER` da migration
 `supabase/migrations/20261027120000_inicio_rpcs.sql`, que devolvem só o necessário e sempre
 escopadas a `get_escola_id()`:
 
@@ -282,8 +284,6 @@ escopadas a `get_escola_id()`:
 - Item 11 do catálogo foi substituído por `usuario_sem_primeiro_acesso`
   (`usuarios.senha_definida = false`).
 - Sino de notificações: segue sem ação e sem indicador.
-- Bug conhecido, anterior a este módulo: a Direção vê "Estudantes vinculados" vazio na tela da
-  turma, pela mesma RLS de `vinculos_escolares_anuais`.
 
 ### Seed de desenvolvimento
 
