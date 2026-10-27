@@ -144,7 +144,28 @@ export async function getOcupacaoTurmas(): Promise<OcupacaoTurma[]> {
 // ---------------------------------------------------------------------------
 // Sua turma (professor)
 
-export type EstudanteComAlertas = { id: string; nome: string; alertas: Alerta[] };
+export type SeloAlerta = { rotulo: string; descricao: string; risco: "alto" | "medio" | "baixo" };
+export type EstudanteComAlertas = { id: string; nome: string; selos: SeloAlerta[] };
+
+// Painel lateral não comporta os textos de Condição do estudante (escritos
+// para a ficha): só o tipo de cada alerta, na ordem de prioridade abaixo, e o
+// texto completo fica no Perfil do Estudante. "O que ajuda" é orientação, não
+// alerta — fica só na ficha.
+const SELOS: Record<string, Omit<SeloAlerta, "descricao">> = {
+  "Alergia/restrição": { rotulo: "Alergia", risco: "alto" },
+  "Necessita medicação": { rotulo: "Medicação", risco: "alto" },
+  "Segurança e cuidados": { rotulo: "Segurança", risco: "medio" },
+  "Situação que exige atenção": { rotulo: "Atenção", risco: "medio" },
+  "Comunicação alternativa": { rotulo: "Comunicação alternativa", risco: "baixo" },
+};
+const ORDEM_SELOS = Object.keys(SELOS);
+
+function selosDosAlertas(alertas: Alerta[]): SeloAlerta[] {
+  return alertas
+    .filter((alerta) => alerta.titulo in SELOS)
+    .sort((a, b) => ORDEM_SELOS.indexOf(a.titulo) - ORDEM_SELOS.indexOf(b.titulo))
+    .map((alerta) => ({ ...SELOS[alerta.titulo], descricao: alerta.descricao }));
+}
 export type SuaTurma = {
   id: string;
   nome: string;
@@ -179,8 +200,8 @@ export async function getSuasTurmas(usuarioId: string): Promise<SuaTurma[]> {
     : { data: [], error: null };
   if (perfis.error) throw perfis.error;
 
-  const alertasPorEstudante = new Map(
-    (perfis.data ?? []).map((row) => [row.estudante_id, montarAlertas(mapPerfilFuncional(row))]),
+  const selosPorEstudante = new Map(
+    (perfis.data ?? []).map((row) => [row.estudante_id, selosDosAlertas(montarAlertas(mapPerfilFuncional(row)))]),
   );
 
   return (minhasTurmas.data ?? []).flatMap((vinculo) => {
@@ -198,13 +219,19 @@ export async function getSuasTurmas(usuarioId: string): Promise<SuaTurma[]> {
         nome: turma.nome,
         organizacao: turma.etapas_ciclos?.nome ?? "",
         total: estudantes.length,
+        // Quem tem alerta de risco alto (alergia, medicação) vem primeiro.
         comAlertas: estudantes
           .map((row) => ({
             id: row.estudante_id,
             nome: row.estudante_nome,
-            alertas: alertasPorEstudante.get(row.estudante_id) ?? [],
+            selos: selosPorEstudante.get(row.estudante_id) ?? [],
           }))
-          .filter((estudante) => estudante.alertas.length > 0),
+          .filter((estudante) => estudante.selos.length > 0)
+          .sort(
+            (a, b) =>
+              Number(b.selos[0].risco === "alto") - Number(a.selos[0].risco === "alto") ||
+              a.nome.localeCompare(b.nome, "pt-BR"),
+          ),
       },
     ];
   });

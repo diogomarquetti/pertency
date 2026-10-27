@@ -1,69 +1,93 @@
 import Link from "next/link";
 
-import type { SuaTurma } from "@/lib/pendencias/paineis";
+import { Badge } from "@/components/ui/badge";
+import type { SeloAlerta, SuaTurma } from "@/lib/pendencias/paineis";
 
 import { PainelCard } from "./painel-card";
 
-// Só os alertas funcionais de Condição do estudante (mesmos do Perfil do
-// Estudante) — nada clínico: sem CID nem diagnóstico.
+// Quantos estudantes com alerta cabem por turma antes do "Ver todos".
+const LIMITE_ESTUDANTES = 6;
+
+const VARIANTE_SELO: Record<SeloAlerta["risco"], "danger" | "warning" | "neutral"> = {
+  alto: "danger",
+  medio: "warning",
+  baixo: "neutral",
+};
+
+// Só o tipo de cada alerta funcional de Condição do estudante — nada
+// clínico (sem CID nem diagnóstico). O texto completo fica no Perfil do
+// Estudante, a um clique no nome.
 export function PainelSuaTurma({ turmas }: { turmas: SuaTurma[] }) {
-  if (turmas.length === 0) {
+  const comEstudantes = turmas.filter((turma) => turma.total > 0);
+
+  if (comEstudantes.length === 0) {
     return (
       <PainelCard titulo="Sua turma">
-        <p className="text-[13px] text-muted">Você ainda não está vinculado(a) a nenhuma turma ativa.</p>
+        <p className="text-[13px] text-muted">
+          {turmas.length === 0
+            ? "Você ainda não está vinculado(a) a nenhuma turma ativa."
+            : "Nenhum estudante ativo nas suas turmas."}
+        </p>
       </PainelCard>
     );
   }
 
-  return turmas.map((turma) => {
+  return comEstudantes.map((turma) => {
     const semAlertas = turma.total - turma.comAlertas.length;
+    const visiveis = turma.comAlertas.slice(0, LIMITE_ESTUDANTES);
+    const ocultos = turma.comAlertas.length - visiveis.length;
+
     return (
       <PainelCard
         key={turma.id}
-        titulo={turmas.length === 1 ? "Sua turma" : turma.nome}
+        titulo={comEstudantes.length === 1 ? "Sua turma" : turma.nome}
         contagem={`${turma.total} ${turma.total === 1 ? "estudante" : "estudantes"}`}
         rodape={
-          turma.total === 0
-            ? undefined
-            : turma.comAlertas.length === 0
-              ? "Nenhum estudante tem alertas registrados em Condição do estudante."
-              : semAlertas > 0
-                ? semAlertas === 1
-                  ? "O outro estudante não tem alertas registrados em Condição do estudante."
-                  : `Os outros ${semAlertas} estudantes não têm alertas registrados em Condição do estudante.`
+          turma.comAlertas.length === 0
+            ? "Nenhum estudante tem alertas registrados em Condição do estudante."
+            : semAlertas === 1
+              ? "O outro estudante não tem alertas registrados em Condição do estudante."
+              : semAlertas > 1
+                ? `Os outros ${semAlertas} estudantes não têm alertas registrados em Condição do estudante.`
                 : undefined
         }
       >
         <p className="-mt-1 mb-1 text-[13px] text-muted">
-          {[turmas.length === 1 && turma.nome, turma.organizacao].filter(Boolean).join(" · ")}
+          {[comEstudantes.length === 1 && turma.nome, turma.organizacao].filter(Boolean).join(" · ")}
         </p>
 
-        {turma.total === 0 ? (
-          <p className="text-[13px] text-muted">Nenhum estudante ativo nesta turma.</p>
-        ) : turma.comAlertas.length > 0 ? (
+        {visiveis.length > 0 && (
           <>
             <p className="mt-2 text-caption tracking-[.06em] text-muted uppercase">Alertas para a rotina</p>
             <ul>
-              {turma.comAlertas.map((estudante) => (
-                <li key={estudante.id} className="border-t border-line py-[12px] first:border-t-0 last:pb-0">
+              {visiveis.map((estudante) => (
+                <li
+                  key={estudante.id}
+                  className="flex flex-col gap-[6px] border-t border-line py-[10px] first:border-t-0 last:pb-0"
+                >
                   <Link
                     href={`/estudantes/${estudante.id}`}
                     className="text-[14px] font-semibold text-ink hover:text-brand"
                   >
                     {estudante.nome}
                   </Link>
-                  <ul className="mt-[2px] flex flex-col gap-[2px]">
-                    {estudante.alertas.map((alerta) => (
-                      <li key={alerta.titulo} className="text-[13.5px] leading-normal text-ink">
-                        <span className="font-medium">{alerta.titulo}:</span> {alerta.descricao}
-                      </li>
+                  <div className="flex flex-wrap gap-[6px]">
+                    {estudante.selos.map((selo) => (
+                      <Badge key={selo.rotulo} variant={VARIANTE_SELO[selo.risco]} dot={false} title={selo.descricao}>
+                        {selo.rotulo}
+                      </Badge>
                     ))}
-                  </ul>
+                  </div>
                 </li>
               ))}
             </ul>
+            {ocultos > 0 && (
+              <Link href="/estudantes" className="mt-2 inline-block text-[13px] font-semibold text-brand hover:underline">
+                Ver todos ({ocultos === 1 ? "mais 1 estudante" : `mais ${ocultos} estudantes`} com alertas)
+              </Link>
+            )}
           </>
-        ) : null}
+        )}
       </PainelCard>
     );
   });
