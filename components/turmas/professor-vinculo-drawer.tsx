@@ -289,6 +289,8 @@ function DrawerBody({
           />
         </div>
 
+        {/* PROVISÓRIO: validar com P.O — na Educação Infantil o professor
+            continua vinculado à turma inteira. */}
         {pool.ofertaSlug === "ei" && (
           <p className="text-[13px] text-muted">
             Educação Infantil: o professor é vinculado à turma inteira, sem escopo adicional.

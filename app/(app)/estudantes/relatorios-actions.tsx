@@ -24,6 +24,7 @@ type RelatorioMontado =
   | {
       relatorioData: AvaliacaoRelatorioData;
       statusAvaliacao: string;
+      versaoAvaliacao: number;
       avaliacaoAtualizadaEm: string;
     };
 
@@ -36,7 +37,7 @@ async function montarRelatorio(
   const { data: avaliacao } = await supabase
     .from("avaliacoes_ingresso")
     .select(
-      `updated_at, status_avaliacao, equipe_responsavel_ids, data_inicio, data_termino,
+      `updated_at, status_avaliacao, versao, equipe_responsavel_ids, data_inicio, data_termino,
        historico_escolar, informacoes_familia, contexto_sociocultural, habilidades_conceituais,
        habilidades_sociais, habilidades_praticas, dimensao_participacao,
        contexto_escolar, contexto_familiar, contexto_comunitario, fatores_facilitadores,
@@ -145,6 +146,7 @@ async function montarRelatorio(
   return {
     relatorioData,
     statusAvaliacao: avaliacao.status_avaliacao,
+    versaoAvaliacao: avaliacao.versao as number,
     avaliacaoAtualizadaEm: avaliacao.updated_at,
   };
 }
@@ -181,12 +183,13 @@ export async function gerarPreviaRelatorioAvaliacao(
 
 /**
  * Gera um PDF (Padrão ou Completo) da Avaliação de Ingresso — HU-EST-001
- * v2.0, seção 11.4. Só com a avaliação Concluída: antes disso a decisão de
- * elegibilidade ainda não é final (existe a prévia pra conferir). Cada
- * geração cria uma nova versão (nunca sobrescreve a anterior, CA16) e
- * atualiza a linha "Avaliação de Ingresso" do checklist da Aba 3 pra apontar
- * pro PDF mais recente.
+ * v2.0, seção 11.4. Só a partir de uma versão Concluída (existe a prévia pra
+ * conferir antes). O PDF fica ligado à versão da avaliação; gerar de novo o
+ * mesmo tipo na mesma versão não cria duplicata — devolve o existente
+ * (`existente: true`). Atualiza a linha "Avaliação de Ingresso" do checklist
+ * da Aba 3 pra apontar pro PDF mais recente.
  */
+// PROVISÓRIO: validar com P.O — PDF só de versão Concluída, um por tipo em cada versão.
 export async function gerarRelatorioAvaliacao(
   estudanteId: string,
   avaliacaoId: string,
@@ -198,13 +201,25 @@ export async function gerarRelatorioAvaliacao(
   }
   const { supabase, userId, escolaId } = context;
 
+  const { data: relatorioExistente } = await supabase
+    .from("avaliacao_relatorios")
+    .select("arquivo_path")
+    .eq("avaliacao_id", avaliacaoId)
+    .eq("tipo", tipo)
+    .order("gerado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (relatorioExistente) {
+    return { existente: true, arquivoPath: relatorioExistente.arquivo_path as string } as const;
+  }
+
   const montado = await montarRelatorio(context, estudanteId, avaliacaoId, tipo);
   if ("error" in montado) {
     return { error: montado.error };
   }
   if (montado.statusAvaliacao !== "concluida") {
     return {
-      error: "O relatório definitivo só pode ser gerado com a avaliação Concluída e salva.",
+      error: "O relatório definitivo só pode ser gerado a partir de uma versão Concluída.",
     };
   }
 
@@ -227,7 +242,8 @@ export async function gerarRelatorioAvaliacao(
     .maybeSingle();
 
   const versao = (ultimaVersao?.versao ?? 0) + 1;
-  const arquivoPath = `${escolaId}/${estudanteId}/avaliacao-${tipo}-v${versao}.pdf`;
+  // Caminho por versão da avaliação (cada versão é uma linha própria).
+  const arquivoPath = `${escolaId}/${estudanteId}/avaliacao-v${montado.versaoAvaliacao}-${tipo}-${avaliacaoId}.pdf`;
 
   const { error: uploadError } = await supabase.storage
     .from("estudantes-documentos")
@@ -262,7 +278,7 @@ export async function gerarRelatorioAvaliacao(
   const documentoPatch = {
     status: "gerado_pelo_sistema",
     arquivo_path: arquivoPath,
-    arquivo_nome: `Avaliação de Ingresso (${tipo === "completo" ? "completa" : "padrão"}) v${versao}.pdf`,
+    arquivo_nome: `Avaliação de Ingresso (${tipo === "completo" ? "completa" : "padrão"}) - Versão ${montado.versaoAvaliacao}.pdf`,
     data_envio: new Date().toISOString().slice(0, 10),
   };
 

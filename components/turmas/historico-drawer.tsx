@@ -1,6 +1,17 @@
 "use client";
 
-import { BookOpen, Clock, History, Type as TypeIcon, Users, type LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  Clock,
+  History,
+  Layers,
+  Library,
+  Network,
+  Type as TypeIcon,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { FORMA_FUNCIONAMENTO_OPTIONS, cicloLabel } from "@/lib/ofertas-config";
 import { STATUS_OPTIONS } from "@/app/(app)/turmas/schema";
 import type { AuditoriaTurmaRow, ReferenciaTurmaForm } from "@/app/(app)/turmas/queries";
 
@@ -33,6 +45,16 @@ function formatValor(campo: string, valor: string | null, referencia: Referencia
   if (campo === "oferta_id") {
     return referencia.ofertas.find((oferta) => oferta.id === valor)?.nome ?? "Oferta removida do sistema";
   }
+  if (campo === "etapa_ciclo_id") {
+    return referencia.organizacoes.find((org) => org.id === valor)?.nome ?? "Organização removida do sistema";
+  }
+  if (campo === "matriz_curricular_id") {
+    return referencia.matrizes.find((matriz) => matriz.id === valor)?.nome ?? "Matriz removida do sistema";
+  }
+  if (campo === "ciclo") return cicloLabel(Number(valor)) || valor;
+  if (campo === "forma_funcionamento") {
+    return FORMA_FUNCIONAMENTO_OPTIONS.find((opcao) => opcao.value === valor)?.label ?? valor;
+  }
   return valor;
 }
 
@@ -41,6 +63,10 @@ const CAMPO_META: Record<string, { icon: LucideIcon; label: string }> = {
   nome: { icon: TypeIcon, label: "Nome da turma" },
   capacidade: { icon: Users, label: "Capacidade" },
   oferta_id: { icon: BookOpen, label: "Oferta" },
+  etapa_ciclo_id: { icon: Network, label: "Organização da oferta" },
+  ciclo: { icon: Layers, label: "Ciclo" },
+  matriz_curricular_id: { icon: Library, label: "Matriz curricular" },
+  forma_funcionamento: { icon: CalendarClock, label: "Forma de funcionamento" },
 };
 
 function AuditoriaItem({ row, referencia }: { row: AuditoriaTurmaRow; referencia: ReferenciaTurmaForm }) {

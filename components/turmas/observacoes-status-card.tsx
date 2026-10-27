@@ -13,11 +13,18 @@ import { Textarea } from "@/components/ui/textarea";
 
 import type { UpdateTurmaValues } from "@/app/(app)/turmas/schema";
 
-export function ObservacoesStatusCard({ control }: { control: Control<UpdateTurmaValues> }) {
+/** Status fica só no bloco 1 (Identificação). */
+export function ObservacoesStatusCard({
+  numero,
+  control,
+}: {
+  numero: number;
+  control: Control<UpdateTurmaValues>;
+}) {
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
-        <span className="text-brand">6.</span> Observações e status
+        <span className="text-brand">{numero}.</span> Observações e período
       </h2>
 
       <FormField

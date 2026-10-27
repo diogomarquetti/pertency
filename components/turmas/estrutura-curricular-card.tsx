@@ -13,31 +13,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
-  AREAS_CONHECIMENTO_EF,
   AREAS_CONHECIMENTO_EJA,
-  CAMPOS_EXPERIENCIA,
-  DIREITOS_APRENDIZAGEM,
-  EIXO_ESTRUTURANTE_EI,
   EIXOS_FUNCIONAIS,
   UNIDADES_OCUPACIONAIS,
-  getEtapasDoCiclo,
   type UpdateTurmaValues,
 } from "@/app/(app)/turmas/schema";
 import type { ReferenciaTurmaForm } from "@/app/(app)/turmas/queries";
 
 type MultiSelectName =
-  | "camposExperiencias"
-  | "direitosAprendizagem"
   | "areasConhecimento"
   | "componenteIds"
   | "unidadesOcupacionais"
@@ -103,6 +89,29 @@ function MultiSelectField({
   );
 }
 
+/** Itens que vêm da matriz curricular — só leitura na turma. */
+function ItensDaMatriz({ label, itens }: { label: string; itens: string[] }) {
+  return (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      {itens.length === 0 ? (
+        <p className="text-[13px] text-muted">Não definido na matriz curricular.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {itens.map((item) => (
+            <span
+              key={item}
+              className="inline-flex items-center rounded-sm border border-dashed border-line bg-bg px-[14px] py-[9px] text-[14px] text-ink"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EstruturaCurricularCard({
   form,
   referencia,
@@ -111,43 +120,43 @@ export function EstruturaCurricularCard({
   referencia: ReferenciaTurmaForm;
 }) {
   const ofertaSlug = form.watch("ofertaSlug");
-  const organizacaoId = form.watch("organizacaoId");
-  const organizacaoNome = referencia.organizacoes.find((o) => o.id === organizacaoId)?.nome;
-  const etapasDoCiclo = getEtapasDoCiclo(organizacaoNome);
+  const matrizId = form.watch("matrizCurricularId");
+  const matriz = referencia.matrizes.find((m) => m.id === matrizId);
   const componenteOptions = referencia.componentes.map((c) => ({ value: c.id, label: c.nome }));
+
+  // Ensino Fundamental: componentes da matriz agrupados por área, na ordem
+  // em que aparecem.
+  const componentesPorArea = new Map<string, string[]>();
+  for (const componente of matriz?.componentes ?? []) {
+    componentesPorArea.set(componente.area, [...(componentesPorArea.get(componente.area) ?? []), componente.nome]);
+  }
 
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
-        <span className="text-brand">3.</span> Estrutura curricular
+        <span className="text-brand">3.</span> Organização específica
       </h2>
 
       {!ofertaSlug && (
         <p className="text-[13px] text-muted">
-          Selecione a oferta no bloco anterior para configurar a estrutura curricular da turma.
+          Selecione a oferta no bloco anterior para ver a organização específica da turma.
         </p>
       )}
 
-      {ofertaSlug === "ei" && (
+      {(ofertaSlug === "ei" || ofertaSlug === "ef") && !matriz && (
+        <p className="text-[13px] text-muted">
+          Selecione a matriz curricular no bloco anterior — a organização da turma vem dela.
+        </p>
+      )}
+
+      {ofertaSlug === "ei" && matriz && (
         <div className="flex flex-col gap-5">
-          <MultiSelectField
-            control={form.control}
-            name="camposExperiencias"
-            label="Campos de experiências"
-            options={toOptions(CAMPOS_EXPERIENCIA)}
-          />
-          <MultiSelectField
-            control={form.control}
-            name="direitosAprendizagem"
-            label="Direitos de aprendizagem"
-            options={toOptions(DIREITOS_APRENDIZAGEM)}
-          />
-          <div className="grid gap-2">
-            <Label>Eixos estruturantes</Label>
-            <div className="inline-flex w-fit items-center gap-2 rounded-sm border border-dashed border-line bg-bg px-[14px] py-[9px] text-[14px] font-semibold text-ink">
-              {EIXO_ESTRUTURANTE_EI}
-            </div>
-          </div>
+          <p className="text-[13px] text-muted">
+            Definidos pela matriz curricular ({matriz.nome}). A escolha pedagógica acontece no Planejamento.
+          </p>
+          <ItensDaMatriz label="Campos de experiências" itens={matriz.camposExperiencias} />
+          <ItensDaMatriz label="Direitos de aprendizagem" itens={matriz.direitosAprendizagem} />
+          <ItensDaMatriz label="Eixos estruturantes" itens={matriz.eixosEstruturantes} />
           <FormField
             control={form.control}
             name="objetivoGeral"
@@ -169,51 +178,20 @@ export function EstruturaCurricularCard({
         </div>
       )}
 
-      {ofertaSlug === "ef" && (
+      {ofertaSlug === "ef" && matriz && (
         <div className="flex flex-col gap-5">
-          <FormField
-            control={form.control}
-            name="etapaDoCiclo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Etapa do ciclo</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange} disabled={etapasDoCiclo.length === 0}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          organizacaoId ? "Selecione…" : "Selecione a organização da oferta primeiro"
-                        }
-                      />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {etapasDoCiclo.map((etapa) => (
-                      <SelectItem key={etapa} value={etapa}>
-                        {etapa}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <MultiSelectField
-            control={form.control}
-            name="areasConhecimento"
-            label="Áreas do conhecimento"
-            options={toOptions(AREAS_CONHECIMENTO_EF)}
-          />
-          <MultiSelectField
-            control={form.control}
-            name="componenteIds"
-            label="Componentes curriculares"
-            options={componenteOptions}
-          />
+          <p className="text-[13px] text-muted">
+            Áreas do conhecimento e componentes curriculares definidos pela matriz ({matriz.nome}).
+          </p>
+          {componentesPorArea.size === 0 ? (
+            <p className="text-[13px] text-muted">A matriz ainda não tem componentes cadastrados.</p>
+          ) : (
+            [...componentesPorArea].map(([area, componentes]) => (
+              <ItensDaMatriz key={area} label={area} itens={componentes} />
+            ))
+          )}
         </div>
       )}
-
       {ofertaSlug === "eja" && (
         <div className="flex flex-col gap-5">
           <MultiSelectField

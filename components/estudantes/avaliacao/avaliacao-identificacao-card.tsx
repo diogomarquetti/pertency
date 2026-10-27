@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
 import { STATUS_AVALIACAO_OPTIONS, type AvaliacaoValues } from "@/app/(app)/estudantes/avaliacao-schema";
 import type { ReferenciaOfertas, UsuarioElegivel } from "@/app/(app)/estudantes/queries";
 
@@ -33,14 +34,20 @@ export function AvaliacaoIdentificacaoCard({
   form,
   equipeElegivel,
   referenciaOfertas,
+  podeConcluir,
 }: {
   form: UseFormReturn<AvaliacaoValues>;
   equipeElegivel: UsuarioElegivel[];
   referenciaOfertas: ReferenciaOfertas;
+  /** Concluir: Pedagogo(a), Direção e Administrador — ver pode_fechar_avaliacao(). */
+  podeConcluir: boolean;
 }) {
   const ofertaPretendidaId = form.watch("ofertaPretendidaId");
-  const organizacoesFiltradas = referenciaOfertas.organizacoes.filter(
-    (organizacao) => organizacao.ofertaId === ofertaPretendidaId,
+  const organizacaoPretendidaId = form.watch("organizacaoPretendidaId");
+  const organizacoesFiltradas = organizacoesSelecionaveis(
+    referenciaOfertas.organizacoes,
+    ofertaPretendidaId,
+    organizacaoPretendidaId,
   );
 
   return (
@@ -134,7 +141,7 @@ export function AvaliacaoIdentificacaoCard({
                 <SelectContent>
                   {organizacoesFiltradas.map((organizacao) => (
                     <SelectItem key={organizacao.id} value={organizacao.id}>
-                      {organizacao.nome}
+                      {organizacaoLabel(organizacao)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -189,7 +196,13 @@ export function AvaliacaoIdentificacaoCard({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {STATUS_AVALIACAO_OPTIONS.map((status) => (
+                  {STATUS_AVALIACAO_OPTIONS.filter(
+                    (status) =>
+                      status.value === field.value ||
+                      status.value === "rascunho" ||
+                      status.value === "em_andamento" ||
+                      (status.value === "concluida" && podeConcluir),
+                  ).map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>

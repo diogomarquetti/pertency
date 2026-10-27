@@ -105,7 +105,9 @@ type EstudanteFormProps = {
       defaultValues: UpdateEstudanteValues;
       fotoUrlInicial: string | null;
       auditoria: AuditoriaEstudanteRow[];
+      /** Versão vigente (Concluída) ou, sem ela, a em edição — libera Documentos/Dados escolares. */
       avaliacao: AvaliacaoIngresso | null;
+      versoesAvaliacao: AvaliacaoIngresso[];
       equipeElegivel: UsuarioElegivel[];
       referenciaOfertas: ReferenciaOfertas;
       documentos: DocumentoEstudante[];
@@ -145,6 +147,8 @@ export function EstudanteForm(props: EstudanteFormProps) {
     abaInicial && ABAS_VALIDAS.has(abaInicial) ? abaInicial : "dados-pessoais",
   );
   const [avaliacaoPending, setAvaliacaoPending] = useState(false);
+  // Versão da avaliação aberta é Concluída/Retificada/Cancelada: some o Salvar do topo.
+  const [avaliacaoSomenteLeitura, setAvaliacaoSomenteLeitura] = useState(false);
   const [dadosEscolaresPending, setDadosEscolaresPending] = useState(false);
   const [condicaoPending, setCondicaoPending] = useState(false);
   const setPageActions = usePageActionsSetter();
@@ -196,7 +200,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
       pending: formIdDaAba ? (PENDING_POR_ABA[activeTab] ?? false) : false,
       cancelHref: "/estudantes",
       cancelLabel: props.canEdit ? undefined : "Voltar",
-      readOnly: !props.canEdit || !formIdDaAba,
+      readOnly: !props.canEdit || !formIdDaAba || (activeTab === "avaliacao" && avaliacaoSomenteLeitura),
       isDirty,
     });
     return () => setPageActions(null);
@@ -207,6 +211,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
     avaliacaoPending,
     dadosEscolaresPending,
     condicaoPending,
+    avaliacaoSomenteLeitura,
     props.canEdit,
     isDirty,
   ]);
@@ -346,7 +351,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
         {props.mode === "edit" ? (
           <AvaliacaoTab
             estudanteId={props.estudanteId}
-            avaliacao={props.avaliacao}
+            versoes={props.versoesAvaliacao}
             equipeElegivel={props.equipeElegivel}
             referenciaOfertas={props.referenciaOfertas}
             contribuicoes={props.contribuicoes}
@@ -357,6 +362,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
             canGerarRelatorio={props.canGerarRelatorio}
             canEdit={props.canEdit}
             onPendingChange={setAvaliacaoPending}
+            onSomenteLeituraChange={setAvaliacaoSomenteLeitura}
           />
         ) : (
           <AbaPlaceholder titulo="Avaliação de Ingresso" />

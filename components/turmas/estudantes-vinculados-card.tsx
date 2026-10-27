@@ -34,11 +34,17 @@ const SITUACAO_BADGE: Record<string, "success" | "warning" | "danger" | "neutral
  * (Aba 4, Dados escolares), reaproveitando o mesmo catálogo de turmas.
  * Fecha a ponta deixada em aberto desde a Fase 1 de Turmas.
  */
-export function EstudantesVinculadosCard({ estudantes }: { estudantes: EstudanteVinculado[] }) {
+export function EstudantesVinculadosCard({
+  numero,
+  estudantes,
+}: {
+  numero: number;
+  estudantes: EstudanteVinculado[];
+}) {
   return (
     <Card className="gap-4 p-[24px]">
       <h2 className="flex items-baseline gap-2 text-highlight text-ink">
-        <span className="text-brand">5.</span> Estudantes vinculados
+        <span className="text-brand">{numero}.</span> Estudantes vinculados
       </h2>
 
       {estudantes.length === 0 ? (

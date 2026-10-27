@@ -21,7 +21,7 @@ import {
   gerarPreviaRelatorioAvaliacao,
   gerarRelatorioAvaliacao,
 } from "@/app/(app)/estudantes/relatorios-actions";
-import type { RelatorioAvaliacao } from "@/app/(app)/estudantes/queries";
+import type { AvaliacaoIngresso, RelatorioAvaliacao } from "@/app/(app)/estudantes/queries";
 
 const TIPO_LABEL: Record<string, string> = { padrao: "Padrão", completo: "Completo" };
 
@@ -34,37 +34,47 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 });
 
 /**
- * "Desatualizado" (CA16) é calculado aqui, comparando o `updated_at` que a
- * avaliação tinha no momento da geração com o `updated_at` atual — sem
- * trigger nem flag mantida à mão.
+ * PDFs ficam ligados à versão da avaliação ("Completo · Versão 2") — a
+ * versão concluída não muda, então não existe mais "Desatualizado"; PDFs de
+ * versões retificadas aparecem como "Versão anterior". Um PDF por tipo em
+ * cada versão: gerar de novo abre o existente.
  *
- * Relatório definitivo só com a avaliação Concluída (status já salvo — o PDF
- * sempre sai dos dados salvos). Antes disso existe só a prévia, com marca
- * d'água, que não vira versão.
+ * Relatório definitivo só a partir de versão Concluída. Antes disso existe
+ * só a prévia, com marca d'água, que não vira documento.
  */
 export function RelatoriosCard({
   estudanteId,
-  avaliacaoId,
+  versao,
+  versoes,
   relatorios,
-  avaliacaoAtualizadaEm,
-  avaliacaoConcluida,
   canGerar,
 }: {
   estudanteId: string;
-  avaliacaoId: string;
+  /** Versão aberta na aba. */
+  versao: AvaliacaoIngresso;
+  versoes: AvaliacaoIngresso[];
   relatorios: RelatorioAvaliacao[];
-  avaliacaoAtualizadaEm: string;
-  avaliacaoConcluida: boolean;
   canGerar: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const avaliacaoId = versao.id;
+  const avaliacaoConcluida = versao.statusAvaliacao === "concluida";
+  const versaoPorId = new Map(versoes.map((v) => [v.id, v]));
+  const tiposGerados = new Set(
+    relatorios.filter((relatorio) => relatorio.avaliacaoId === avaliacaoId).map((relatorio) => relatorio.tipo),
+  );
 
   function handleGerar(tipo: "padrao" | "completo") {
     startTransition(async () => {
       const result = await gerarRelatorioAvaliacao(estudanteId, avaliacaoId, tipo);
       if (result && "error" in result) {
         toast.error("Não foi possível gerar o relatório", result.error);
+        return;
+      }
+      if (result && "existente" in result && result.arquivoPath) {
+        toast.success(`O relatório ${TIPO_LABEL[tipo].toLowerCase()} desta versão já existe. Abrindo.`);
+        handleVisualizar(result.arquivoPath);
         return;
       }
       toast.success(`Relatório ${TIPO_LABEL[tipo].toLowerCase()} gerado com sucesso.`);
@@ -128,23 +138,23 @@ export function RelatoriosCard({
                 <DropdownMenuItem onSelect={() => handlePrevia("completo")}>Prévia do relatório completo</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {avaliacaoConcluida && (
-              <>
-                <Button type="button" variant="secondary" size="sm" onClick={() => handleGerar("padrao")} disabled={isPending}>
-                  Gerar relatório padrão
-                </Button>
-                <Button type="button" size="sm" onClick={() => handleGerar("completo")} disabled={isPending}>
-                  Gerar relatório completo
-                </Button>
-              </>
+            {avaliacaoConcluida && !tiposGerados.has("padrao") && (
+              <Button type="button" variant="secondary" size="sm" onClick={() => handleGerar("padrao")} disabled={isPending}>
+                Gerar relatório padrão
+              </Button>
+            )}
+            {avaliacaoConcluida && !tiposGerados.has("completo") && (
+              <Button type="button" size="sm" onClick={() => handleGerar("completo")} disabled={isPending}>
+                Gerar relatório completo
+              </Button>
             )}
           </div>
         )}
       </div>
 
-      {canGerar && !avaliacaoConcluida && (
+      {canGerar && !avaliacaoConcluida && versao.statusAvaliacao !== "retificada" && (
         <p className="text-[12.5px] text-muted">
-          O relatório definitivo é liberado quando a avaliação estiver &ldquo;Concluída&rdquo; e
+          O relatório definitivo é liberado quando esta versão estiver &ldquo;Concluída&rdquo; e
           salva. Até lá, use a prévia para conferir o conteúdo.
         </p>
       )}
@@ -154,7 +164,8 @@ export function RelatoriosCard({
       ) : (
         <div className="flex flex-col">
           {relatorios.map((relatorio) => {
-            const desatualizado = relatorio.avaliacaoAtualizadaEm < avaliacaoAtualizadaEm;
+            const versaoDoRelatorio = versaoPorId.get(relatorio.avaliacaoId);
+            const versaoAnterior = versaoDoRelatorio?.statusAvaliacao === "retificada";
             return (
               <div
                 key={relatorio.id}
@@ -164,8 +175,8 @@ export function RelatoriosCard({
                   <FileText size={18} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 font-semibold text-ink">
-                      {TIPO_LABEL[relatorio.tipo]} · v{relatorio.versao}
-                      {desatualizado && <Badge variant="warning">Desatualizado</Badge>}
+                      {TIPO_LABEL[relatorio.tipo]} · Versão {versaoDoRelatorio?.versao ?? "—"}
+                      {versaoAnterior && <Badge variant="neutral">Versão anterior</Badge>}
                     </div>
                     <div className="mt-[2px] text-[12.5px] text-muted">
                       Gerado por {relatorio.geradoPorNome ?? "—"} em{" "}

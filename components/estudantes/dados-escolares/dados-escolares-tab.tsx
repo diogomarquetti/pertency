@@ -40,7 +40,6 @@ type CamposVinculo = Pick<
   | "ofertaAtualId"
   | "ofertaAtualSlug"
   | "organizacaoAtualId"
-  | "etapaDoCiclo"
   | "turnoId"
   | "turmaId"
   | "matriculaInterna"
@@ -53,7 +52,6 @@ const CAMPOS_VINCULO_VAZIOS: CamposVinculo = {
   ofertaAtualId: "",
   ofertaAtualSlug: "",
   organizacaoAtualId: "",
-  etapaDoCiclo: "",
   turnoId: "",
   turmaId: "",
   matriculaInterna: "",
@@ -74,7 +72,6 @@ function vinculoInicial(
       ofertaAtualId: maisRecente.ofertaAtualId,
       ofertaAtualSlug: maisRecente.ofertaAtualSlug,
       organizacaoAtualId: maisRecente.organizacaoAtualId,
-      etapaDoCiclo: maisRecente.etapaDoCiclo,
       turnoId: maisRecente.turnoId,
       turmaId: maisRecente.turmaId,
       matriculaInterna: maisRecente.matriculaInterna,

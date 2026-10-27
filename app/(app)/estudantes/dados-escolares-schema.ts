@@ -63,7 +63,6 @@ const dadosEscolaresFields = {
   ofertaAtualSlug: z.string().optional().or(z.literal("")),
   ofertaAtualId: z.string().optional().or(z.literal("")),
   organizacaoAtualId: z.string().optional().or(z.literal("")),
-  etapaDoCiclo: z.string().optional().or(z.literal("")),
   turnoId: z.string().optional().or(z.literal("")),
   turmaId: z.string().optional().or(z.literal("")),
   matriculaInterna: z.string().optional().or(z.literal("")),
@@ -79,8 +78,8 @@ const dadosEscolaresFields = {
 
 // Regra 3 da história: estudante Ativo precisa de oferta atual, organização
 // atual, turno, turma, número de matrícula (coluna `matricula_interna`) e
-// data de matrícula efetiva, forma de origem. Regra do bloco "Ensino Fundamental": etapa do
-// ciclo obrigatória nessa oferta. Bloco "Encerramento": obrigatório quando a
+// data de matrícula efetiva, forma de origem. (A etapa do ciclo deixou de
+// ser pedida aqui — retorno do P.O de 2026-10-27; as etapas são da turma.) Bloco "Encerramento": obrigatório quando a
 // situação é transferido/desligado/inativo.
 export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superRefine((data, ctx) => {
   if (data.situacao === "ativo") {
@@ -99,10 +98,6 @@ export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superR
         ctx.addIssue({ code: "custom", path: [campo], message: mensagem });
       }
     }
-  }
-
-  if (data.ofertaAtualSlug === "ef" && !data.etapaDoCiclo) {
-    ctx.addIssue({ code: "custom", path: ["etapaDoCiclo"], message: "Selecione a etapa do ciclo" });
   }
 
   if (situacaoTemEncerramento(data.situacao)) {
@@ -136,7 +131,6 @@ export const DADOS_ESCOLARES_EMPTY_VALUES: DadosEscolaresValues = {
   ofertaAtualSlug: "",
   ofertaAtualId: "",
   organizacaoAtualId: "",
-  etapaDoCiclo: "",
   turnoId: "",
   turmaId: "",
   matriculaInterna: "",

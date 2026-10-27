@@ -9,6 +9,7 @@ import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 import {
   getAuditoriaTurma,
   getComponentesTurma,
+  getCronogramaTurma,
   getEstudantesVinculados,
   getProfessoresElegiveis,
   getProfessoresVinculados,
@@ -28,9 +29,8 @@ export default async function EditarTurmaPage({
     .from("turmas")
     .select(
       `nome, ano_letivo_id, turno_id, capacidade, status, data_inicio, data_fim, observacoes,
-       campos_experiencias, direitos_aprendizagem, objetivo_geral, etapa_do_ciclo, areas_conhecimento,
-       unidades_ocupacionais, eixos_funcionais, oferta_id, etapa_ciclo_id, matriz_curricular_id,
-       ofertas(slug)`,
+       objetivo_geral, areas_conhecimento, unidades_ocupacionais, eixos_funcionais, oferta_id,
+       etapa_ciclo_id, ciclo, etapas, matriz_curricular_id, forma_funcionamento, ofertas(slug)`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -42,6 +42,7 @@ export default async function EditarTurmaPage({
   const [
     referencia,
     componenteIds,
+    cronograma,
     auditoria,
     professoresVinculados,
     professoresElegiveis,
@@ -50,6 +51,7 @@ export default async function EditarTurmaPage({
   ] = await Promise.all([
     getReferenciaTurmaForm(),
     getComponentesTurma(id),
+    getCronogramaTurma(id),
     getAuditoriaTurma(id),
     getProfessoresVinculados(id),
     getProfessoresElegiveis(),
@@ -59,9 +61,16 @@ export default async function EditarTurmaPage({
 
   const ofertaSlug = (turma.ofertas as unknown as { slug: string } | null)?.slug ?? "";
 
+  const isEja = ofertaSlug === "eja";
+  // EF: componentes do vínculo do professor vêm da matriz da turma. EJA
+  // continua usando os componentes escolhidos na própria turma.
+  const matriz = referencia.matrizes.find((m) => m.id === turma.matriz_curricular_id);
   const scopePool: ScopePool = {
     ofertaSlug: ofertaSlug as ScopePool["ofertaSlug"],
-    componentes: referencia.componentes.filter((componente) => componenteIds.includes(componente.id)),
+    componentes:
+      ofertaSlug === "ef"
+        ? (matriz?.componentes ?? []).map(({ id: componenteId, nome }) => ({ id: componenteId, nome }))
+        : referencia.componentes.filter((componente) => componenteIds.includes(componente.id)),
     areasConhecimento: turma.areas_conhecimento ?? [],
     unidadesOcupacionais: turma.unidades_ocupacionais ?? [],
     eixosFuncionais: turma.eixos_funcionais ?? [],
@@ -75,19 +84,22 @@ export default async function EditarTurmaPage({
     ofertaSlug: ofertaSlug as UpdateTurmaValues["ofertaSlug"],
     ofertaId: turma.oferta_id,
     organizacaoId: turma.etapa_ciclo_id,
+    ciclo: turma.ciclo ? String(turma.ciclo) : "",
+    etapas: (turma.etapas as number[] | null) ?? [],
     matrizCurricularId: turma.matriz_curricular_id,
+    formaFuncionamento: (turma.forma_funcionamento ?? "diaria") as UpdateTurmaValues["formaFuncionamento"],
     status: turma.status as UpdateTurmaValues["status"],
     dataInicio: turma.data_inicio,
     dataFim: turma.data_fim ?? "",
     observacoes: turma.observacoes ?? "",
-    camposExperiencias: turma.campos_experiencias ?? [],
-    direitosAprendizagem: turma.direitos_aprendizagem ?? [],
     objetivoGeral: turma.objetivo_geral ?? "",
-    etapaDoCiclo: turma.etapa_do_ciclo ?? "",
-    areasConhecimento: turma.areas_conhecimento ?? [],
-    componenteIds,
+    areasConhecimento: isEja ? (turma.areas_conhecimento ?? []) : [],
+    componenteIds: isEja ? componenteIds : [],
     unidadesOcupacionais: turma.unidades_ocupacionais ?? [],
     eixosFuncionais: turma.eixos_funcionais ?? [],
+    cronogramaDias: cronograma?.diasSemana ?? [],
+    cronogramaHoraInicio: cronograma?.horaInicio ?? "",
+    cronogramaHoraFim: cronograma?.horaFim ?? "",
   };
 
   return (

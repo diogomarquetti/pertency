@@ -1,11 +1,29 @@
 import { z } from "zod";
 
+// Retificada e Cancelada são definidos pelo sistema (fluxos "Retificar
+// avaliação" e "Cancelar avaliação"); no select só aparecem os três
+// primeiros. Não existe mais "Reaberta": avaliação concluída é imutável.
 export const STATUS_AVALIACAO_OPTIONS = [
-  { value: "nao_iniciada", label: "Não iniciada" },
+  { value: "rascunho", label: "Rascunho" },
   { value: "em_andamento", label: "Em andamento" },
   { value: "concluida", label: "Concluída" },
-  { value: "reaberta", label: "Reaberta" },
+  { value: "retificada", label: "Retificada" },
+  { value: "cancelada", label: "Cancelada" },
 ] as const;
+
+export const STATUS_AVALIACAO_EDITAVEIS = ["rascunho", "em_andamento", "concluida"] as const;
+
+/** Inclui os status antigos, que ainda aparecem no histórico de alterações. */
+export const STATUS_AVALIACAO_LABEL: Record<string, string> = {
+  ...Object.fromEntries(STATUS_AVALIACAO_OPTIONS.map((option) => [option.value, option.label])),
+  nao_iniciada: "Não iniciada",
+  reaberta: "Reaberta",
+};
+
+/** Rascunho e Em andamento são editáveis; Concluída, Retificada e Cancelada, não. */
+export function avaliacaoEditavel(statusAvaliacao: string) {
+  return statusAvaliacao === "rascunho" || statusAvaliacao === "em_andamento";
+}
 
 export const NIVEL_APOIO_OPTIONS = [
   { value: "intermitente", label: "Intermitente" },
@@ -47,7 +65,7 @@ const avaliacaoFields = z.object({
   organizacaoPretendidaId: z.string().optional().or(z.literal("")),
   dataInicio: z.string().optional().or(z.literal("")),
   dataTermino: z.string().optional().or(z.literal("")),
-  statusAvaliacao: z.enum(["nao_iniciada", "em_andamento", "concluida", "reaberta"]),
+  statusAvaliacao: z.enum(STATUS_AVALIACAO_EDITAVEIS),
 
   historicoEscolar: z.string().optional().or(z.literal("")),
   informacoesFamilia: z.string().optional().or(z.literal("")),
@@ -106,7 +124,7 @@ export const AVALIACAO_EMPTY_VALUES: AvaliacaoValues = {
   organizacaoPretendidaId: "",
   dataInicio: "",
   dataTermino: "",
-  statusAvaliacao: "nao_iniciada",
+  statusAvaliacao: "rascunho",
   historicoEscolar: "",
   informacoesFamilia: "",
   contextoSociocultural: "",

@@ -37,8 +37,7 @@ function toggleValue(current: string[], value: string) {
 export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoValues> }) {
   // A decisão final (elegibilidade, justificativa, encaminhamento) só abre
   // com o status "Concluída" — reage ao select do bloco 1, não ao valor
-  // salvo, pra dar pra concluir e decidir no mesmo salvamento. Se a
-  // avaliação for reaberta, os valores continuam guardados, só travados.
+  // salvo, pra dar pra concluir e decidir no mesmo salvamento.
   const statusAvaliacao = useWatch({ control, name: "statusAvaliacao" });
   const decisaoBloqueada = !decisaoFinalLiberada(statusAvaliacao);
 

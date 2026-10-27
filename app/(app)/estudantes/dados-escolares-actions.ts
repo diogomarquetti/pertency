@@ -47,7 +47,6 @@ function toVinculoAnualRow(
     escola_id: escolaId,
     oferta_atual_id: data.ofertaAtualId || null,
     organizacao_atual_id: data.organizacaoAtualId || null,
-    etapa_do_ciclo: data.ofertaAtualSlug === "ef" ? data.etapaDoCiclo || null : null,
     turno_id: data.turnoId || null,
     turma_id: data.turmaId || null,
     matricula_interna: data.matriculaInterna || null,

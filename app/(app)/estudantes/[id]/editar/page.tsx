@@ -12,9 +12,9 @@ import {
 } from "@/lib/supabase/get-viewer-role";
 
 import {
+  avaliacaoVigente,
   getAnosLetivosReferencia,
   getAuditoriaEstudante,
-  getAvaliacaoIngresso,
   getCondicoesEstudante,
   getContribuicoesAvaliacao,
   getDadosEscolares,
@@ -25,6 +25,7 @@ import {
   getRelatoriosAvaliacao,
   getTurmasReferencia,
   getTurnosAtivos,
+  getVersoesAvaliacaoIngresso,
   getVinculosEscolaresAnuais,
 } from "../../queries";
 import type { UpdateEstudanteValues } from "../../schema";
@@ -61,7 +62,7 @@ export default async function EditarEstudantePage({
 
   const [
     auditoria,
-    avaliacao,
+    versoesAvaliacao,
     equipeElegivel,
     referenciaOfertas,
     documentos,
@@ -79,7 +80,7 @@ export default async function EditarEstudantePage({
     viewer,
   ] = await Promise.all([
     getAuditoriaEstudante(id),
-    getAvaliacaoIngresso(id),
+    getVersoesAvaliacaoIngresso(id),
     getEquipeElegivel(),
     getReferenciaOfertas(),
     getDocumentosEstudante(id),
@@ -97,9 +98,12 @@ export default async function EditarEstudantePage({
     getCurrentUser(),
   ]);
 
-  const [contribuicoes, relatorios] = avaliacao
-    ? await Promise.all([getContribuicoesAvaliacao(avaliacao.id), getRelatoriosAvaliacao(avaliacao.id)])
-    : [[], []];
+  const avaliacao = avaliacaoVigente(versoesAvaliacao);
+  const versaoIds = versoesAvaliacao.map((versao) => versao.id);
+  const [contribuicoes, relatorios] = await Promise.all([
+    getContribuicoesAvaliacao(versaoIds),
+    getRelatoriosAvaliacao(versaoIds),
+  ]);
 
   const canEditCondicao = canEdit && viewerCanEditCondicaoRole;
 
@@ -160,6 +164,7 @@ export default async function EditarEstudantePage({
         fotoUrlInicial={estudante.foto_url}
         auditoria={auditoria}
         avaliacao={avaliacao}
+        versoesAvaliacao={versoesAvaliacao}
         equipeElegivel={equipeElegivel}
         referenciaOfertas={referenciaOfertas}
         documentos={documentos}

@@ -32,11 +32,11 @@ import type {
   TurmaOption,
   VinculoEscolarAnual,
 } from "@/app/(app)/estudantes/queries";
-import { getEtapasDoCiclo, type OfertaSlug } from "@/app/(app)/turmas/schema";
+import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
+import type { OfertaSlug } from "@/app/(app)/turmas/schema";
 
 function limparCamposDependentes(form: UseFormReturn<DadosEscolaresValues>) {
   form.setValue("organizacaoAtualId", "", { shouldDirty: true });
-  form.setValue("etapaDoCiclo", "");
   form.setValue("turmaId", "");
 }
 
@@ -57,7 +57,6 @@ function aplicarVinculoDoAno(
     form.setValue("ofertaAtualId", vinculoDoAno.ofertaAtualId, { shouldDirty: true });
     form.setValue("ofertaAtualSlug", vinculoDoAno.ofertaAtualSlug as OfertaSlug);
     form.setValue("organizacaoAtualId", vinculoDoAno.organizacaoAtualId);
-    form.setValue("etapaDoCiclo", vinculoDoAno.etapaDoCiclo);
     form.setValue("turnoId", vinculoDoAno.turnoId);
     form.setValue("turmaId", vinculoDoAno.turmaId);
     form.setValue("matriculaInterna", vinculoDoAno.matriculaInterna);
@@ -71,7 +70,6 @@ function aplicarVinculoDoAno(
   form.setValue("ofertaAtualSlug", (maisRecente?.ofertaAtualSlug ?? "") as OfertaSlug);
   form.setValue("organizacaoAtualId", maisRecente?.organizacaoAtualId ?? "");
   form.setValue("turnoId", maisRecente?.turnoId ?? "");
-  form.setValue("etapaDoCiclo", "");
   form.setValue("turmaId", "");
   form.setValue("matriculaInterna", "");
   form.setValue("utilizaTransporte", false);
@@ -101,8 +99,10 @@ export function VinculoEscolarCard({
   const organizacaoAtualId = form.watch("organizacaoAtualId");
   const turnoId = form.watch("turnoId");
 
-  const organizacoesFiltradas = referenciaOfertas.organizacoes.filter(
-    (organizacao) => organizacao.ofertaId === ofertaAtualId,
+  const organizacoesFiltradas = organizacoesSelecionaveis(
+    referenciaOfertas.organizacoes,
+    ofertaAtualId,
+    organizacaoAtualId,
   );
   // Turma precisa bater com oferta, organização, turno e ano letivo do
   // vínculo sendo editado (CA22/CA23 da HU-EST-001 v2.0) — enquanto faltar
@@ -137,10 +137,6 @@ export function VinculoEscolarCard({
       form.setValue("turmaId", "", { shouldDirty: true });
     }
   }
-  const organizacaoNome = referenciaOfertas.organizacoes.find(
-    (organizacao) => organizacao.id === organizacaoAtualId,
-  )?.nome;
-  const etapasDoCiclo = getEtapasDoCiclo(organizacaoNome);
 
   const ofertaPretendidaNome = referenciaOfertas.ofertas.find(
     (oferta) => oferta.id === avaliacao?.ofertaPretendidaId,
@@ -324,7 +320,7 @@ export function VinculoEscolarCard({
                 <SelectContent>
                   {organizacoesFiltradas.map((organizacao) => (
                     <SelectItem key={organizacao.id} value={organizacao.id}>
-                      {organizacao.nome}
+                      {organizacaoLabel(organizacao)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -333,35 +329,6 @@ export function VinculoEscolarCard({
             </FormItem>
           )}
         />
-
-        {ofertaAtualSlug === "ef" && (
-          <FormField
-            control={form.control}
-            name="etapaDoCiclo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Etapa do ciclo</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange} disabled={!organizacaoAtualId}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={organizacaoAtualId ? "Selecione…" : "Selecione a organização primeiro"}
-                      />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {etapasDoCiclo.map((etapa) => (
-                      <SelectItem key={etapa} value={etapa}>
-                        {etapa}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
         <FormField
           control={form.control}

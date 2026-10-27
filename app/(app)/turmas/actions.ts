@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import { getOrganizacaoConfig } from "@/lib/ofertas-config";
 import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
 import {
@@ -17,7 +18,18 @@ function isDuplicateNomeError(message: string | undefined) {
   return message.toLowerCase().includes("turmas_nome_unico");
 }
 
-function toTurmaRow(escolaId: string, data: CreateTurmaValues | UpdateTurmaValues) {
+/**
+ * Linha de `turmas` a partir do formulário. Colunas que deixaram de ser
+ * usadas (campos_experiencias, direitos_aprendizagem, etapa_do_ciclo; e
+ * areas_conhecimento no Ensino Fundamental) não entram aqui: o valor antigo
+ * fica guardado, só não é mais lido nem gravado.
+ */
+function toTurmaRow(
+  escolaId: string,
+  data: CreateTurmaValues | UpdateTurmaValues,
+  formaFuncionamento: "diaria" | "cronograma",
+  { incluirEstrutura }: { incluirEstrutura: boolean },
+) {
   const isEi = data.ofertaSlug === "ei";
   const isEf = data.ofertaSlug === "ef";
   const isEja = data.ofertaSlug === "eja";
@@ -30,25 +42,58 @@ function toTurmaRow(escolaId: string, data: CreateTurmaValues | UpdateTurmaValue
     capacidade: data.capacidade ? Number(data.capacidade) : null,
     oferta_id: data.ofertaId,
     etapa_ciclo_id: data.organizacaoId,
+    ciclo: isEf ? Number(data.ciclo) : null,
+    etapas: isEf ? [...data.etapas].sort((a, b) => a - b) : null,
     matriz_curricular_id: data.matrizCurricularId,
+    forma_funcionamento: formaFuncionamento,
     status: data.status,
     data_inicio: data.dataInicio,
     data_fim: data.dataFim || null,
     observacoes: data.observacoes || null,
-    campos_experiencias: isEi ? data.camposExperiencias : null,
-    direitos_aprendizagem: isEi ? data.direitosAprendizagem : null,
-    objetivo_geral: isEi ? data.objetivoGeral || null : null,
-    etapa_do_ciclo: isEf ? data.etapaDoCiclo || null : null,
-    areas_conhecimento: isEf || isEja ? data.areasConhecimento : null,
-    unidades_ocupacionais: isEja ? data.unidadesOcupacionais : null,
-    eixos_funcionais: isEja ? data.eixosFuncionais : null,
+    ...(incluirEstrutura
+      ? {
+          objetivo_geral: isEi ? data.objetivoGeral || null : null,
+          ...(isEja
+            ? {
+                areas_conhecimento: data.areasConhecimento,
+                unidades_ocupacionais: data.unidadesOcupacionais,
+                eixos_funcionais: data.eixosFuncionais,
+              }
+            : {}),
+        }
+      : {}),
   };
 }
 
 /**
- * Substitui por completo os componentes curriculares vinculados a uma turma
- * — mais simples que diffing, mesmo padrão de replaceVinculos em
- * usuarios/actions.ts.
+ * Confere a organização escolhida contra a configuração central: precisa
+ * estar ativa (organização descontinuada só aparece em registro antigo) e
+ * define a forma de funcionamento quando a regra não é "livre".
+ */
+async function resolverOrganizacao(
+  supabase: SupabaseServerClient,
+  data: CreateTurmaValues | UpdateTurmaValues,
+): Promise<{ error: string } | { formaFuncionamento: "diaria" | "cronograma" }> {
+  const { data: organizacao } = await supabase
+    .from("etapas_ciclos")
+    .select("codigo, oferta_id")
+    .eq("id", data.organizacaoId)
+    .maybeSingle();
+
+  const config = getOrganizacaoConfig(organizacao?.codigo as string | null | undefined);
+  if (!organizacao || organizacao.oferta_id !== data.ofertaId || !config) {
+    return { error: "A organização da oferta foi descontinuada. Escolha uma nova organização." };
+  }
+
+  const formaFuncionamento =
+    config.formaFuncionamentoRegra === "livre" ? data.formaFuncionamento : config.formaFuncionamentoRegra;
+  return { formaFuncionamento };
+}
+
+/**
+ * Substitui por completo os componentes curriculares escolhidos numa turma
+ * de EJA — mais simples que diffing, mesmo padrão de replaceVinculos em
+ * usuarios/actions.ts. No Ensino Fundamental os componentes vêm da matriz.
  */
 async function replaceComponentes(
   supabase: SupabaseServerClient,
@@ -64,8 +109,24 @@ async function replaceComponentes(
   }
 }
 
-function componentesDe(data: CreateTurmaValues | UpdateTurmaValues): string[] {
-  return data.ofertaSlug === "ef" || data.ofertaSlug === "eja" ? data.componenteIds : [];
+async function salvarCronograma(
+  supabase: SupabaseServerClient,
+  turmaId: string,
+  formaFuncionamento: "diaria" | "cronograma",
+  data: UpdateTurmaValues,
+) {
+  if (formaFuncionamento !== "cronograma") {
+    return supabase.from("turma_cronograma").delete().eq("turma_id", turmaId);
+  }
+  return supabase.from("turma_cronograma").upsert(
+    {
+      turma_id: turmaId,
+      dias_semana: [...data.cronogramaDias].sort((a, b) => a - b),
+      hora_inicio: data.cronogramaHoraInicio,
+      hora_fim: data.cronogramaHoraFim,
+    },
+    { onConflict: "turma_id" },
+  );
 }
 
 export async function createTurma(values: CreateTurmaValues) {
@@ -81,9 +142,14 @@ export async function createTurma(values: CreateTurmaValues) {
   }
   const { supabase, escolaId } = context;
 
+  const organizacao = await resolverOrganizacao(supabase, data);
+  if ("error" in organizacao) {
+    return organizacao;
+  }
+
   const { data: inserted, error } = await supabase
     .from("turmas")
-    .insert(toTurmaRow(escolaId, data))
+    .insert(toTurmaRow(escolaId, data, organizacao.formaFuncionamento, { incluirEstrutura: false }))
     .select("id")
     .single();
 
@@ -92,11 +158,6 @@ export async function createTurma(values: CreateTurmaValues) {
       return { error: "Já existe uma turma com esse nome no mesmo ano letivo, oferta e turno." };
     }
     return { error: "Não foi possível salvar a turma. Tente novamente." };
-  }
-
-  const componenteIds = componentesDe(data);
-  if (componenteIds.length > 0) {
-    await replaceComponentes(supabase, inserted.id, componenteIds);
   }
 
   revalidatePath("/turmas");
@@ -116,9 +177,14 @@ export async function updateTurma(id: string, values: UpdateTurmaValues) {
   }
   const { supabase } = context;
 
+  const organizacao = await resolverOrganizacao(supabase, data);
+  if ("error" in organizacao) {
+    return organizacao;
+  }
+
   const { data: updated, error } = await supabase
     .from("turmas")
-    .update(toTurmaRow(context.escolaId, data))
+    .update(toTurmaRow(context.escolaId, data, organizacao.formaFuncionamento, { incluirEstrutura: true }))
     .eq("id", id)
     .select("id")
     .maybeSingle();
@@ -130,7 +196,14 @@ export async function updateTurma(id: string, values: UpdateTurmaValues) {
     return { error: "Não foi possível salvar as alterações." };
   }
 
-  await replaceComponentes(supabase, id, componentesDe(data));
+  if (data.ofertaSlug === "eja") {
+    await replaceComponentes(supabase, id, data.componenteIds);
+  }
+
+  const { error: cronogramaError } = await salvarCronograma(supabase, id, organizacao.formaFuncionamento, data);
+  if (cronogramaError) {
+    return { error: "A turma foi salva, mas não foi possível salvar o cronograma de atendimento." };
+  }
 
   revalidatePath("/turmas");
   redirect("/turmas?salvo=1");

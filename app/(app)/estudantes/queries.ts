@@ -164,7 +164,8 @@ export async function getEquipeElegivel(): Promise<UsuarioElegivel[]> {
 
 export type ReferenciaOfertas = {
   ofertas: { id: string; slug: string; nome: string }[];
-  organizacoes: { id: string; ofertaId: string; nome: string }[];
+  /** `codigo` aponta pra lib/ofertas-config.ts; null = organização descontinuada. */
+  organizacoes: { id: string; ofertaId: string; nome: string; codigo: string | null }[];
 };
 
 /**
@@ -177,7 +178,7 @@ export async function getReferenciaOfertas(): Promise<ReferenciaOfertas> {
 
   const [ofertasResult, organizacoesResult] = await Promise.all([
     supabase.from("ofertas").select("id, slug, nome").order("nome"),
-    supabase.from("etapas_ciclos").select("id, oferta_id, nome").order("ordem"),
+    supabase.from("etapas_ciclos").select("id, oferta_id, nome, codigo").order("ordem"),
   ]);
 
   return {
@@ -186,6 +187,7 @@ export async function getReferenciaOfertas(): Promise<ReferenciaOfertas> {
       id: organizacao.id as string,
       ofertaId: organizacao.oferta_id as string,
       nome: organizacao.nome as string,
+      codigo: (organizacao.codigo as string | null) ?? null,
     })),
   };
 }
@@ -193,6 +195,16 @@ export async function getReferenciaOfertas(): Promise<ReferenciaOfertas> {
 export type AvaliacaoIngresso = {
   id: string;
   updatedAt: string;
+  versao: number;
+  avaliacaoOrigemId: string | null;
+  justificativaRetificacao: string;
+  retificacaoSolicitadaEm: string | null;
+  retificacaoSolicitadaPorNome: string | null;
+  concluidaEm: string | null;
+  concluidaPorNome: string | null;
+  justificativaCancelamento: string;
+  canceladaEm: string | null;
+  canceladaPorNome: string | null;
   equipeResponsavelIds: string[];
   ofertaPretendidaId: string;
   organizacaoPretendidaId: string;
@@ -222,14 +234,26 @@ export type AvaliacaoIngresso = {
   assinaturas: string;
 };
 
-/** Avaliação de Ingresso de um estudante — no máximo uma (relação 1:1). */
-export async function getAvaliacaoIngresso(estudanteId: string): Promise<AvaliacaoIngresso | null> {
+function nomeUsuario(valor: unknown) {
+  return (valor as { nome_completo: string } | null)?.nome_completo ?? null;
+}
+
+/**
+ * Todas as versões da Avaliação de Ingresso de um estudante, da mais nova
+ * pra mais antiga — inclusive retificadas e canceladas (só leitura).
+ */
+export async function getVersoesAvaliacaoIngresso(estudanteId: string): Promise<AvaliacaoIngresso[]> {
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("avaliacoes_ingresso")
     .select(
-      `id, updated_at, equipe_responsavel_ids, oferta_pretendida_id, organizacao_pretendida_id,
+      `id, updated_at, versao, avaliacao_origem_id, justificativa_retificacao, retificacao_solicitada_em,
+       concluida_em, justificativa_cancelamento, cancelada_em,
+       retificacao_solicitada_por_usuario:usuarios!avaliacoes_ingresso_retificacao_solicitada_por_fkey(nome_completo),
+       concluida_por_usuario:usuarios!avaliacoes_ingresso_concluida_por_fkey(nome_completo),
+       cancelada_por_usuario:usuarios!avaliacoes_ingresso_cancelada_por_fkey(nome_completo),
+       equipe_responsavel_ids, oferta_pretendida_id, organizacao_pretendida_id,
        data_inicio, data_termino, status_avaliacao, historico_escolar, informacoes_familia,
        contexto_sociocultural, habilidades_conceituais, habilidades_sociais,
        habilidades_praticas, dimensao_participacao, contexto_escolar, contexto_familiar,
@@ -239,41 +263,63 @@ export async function getAvaliacaoIngresso(estudanteId: string): Promise<Avaliac
        orientacoes_pai, assinaturas`,
     )
     .eq("estudante_id", estudanteId)
-    .maybeSingle();
+    .order("versao", { ascending: false })
+    .order("created_at", { ascending: false });
 
-  if (!data) return null;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    updatedAt: row.updated_at,
+    versao: row.versao,
+    avaliacaoOrigemId: row.avaliacao_origem_id ?? null,
+    justificativaRetificacao: row.justificativa_retificacao ?? "",
+    retificacaoSolicitadaEm: row.retificacao_solicitada_em ?? null,
+    retificacaoSolicitadaPorNome: nomeUsuario(row.retificacao_solicitada_por_usuario),
+    concluidaEm: row.concluida_em ?? null,
+    concluidaPorNome: nomeUsuario(row.concluida_por_usuario),
+    justificativaCancelamento: row.justificativa_cancelamento ?? "",
+    canceladaEm: row.cancelada_em ?? null,
+    canceladaPorNome: nomeUsuario(row.cancelada_por_usuario),
+    equipeResponsavelIds: row.equipe_responsavel_ids ?? [],
+    ofertaPretendidaId: row.oferta_pretendida_id ?? "",
+    organizacaoPretendidaId: row.organizacao_pretendida_id ?? "",
+    dataInicio: row.data_inicio ?? "",
+    dataTermino: row.data_termino ?? "",
+    statusAvaliacao: row.status_avaliacao,
+    historicoEscolar: row.historico_escolar ?? "",
+    informacoesFamilia: row.informacoes_familia ?? "",
+    contextoSociocultural: row.contexto_sociocultural ?? "",
+    habilidadesConceituais: row.habilidades_conceituais ?? "",
+    habilidadesSociais: row.habilidades_sociais ?? "",
+    habilidadesPraticas: row.habilidades_praticas ?? "",
+    dimensaoParticipacao: row.dimensao_participacao ?? "",
+    contextoEscolar: row.contexto_escolar ?? "",
+    contextoFamiliar: row.contexto_familiar ?? "",
+    contextoComunitario: row.contexto_comunitario ?? "",
+    fatoresFacilitadores: row.fatores_facilitadores ?? "",
+    barreirasIdentificadas: row.barreiras_identificadas ?? "",
+    necessidadesEspecificas: row.necessidades_especificas ?? "",
+    nivelApoio: row.nivel_apoio ?? "",
+    areasApoio: row.areas_apoio ?? [],
+    parecerEquipe: row.parecer_equipe ?? "",
+    recomendacaoElegibilidade: row.recomendacao_elegibilidade ?? "",
+    justificativaElegibilidade: row.justificativa_elegibilidade ?? "",
+    encaminhamentoRecomendado: row.encaminhamento_recomendado ?? "",
+    orientacoesPai: row.orientacoes_pai ?? "",
+    assinaturas: row.assinaturas ?? "",
+  }));
+}
 
-  return {
-    id: data.id,
-    updatedAt: data.updated_at,
-    equipeResponsavelIds: data.equipe_responsavel_ids ?? [],
-    ofertaPretendidaId: data.oferta_pretendida_id ?? "",
-    organizacaoPretendidaId: data.organizacao_pretendida_id ?? "",
-    dataInicio: data.data_inicio ?? "",
-    dataTermino: data.data_termino ?? "",
-    statusAvaliacao: data.status_avaliacao,
-    historicoEscolar: data.historico_escolar ?? "",
-    informacoesFamilia: data.informacoes_familia ?? "",
-    contextoSociocultural: data.contexto_sociocultural ?? "",
-    habilidadesConceituais: data.habilidades_conceituais ?? "",
-    habilidadesSociais: data.habilidades_sociais ?? "",
-    habilidadesPraticas: data.habilidades_praticas ?? "",
-    dimensaoParticipacao: data.dimensao_participacao ?? "",
-    contextoEscolar: data.contexto_escolar ?? "",
-    contextoFamiliar: data.contexto_familiar ?? "",
-    contextoComunitario: data.contexto_comunitario ?? "",
-    fatoresFacilitadores: data.fatores_facilitadores ?? "",
-    barreirasIdentificadas: data.barreiras_identificadas ?? "",
-    necessidadesEspecificas: data.necessidades_especificas ?? "",
-    nivelApoio: data.nivel_apoio ?? "",
-    areasApoio: data.areas_apoio ?? [],
-    parecerEquipe: data.parecer_equipe ?? "",
-    recomendacaoElegibilidade: data.recomendacao_elegibilidade ?? "",
-    justificativaElegibilidade: data.justificativa_elegibilidade ?? "",
-    encaminhamentoRecomendado: data.encaminhamento_recomendado ?? "",
-    orientacoesPai: data.orientacoes_pai ?? "",
-    assinaturas: data.assinaturas ?? "",
-  };
+/**
+ * Versão vigente (Concluída) da avaliação — é ela que vale pro resto do
+ * cadastro (liberar Documentos/Dados escolares), mesmo com uma retificação
+ * em andamento. Sem vigente, a versão em edição, se houver.
+ */
+export function avaliacaoVigente(versoes: AvaliacaoIngresso[]) {
+  return (
+    versoes.find((versao) => versao.statusAvaliacao === "concluida") ??
+    versoes.find((versao) => versao.statusAvaliacao === "rascunho" || versao.statusAvaliacao === "em_andamento") ??
+    null
+  );
 }
 
 export type DocumentoVersaoEstudante = {
@@ -481,7 +527,6 @@ export type VinculoEscolarAnual = {
   ofertaAtualId: string;
   ofertaAtualSlug: string;
   organizacaoAtualId: string;
-  etapaDoCiclo: string;
   turnoId: string;
   turmaId: string;
   turmaNome: string | null;
@@ -501,7 +546,7 @@ export async function getVinculosEscolaresAnuais(estudanteId: string): Promise<V
   const { data } = await supabase
     .from("vinculos_escolares_anuais")
     .select(
-      `id, oferta_atual_id, organizacao_atual_id, etapa_do_ciclo, turno_id, matricula_interna,
+      `id, oferta_atual_id, organizacao_atual_id, turno_id, matricula_interna,
        utiliza_transporte, data_matricula_efetiva,
        anos_letivos!inner(id, ano),
        ofertas(slug),
@@ -521,7 +566,6 @@ export async function getVinculosEscolaresAnuais(estudanteId: string): Promise<V
       ofertaAtualId: row.oferta_atual_id ?? "",
       ofertaAtualSlug: (row.ofertas as unknown as { slug: string } | null)?.slug ?? "",
       organizacaoAtualId: row.organizacao_atual_id ?? "",
-      etapaDoCiclo: row.etapa_do_ciclo ?? "",
       turnoId: row.turno_id ?? "",
       turmaId: turma?.id ?? "",
       turmaNome: turma?.nome ?? null,
@@ -535,6 +579,7 @@ export async function getVinculosEscolaresAnuais(estudanteId: string): Promise<V
 
 export type ContribuicaoAvaliacao = {
   id: string;
+  avaliacaoId: string;
   profissionalId: string;
   profissionalNome: string;
   areaContribuicao: string;
@@ -545,22 +590,27 @@ export type ContribuicaoAvaliacao = {
   criadoEm: string;
 };
 
-/** Contribuições complementares de uma Avaliação de Ingresso (Aba 2, seção 11.3). */
-export async function getContribuicoesAvaliacao(avaliacaoId: string): Promise<ContribuicaoAvaliacao[]> {
+/**
+ * Contribuições complementares das versões da Avaliação de Ingresso (Aba 2,
+ * seção 11.3) — cada contribuição pertence à versão em que foi lançada.
+ */
+export async function getContribuicoesAvaliacao(avaliacaoIds: string[]): Promise<ContribuicaoAvaliacao[]> {
+  if (avaliacaoIds.length === 0) return [];
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("avaliacao_contribuicoes")
     .select(
-      `id, profissional_id, area_contribuicao, observacoes, implicacoes_participacao,
+      `id, avaliacao_id, profissional_id, area_contribuicao, observacoes, implicacoes_participacao,
        recomendacoes_escolares, created_by, created_at,
        usuarios!avaliacao_contribuicoes_profissional_id_fkey(nome_completo)`,
     )
-    .eq("avaliacao_id", avaliacaoId)
+    .in("avaliacao_id", avaliacaoIds)
     .order("created_at", { ascending: false });
 
   return (data ?? []).map((row) => ({
     id: row.id as string,
+    avaliacaoId: row.avaliacao_id as string,
     profissionalId: row.profissional_id as string,
     profissionalNome:
       (row.usuarios as unknown as { nome_completo: string } | null)?.nome_completo ?? "—",
@@ -575,6 +625,7 @@ export async function getContribuicoesAvaliacao(avaliacaoId: string): Promise<Co
 
 export type RelatorioAvaliacao = {
   id: string;
+  avaliacaoId: string;
   tipo: "padrao" | "completo";
   versao: number;
   arquivoPath: string;
@@ -583,21 +634,36 @@ export type RelatorioAvaliacao = {
   geradoEm: string;
 };
 
-/** Versões de PDF já geradas de uma Avaliação de Ingresso, mais recentes primeiro. */
-export async function getRelatoriosAvaliacao(avaliacaoId: string): Promise<RelatorioAvaliacao[]> {
+/**
+ * PDFs gerados das versões da Avaliação de Ingresso, mais recentes primeiro
+ * — um por tipo em cada versão. Gerações antigas repetidas do mesmo tipo na
+ * mesma versão (de antes da regra de não duplicar) ficam guardadas, mas só
+ * a mais recente aparece.
+ */
+export async function getRelatoriosAvaliacao(avaliacaoIds: string[]): Promise<RelatorioAvaliacao[]> {
+  if (avaliacaoIds.length === 0) return [];
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("avaliacao_relatorios")
     .select(
-      `id, tipo, versao, arquivo_path, avaliacao_atualizada_em, gerado_em,
+      `id, avaliacao_id, tipo, versao, arquivo_path, avaliacao_atualizada_em, gerado_em,
        usuarios!avaliacao_relatorios_gerado_por_fkey(nome_completo)`,
     )
-    .eq("avaliacao_id", avaliacaoId)
+    .in("avaliacao_id", avaliacaoIds)
     .order("gerado_em", { ascending: false });
 
-  return (data ?? []).map((row) => ({
+  const vistos = new Set<string>();
+  const unicos = (data ?? []).filter((row) => {
+    const chave = `${row.avaliacao_id}:${row.tipo}`;
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+
+  return unicos.map((row) => ({
     id: row.id as string,
+    avaliacaoId: row.avaliacao_id as string,
     tipo: row.tipo as "padrao" | "completo",
     versao: row.versao as number,
     arquivoPath: row.arquivo_path as string,

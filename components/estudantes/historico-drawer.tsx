@@ -30,7 +30,7 @@ import { SITUACAO_OPTIONS } from "@/app/(app)/estudantes/schema";
 import {
   ENCAMINHAMENTO_OPTIONS,
   RECOMENDACAO_OPTIONS,
-  STATUS_AVALIACAO_OPTIONS,
+  STATUS_AVALIACAO_LABEL,
 } from "@/app/(app)/estudantes/avaliacao-schema";
 import { STATUS_DOCUMENTO_OPTIONS } from "@/app/(app)/estudantes/documentos-schema";
 import { TIPO_CONDICAO_OPTIONS } from "@/app/(app)/estudantes/condicoes-schema";
@@ -45,9 +45,6 @@ export type ReferenciaAuditoria = {
 
 const SITUACAO_LABEL: Record<string, string> = Object.fromEntries(
   SITUACAO_OPTIONS.map((option) => [option.value, option.label]),
-);
-const STATUS_AVALIACAO_LABEL: Record<string, string> = Object.fromEntries(
-  STATUS_AVALIACAO_OPTIONS.map((option) => [option.value, option.label]),
 );
 const RECOMENDACAO_LABEL: Record<string, string> = Object.fromEntries(
   RECOMENDACAO_OPTIONS.map((option) => [option.value, option.label]),
@@ -71,6 +68,8 @@ const CAMPO_META: Record<string, { icon: LucideIcon; label: string }> = {
   autorizado_retirada: { icon: UserCheck, label: "Pessoa autorizada a retirar" },
   autorizado_retirada_removido: { icon: UserCheck, label: "Pessoa autorizada removida" },
   status_avaliacao: { icon: ClipboardList, label: "Status da avaliação" },
+  retificacao: { icon: ClipboardList, label: "Retificação da avaliação" },
+  justificativa_cancelamento: { icon: ClipboardList, label: "Cancelamento da avaliação" },
   recomendacao_elegibilidade: { icon: ClipboardList, label: "Elegibilidade" },
   parecer_equipe: { icon: MessageSquare, label: "Análise integrada" },
   justificativa_elegibilidade: { icon: MessageSquare, label: "Justificativa" },

@@ -24,6 +24,9 @@ import type {
   ReferenciaTurmaForm,
 } from "@/app/(app)/turmas/queries";
 
+import { getOrganizacaoConfig } from "@/lib/ofertas-config";
+
+import { CronogramaCard } from "./cronograma-card";
 import { EstruturaCurricularCard } from "./estrutura-curricular-card";
 import { EstudantesVinculadosCard } from "./estudantes-vinculados-card";
 import { HistoricoTurmaDrawer } from "./historico-drawer";
@@ -44,20 +47,33 @@ const EMPTY_VALUES: UpdateTurmaValues = {
   ofertaSlug: "" as never,
   ofertaId: "",
   organizacaoId: "",
+  ciclo: "",
+  etapas: [],
   matrizCurricularId: "",
+  formaFuncionamento: "" as never,
   status: "ativa",
   dataInicio: "",
   dataFim: "",
   observacoes: "",
-  camposExperiencias: [],
-  direitosAprendizagem: [],
   objetivoGeral: "",
-  etapaDoCiclo: "",
   areasConhecimento: [],
   componenteIds: [],
   unidadesOcupacionais: [],
   eixosFuncionais: [],
+  cronogramaDias: [],
+  cronogramaHoraInicio: "",
+  cronogramaHoraFim: "",
 };
+
+/** Criação só mostra os blocos 1 e 2; a data de início parte de hoje. */
+function valoresIniciaisCriacao(): UpdateTurmaValues {
+  const hoje = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    ...EMPTY_VALUES,
+    dataInicio: `${hoje.getFullYear()}-${pad(hoje.getMonth() + 1)}-${pad(hoje.getDate())}`,
+  };
+}
 
 type DrawerState = { open: boolean; editing: ProfessorVinculado | null };
 
@@ -106,15 +122,15 @@ export function TurmaForm(props: TurmaFormProps) {
 
   const form = useForm<UpdateTurmaValues>({
     resolver: zodResolver(schema as typeof updateTurmaSchema),
-    defaultValues: props.mode === "edit" ? props.defaultValues : EMPTY_VALUES,
+    defaultValues: props.mode === "edit" ? props.defaultValues : valoresIniciaisCriacao(),
   });
 
   const { isDirty } = form.formState;
 
   // Card de topo acompanha o que está sendo digitado, não só o valor salvo.
-  const [nome, status, ofertaId, organizacaoId, anoLetivoId, turnoId] = useWatch({
+  const [nome, status, ofertaId, organizacaoId, anoLetivoId, turnoId, formaFuncionamento] = useWatch({
     control: form.control,
-    name: ["nome", "status", "ofertaId", "organizacaoId", "anoLetivoId", "turnoId"],
+    name: ["nome", "status", "ofertaId", "organizacaoId", "anoLetivoId", "turnoId", "formaFuncionamento"],
   });
   const ofertaNome = props.referencia.ofertas.find((oferta) => oferta.id === ofertaId)?.nome;
   const organizacaoNome = props.referencia.organizacoes.find((org) => org.id === organizacaoId)?.nome;
@@ -147,6 +163,11 @@ export function TurmaForm(props: TurmaFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPending, props.canEdit, isDirty]);
 
+  // Blocos numerados na ordem em que aparecem — o cronograma só existe na
+  // forma de funcionamento "Por cronograma".
+  const temCronograma = formaFuncionamento === "cronograma";
+  const numeroProfessores = temCronograma ? 5 : 4;
+
   function onInvalid(errors: FieldErrors<UpdateTurmaValues>) {
     const firstMessage = Object.values(errors).find(
       (error) => typeof error?.message === "string",
@@ -157,6 +178,13 @@ export function TurmaForm(props: TurmaFormProps) {
   }
 
   function onSubmit(values: UpdateTurmaValues) {
+    const organizacao = props.referencia.organizacoes.find((o) => o.id === values.organizacaoId);
+    if (!getOrganizacaoConfig(organizacao?.codigo)) {
+      form.setError("organizacaoId", { message: "Escolha uma organização ativa" });
+      toast.error("A organização da oferta foi descontinuada. Escolha uma nova organização.");
+      return;
+    }
+
     startTransition(async () => {
       const result =
         props.mode === "create"
@@ -191,22 +219,26 @@ export function TurmaForm(props: TurmaFormProps) {
             <div className="flex min-w-0 flex-col gap-[24px]">
               <IdentificacaoCard control={form.control} referencia={props.referencia} />
               <OfertaCard form={form} referencia={props.referencia} />
-              <EstruturaCurricularCard form={form} referencia={props.referencia} />
 
               {props.mode === "edit" && (
                 <>
+                  <EstruturaCurricularCard form={form} referencia={props.referencia} />
+                  {temCronograma && <CronogramaCard numero={4} form={form} />}
                   <ProfessoresVinculadosCard
+                    numero={numeroProfessores}
                     turmaId={props.turmaId}
                     professores={props.professoresVinculados}
                     ofertaSlug={props.scopePool.ofertaSlug}
                     onRequestAdd={() => setDrawerState({ open: true, editing: null })}
                     onRequestEdit={(professor) => setDrawerState({ open: true, editing: professor })}
                   />
-                  <EstudantesVinculadosCard estudantes={props.estudantesVinculados} />
+                  <EstudantesVinculadosCard
+                    numero={numeroProfessores + 1}
+                    estudantes={props.estudantesVinculados}
+                  />
+                  <ObservacoesStatusCard numero={numeroProfessores + 2} control={form.control} />
                 </>
               )}
-
-              <ObservacoesStatusCard control={form.control} />
             </div>
           </fieldset>
         </div>

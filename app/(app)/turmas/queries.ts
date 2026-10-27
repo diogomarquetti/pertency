@@ -10,9 +10,24 @@ export type ReferenciaTurmaForm = {
   anosLetivos: { id: string; ano: number; status: string }[];
   turnos: { id: string; nome: string }[];
   ofertas: { id: string; slug: string; nome: string }[];
-  organizacoes: { id: string; ofertaId: string; nome: string; ordem: number | null }[];
-  matrizes: { id: string; ofertaId: string; nome: string }[];
+  /** `codigo` aponta pra lib/ofertas-config.ts; null = organização descontinuada. */
+  organizacoes: { id: string; ofertaId: string; nome: string; ordem: number | null; codigo: string | null }[];
+  matrizes: MatrizCurricular[];
   componentes: { id: string; nome: string }[];
+};
+
+export type MatrizCurricular = {
+  id: string;
+  ofertaId: string;
+  nome: string;
+  /** Só Ensino Fundamental: 1º ou 2º Ciclo. */
+  ciclo: number | null;
+  /** Só Educação Infantil. */
+  camposExperiencias: string[];
+  direitosAprendizagem: string[];
+  eixosEstruturantes: string[];
+  /** Componentes da matriz agrupáveis por área (Ensino Fundamental). */
+  componentes: { id: string; nome: string; area: string }[];
 };
 
 /**
@@ -32,8 +47,14 @@ export async function getReferenciaTurmaForm(): Promise<ReferenciaTurmaForm> {
         .order("ano"),
       supabase.from("turnos").select("id, nome").eq("ativo", true).order("nome"),
       supabase.from("ofertas").select("id, slug, nome").order("nome"),
-      supabase.from("etapas_ciclos").select("id, oferta_id, nome, ordem").order("ordem"),
-      supabase.from("matrizes_curriculares").select("id, oferta_id, nome").order("nome"),
+      supabase.from("etapas_ciclos").select("id, oferta_id, nome, ordem, codigo").order("ordem"),
+      supabase
+        .from("matrizes_curriculares")
+        .select(
+          `id, oferta_id, nome, ciclo, campos_experiencias, direitos_aprendizagem, eixos_estruturantes,
+           matriz_componentes(area, ordem, componentes_curriculares(id, nome))`,
+        )
+        .order("nome"),
       supabase.from("componentes_curriculares").select("id, nome").order("nome"),
     ]);
 
@@ -50,13 +71,54 @@ export async function getReferenciaTurmaForm(): Promise<ReferenciaTurmaForm> {
       ofertaId: e.oferta_id as string,
       nome: e.nome as string,
       ordem: e.ordem as number | null,
+      codigo: (e.codigo as string | null) ?? null,
     })),
-    matrizes: (matrizesResult.data ?? []).map((m) => ({
-      id: m.id as string,
-      ofertaId: m.oferta_id as string,
-      nome: m.nome as string,
-    })),
+    matrizes: (matrizesResult.data ?? []).map((m) => {
+      const links = (m.matriz_componentes ?? []) as unknown as {
+        area: string;
+        ordem: number;
+        componentes_curriculares: { id: string; nome: string } | null;
+      }[];
+      return {
+        id: m.id as string,
+        ofertaId: m.oferta_id as string,
+        nome: m.nome as string,
+        ciclo: (m.ciclo as number | null) ?? null,
+        camposExperiencias: (m.campos_experiencias as string[] | null) ?? [],
+        direitosAprendizagem: (m.direitos_aprendizagem as string[] | null) ?? [],
+        eixosEstruturantes: (m.eixos_estruturantes as string[] | null) ?? [],
+        componentes: [...links]
+          .sort((a, b) => a.ordem - b.ordem)
+          .filter((link) => link.componentes_curriculares)
+          .map((link) => ({
+            id: link.componentes_curriculares!.id,
+            nome: link.componentes_curriculares!.nome,
+            area: link.area,
+          })),
+      };
+    }),
     componentes: componentesResult.data ?? [],
+  };
+}
+
+export type CronogramaTurma = { diasSemana: number[]; horaInicio: string; horaFim: string };
+
+/** Cronograma de atendimento da turma (1 para 1), quando houver. */
+export async function getCronogramaTurma(turmaId: string): Promise<CronogramaTurma | null> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("turma_cronograma")
+    .select("dias_semana, hora_inicio, hora_fim")
+    .eq("turma_id", turmaId)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    diasSemana: (data.dias_semana as number[]) ?? [],
+    // `time` vem como "HH:MM:SS"; o input type="time" usa "HH:MM".
+    horaInicio: (data.hora_inicio as string).slice(0, 5),
+    horaFim: (data.hora_fim as string).slice(0, 5),
   };
 }
 
@@ -95,7 +157,7 @@ export async function getAuditoriaTurma(turmaId: string): Promise<AuditoriaTurma
   }));
 }
 
-/** Componentes curriculares já vinculados a uma turma (edição). */
+/** Componentes curriculares escolhidos numa turma de EJA (edição). */
 export async function getComponentesTurma(turmaId: string): Promise<string[]> {
   const supabase = await createClient();
 

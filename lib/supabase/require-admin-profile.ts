@@ -66,6 +66,8 @@ export async function requireEstudanteWriteProfile(): Promise<
   return { supabase, userId: user.id, escolaId: perfil.escola_id as string } as const;
 }
 
+// PROVISÓRIO: validar com P.O — os mesmos perfis que geram PDF concluem, retificam
+// e cancelam a Avaliação de Ingresso (no banco: pode_fechar_avaliacao()).
 const RELATORIO_GERACAO_FUNCOES = new Set(["administrador", "coordenacao_pedagogica", "direcao"]);
 
 /**

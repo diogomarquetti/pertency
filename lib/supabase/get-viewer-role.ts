@@ -39,6 +39,8 @@ export async function getViewerCanEditEstudante(): Promise<boolean> {
   return !!data && ESTUDANTE_WRITE_FUNCOES.has(data.funcao);
 }
 
+// PROVISÓRIO: validar com P.O — os mesmos perfis que geram PDF concluem, retificam
+// e cancelam a Avaliação de Ingresso (no banco: pode_fechar_avaliacao()).
 const RELATORIO_GERACAO_FUNCOES = new Set(["administrador", "coordenacao_pedagogica", "direcao"]);
 
 /** Mesma ideia de getViewerCanEditEstudante(), para o botão de gerar PDF da Avaliação. */

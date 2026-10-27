@@ -32,7 +32,6 @@ export function HistoricoVinculosCard({
             <span className="font-semibold text-ink">{vinculo.ano}</span>
             <span className="text-muted">
               {nomeOferta(vinculo.ofertaAtualSlug)}
-              {vinculo.etapaDoCiclo ? ` — ${vinculo.etapaDoCiclo}` : ""}
               {vinculo.turmaNome ? ` · Turma ${vinculo.turmaNome}` : ""}
               {vinculo.turnoNome ? ` · ${vinculo.turnoNome}` : ""}
               {vinculo.matriculaInterna ? ` · Nº de matrícula ${vinculo.matriculaInterna}` : ""}
