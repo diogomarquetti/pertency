@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Bell, ChevronRight, HelpCircle, LogOut, Menu, User } from "lucide-react";
+import { ChevronRight, HelpCircle, LogOut, Menu, User } from "lucide-react";
 
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,18 +14,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificacoesMenu } from "@/components/layout/notificacoes-menu";
 import { PageActionButtons } from "@/components/layout/page-action-buttons";
 import { usePageActions } from "@/components/layout/page-actions-context";
 import { usePageBreadcrumb, usePageTitle } from "@/components/layout/page-title-context";
 import { logout } from "@/app/(app)/actions";
+import type { NotificacoesDoUsuario } from "@/lib/notificacoes";
 
 export function AppTopbar({
   userName,
   userEmail,
+  notificacoes,
   onMenuClick,
 }: {
   userName: string;
   userEmail: string;
+  notificacoes: NotificacoesDoUsuario;
   onMenuClick: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -89,13 +93,7 @@ export function AppTopbar({
       <div className="flex shrink-0 items-center gap-2">
         {actions && <PageActionButtons actions={actions} className="hidden md:flex" />}
 
-        <button
-          type="button"
-          aria-label="Notificações"
-          className="flex size-[36px] items-center justify-center rounded-sm border border-line bg-surface text-muted transition-colors duration-fast ease-standard hover:border-brand hover:bg-brand-tint hover:text-brand-ink"
-        >
-          <Bell size={16} strokeWidth={2} aria-hidden="true" />
-        </button>
+        <NotificacoesMenu inicial={notificacoes} />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

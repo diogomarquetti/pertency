@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Origem, Pendencia, Severidade } from "@/lib/pendencias/types";
 
-const ORIGEM: Record<Origem, { icone: LucideIcon; label: string }> = {
+export const ORIGEM: Record<Origem, { icone: LucideIcon; label: string }> = {
   estudante: { icone: User, label: "Estudante" },
   avaliacao: { icone: ClipboardCheck, label: "Avaliação de Ingresso" },
   documentos: { icone: FileText, label: "Documentos" },

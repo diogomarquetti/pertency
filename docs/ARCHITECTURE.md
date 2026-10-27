@@ -283,7 +283,7 @@ escopadas a `get_escola_id()`:
   não turma).
 - Item 11 do catálogo foi substituído por `usuario_sem_primeiro_acesso`
   (`usuarios.senha_definida = false`).
-- Sino de notificações: segue sem ação e sem indicador.
+- Sino de notificações: ver a seção "Notificações do sino" abaixo.
 
 ### Seed de desenvolvimento
 
@@ -294,3 +294,63 @@ aparece para outras escolas — e sai inteira com `pnpm seed:pendencias --reset`
 recusa rodar sem `PERTENCY_ALLOW_SEED=1`, `SUPABASE_DEV_PROJECT_REF` batendo com a URL do
 Supabase e `SEED_DEV_PASSWORD` no `.env.local`, e recusa em `NODE_ENV`/`VERCEL_ENV` de
 produção. Hoje roda no próprio projeto Pertency (não existe projeto de dev separado).
+
+## Notificações do sino (registrado em 2026-10-28)
+
+### Notificação é acontecimento; pendência é estado
+
+A homepage responde "o que falta fazer" (calculado na leitura). O sino responde "o que
+aconteceu que muda o meu trabalho": alguém fez algo que me diz respeito. Por isso, ao contrário
+das pendências, notificação **é gravada** — na tabela `notificacoes`, por triggers no momento
+do evento (`supabase/migrations/20261028100000_notificacoes.sql` e
+`20261028100100_notificacoes_turma_anula.sql`). Quem recebe é decidido no trigger, porque boa
+parte das tabelas de origem (vínculos anuais, perfil funcional, auditorias) não é legível pelo
+destinatário via RLS.
+
+Regras gerais, todas na função `notificar()`:
+
+- quem fez a ação nunca é notificado (`auth.uid()`); só recebe usuário ativo da mesma escola;
+- uma notificação não lida do mesmo tipo e do mesmo registro é agrupada (`quantidade` + 1,
+  volta ao topo) em vez de duplicar — ex.: "3 novas contribuições";
+- `dados` guarda só nomes curtos (estudante, turma, profissional), nunca conteúdo clínico nem o
+  texto do alerta; o detalhe fica na tela de destino, onde a RLS de quem clica vale normalmente.
+
+RLS: cada usuário lê só as próprias; `insert`/`delete` não existem para `authenticated` e o
+`update` só alcança a coluna `lida_em` (grant por coluna). As funções auxiliares não são
+executáveis pelo client.
+
+### Tipos (Onda 1)
+
+| Tipo | Quem recebe | Evento |
+|---|---|---|
+| `alerta_rotina_atualizado` | Professores da turma do estudante Ativo | Alergia, medicação, situação de atenção ou segurança mudou no perfil funcional |
+| `estudante_entrou_turma` / `estudante_saiu_turma` | Professores da turma | Turma do vínculo anual mudou; ou estudante Ativo virou transferido/desligado/inativo. Entrada e saída não lidas do mesmo estudante se anulam |
+| `vinculado_turma` | O professor vinculado | Vínculo ativo em `usuario_turmas` |
+| `incluido_equipe_avaliacao` | Profissional complementar que entrou na equipe | `equipe_responsavel_ids` de avaliação em rascunho/andamento (retificação herda a equipe: só avisa quem entrou) |
+| `contribuicao_registrada` → `contribuicoes_completas` | Pedagogo(a) da equipe (sem nenhum na equipe, todos da escola) — PROVISÓRIO | Contribuição registrada; a última dos complementares da equipe vira "Pronta para o parecer" e substitui a anterior não lida |
+| `avaliacao_concluida` | Secretaria e quem da equipe lê a avaliação (não professor) | Status passou a Concluída (texto diz elegível / não elegível) |
+
+### Texto e UI
+
+Texto curto, de bater o olho: um título de poucas palavras e o sujeito (estudante ou turma),
+mais o tempo ("há 2 h"). O texto mora em `lib/notificacoes/tipos.ts` (o banco guarda só o tipo);
+título e linha de sujeito são truncados em uma linha cada. `lib/notificacoes/index.ts`
+(`getNotificacoes()`, em `cache()`) lê os últimos `JANELA_DIAS` (30, PROVISÓRIO) até
+`LIMITE_ITENS`; tipo desconhecido é ignorado e erro devolve vazio — o sino nunca derruba o layout.
+
+`components/layout/notificacoes-menu.tsx`: o ponto vermelho indica **notificação não lida**
+(não mais pendência). Como o layout não re-renderiza ao trocar de página, o menu recarrega via
+server action (`carregarNotificacoes`) a cada navegação e ao abrir. Clicar marca como lida e
+leva ao destino; "Marcar todas como lidas" no topo.
+
+**Tipo novo:** um trigger que chama `notificar()` (nova migration) e uma entrada em
+`lib/notificacoes/tipos.ts`.
+
+Fora do escopo por enquanto: e-mail/push/WhatsApp, tempo real, preferências por usuário,
+limpeza automática das antigas, e a Onda 2 (retificação/cancelamento de avaliação, primeiro
+acesso concluído, mudança da própria função/turmas, resumo de situação para a Direção,
+pendência que ficou atrasada).
+
+O seed (`pnpm seed:pendencias`) grava 5 exemplos na primeira vez (Professor, Profissional
+complementar, Pedagoga e Secretaria; Direção e Administrador ficam com o estado vazio) e o
+`--reset` apaga `notificacoes` junto com o resto.

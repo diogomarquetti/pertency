@@ -8,16 +8,19 @@ import { PageActionButtons } from "@/components/layout/page-action-buttons";
 import { PageActionsProvider, usePageActions } from "@/components/layout/page-actions-context";
 import { PageTitleProvider } from "@/components/layout/page-title-context";
 import { Toaster } from "@/components/ui/toaster";
+import type { NotificacoesDoUsuario } from "@/lib/notificacoes";
 
 export function AppShell({
   userName,
   userEmail,
   escolaNome,
+  notificacoes,
   children,
 }: {
   userName: string;
   userEmail: string;
   escolaNome: string | null;
+  notificacoes: NotificacoesDoUsuario;
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -46,6 +49,7 @@ export function AppShell({
             <AppTopbar
               userName={userName}
               userEmail={userEmail}
+              notificacoes={notificacoes}
               onMenuClick={() => setMobileNavOpen(true)}
             />
             <main className="min-h-0 flex-1 overflow-y-auto bg-bg px-2 py-4 md:px-6 md:py-6">

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { getNotificacoes } from "@/lib/notificacoes";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 
@@ -18,9 +19,10 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const [{ data: perfil }, escolaNome] = await Promise.all([
+  const [{ data: perfil }, escolaNome, notificacoes] = await Promise.all([
     supabase.from("usuarios").select("nome_completo").eq("id", user.id).maybeSingle(),
     getEscolaAtual(),
+    getNotificacoes(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function AppLayout({
       userName={perfil?.nome_completo ?? ""}
       userEmail={user.email ?? ""}
       escolaNome={escolaNome}
+      notificacoes={notificacoes}
     >
       {children}
     </AppShell>

@@ -6,8 +6,8 @@
  * (docs/requisitos/inicio-pendencias.md): escola, referências (ano letivo,
  * turnos, organizações), usuários (um ainda sem primeiro acesso), os
  * estudantes em ingresso, a turma
- * EF 2º Ciclo A com estudantes Ativos e o professor, e 3 turmas com
- * organização descontinuada.
+ * EF 2º Ciclo A com estudantes Ativos e o professor, 3 turmas com
+ * organização descontinuada e exemplos de notificação do sino.
  *
  * As datas são relativas ao dia em que o seed roda. Estudante que já existe
  * não é recriado — para "zerar o relógio", rode --reset e depois o seed.
@@ -808,6 +808,98 @@ async function garantirAtivos(
   console.log("  ✓ alertas de rotina de 4 estudantes — painel Sua turma");
 }
 
+/**
+ * Exemplos do sino, um ou dois por perfil — gravados direto (service role),
+ * no formato que os triggers da migration 20261028100000_notificacoes.sql
+ * gravam. Só na primeira vez: depois disso, as notificações reais (geradas
+ * pelos triggers ao usar o sistema) tomam o lugar. Administrador e Direção
+ * ficam sem nada — caso do estado vazio.
+ */
+async function garantirNotificacoes(supabase: AdminClient, escolaId: string, usuarios: Map<string, string>) {
+  console.log("\nNotificações:");
+  const { count, error: erroContagem } = await supabase
+    .from("notificacoes")
+    .select("id", { count: "exact", head: true })
+    .eq("escola_id", escolaId);
+  if (erroContagem) throw erroContagem;
+  if (count) {
+    console.log(`  • ${count} já existem`);
+    return;
+  }
+
+  const { data: estudantes, error } = await supabase
+    .from("estudantes")
+    .select("id, nome_completo, avaliacoes_ingresso(id, status_avaliacao, recomendacao_elegibilidade)")
+    .eq("escola_id", escolaId);
+  if (error) throw error;
+  const estudante = (nome: string) => {
+    const encontrado = estudantes.find((e) => e.nome_completo === nome);
+    if (!encontrado) throw new Error(`Estudante do seed não encontrado: ${nome}`);
+    return encontrado;
+  };
+  const avaliacao = (nome: string, status: string) => {
+    const encontrada = estudante(nome).avaliacoes_ingresso.find((a) => a.status_avaliacao === status);
+    if (!encontrada) throw new Error(`Avaliação ${status} não encontrada: ${nome}`);
+    return encontrada;
+  };
+  const minutosAtras = (minutos: number) => new Date(Date.now() - minutos * 60_000).toISOString();
+
+  const valentina = estudante("Valentina Dias");
+  const bernardo = estudante("Bernardo Lopes");
+  const sofia = avaliacao("Sofia Martins", "em_andamento");
+  const gabriel = avaliacao("Gabriel Pereira", "em_andamento");
+  const anaBeatriz = avaliacao("Ana Beatriz Rocha", "concluida");
+
+  const { error: erroInsert } = await supabase.from("notificacoes").insert([
+    {
+      destinatario_id: usuarios.get("paulo.mendes@caminhos.pertency.test")!,
+      tipo: "alerta_rotina_atualizado",
+      entidade_id: valentina.id,
+      dados: { estudante: valentina.nome_completo },
+      destino: `/estudantes/${valentina.id}`,
+      criada_em: minutosAtras(120),
+    },
+    {
+      destinatario_id: usuarios.get("paulo.mendes@caminhos.pertency.test")!,
+      tipo: "estudante_entrou_turma",
+      entidade_id: bernardo.id,
+      dados: { estudante: bernardo.nome_completo, turma: TURMA_EF },
+      destino: `/estudantes/${bernardo.id}`,
+      criada_em: minutosAtras(60 * 26),
+      lida_em: minutosAtras(60 * 25),
+    },
+    {
+      destinatario_id: usuarios.get(EMAIL_FONO)!,
+      tipo: "incluido_equipe_avaliacao",
+      entidade_id: sofia.id,
+      dados: { estudante: "Sofia Martins" },
+      destino: `/estudantes/${estudante("Sofia Martins").id}/editar?aba=avaliacao#contribuicoes`,
+      criada_em: minutosAtras(180),
+    },
+    {
+      destinatario_id: usuarios.get(EMAIL_PEDAGOGA)!,
+      tipo: "contribuicao_registrada",
+      entidade_id: gabriel.id,
+      dados: { estudante: "Gabriel Pereira", profissional: "Beatriz Nunes" },
+      destino: `/estudantes/${estudante("Gabriel Pereira").id}/editar?aba=avaliacao#contribuicoes`,
+      criada_em: minutosAtras(30),
+    },
+    {
+      destinatario_id: usuarios.get("joana.lima@caminhos.pertency.test")!,
+      tipo: "avaliacao_concluida",
+      entidade_id: anaBeatriz.id,
+      dados: { estudante: "Ana Beatriz Rocha", elegibilidade: anaBeatriz.recomendacao_elegibilidade },
+      destino:
+        anaBeatriz.recomendacao_elegibilidade === "elegivel"
+          ? `/estudantes/${estudante("Ana Beatriz Rocha").id}/editar?aba=dados-escolares`
+          : `/estudantes/${estudante("Ana Beatriz Rocha").id}`,
+      criada_em: minutosAtras(60 * 5),
+    },
+  ].map((notificacao) => ({ ...notificacao, escola_id: escolaId })));
+  if (erroInsert) throw erroInsert;
+  console.log("  ✓ 5 exemplos (Professor, Profissional complementar, Pedagoga e Secretaria)");
+}
+
 async function entrarComo(url: string, anonKey: string, email: string, senha: string) {
   const cliente = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -837,6 +929,7 @@ const TABELAS_AUDITORIA = [
   "escolas_auditoria",
 ];
 const TABELAS_DADOS = [
+  "notificacoes",
   "avaliacao_relatorios",
   "avaliacao_contribuicoes",
   "avaliacoes_ingresso",
@@ -904,6 +997,7 @@ async function main() {
   const pedagoga = await entrarComo(url, anonKey, EMAIL_PEDAGOGA, senha);
   await garantirIngresso(supabase, escolaId, usuarios, pedagoga);
   await garantirAtivos(supabase, escolaId, refs, usuarios);
+  await garantirNotificacoes(supabase, escolaId, usuarios);
 
   console.log("\nPronto. Senha de todos os usuários: SEED_DEV_PASSWORD do .env.local.");
 }

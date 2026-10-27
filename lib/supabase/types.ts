@@ -1607,6 +1607,70 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          ator_id: string | null
+          criada_em: string
+          dados: Json
+          destinatario_id: string
+          destino: string
+          entidade_id: string
+          escola_id: string
+          id: string
+          lida_em: string | null
+          quantidade: number
+          tipo: string
+        }
+        Insert: {
+          ator_id?: string | null
+          criada_em?: string
+          dados?: Json
+          destinatario_id: string
+          destino: string
+          entidade_id: string
+          escola_id: string
+          id?: string
+          lida_em?: string | null
+          quantidade?: number
+          tipo: string
+        }
+        Update: {
+          ator_id?: string | null
+          criada_em?: string
+          dados?: Json
+          destinatario_id?: string
+          destino?: string
+          entidade_id?: string
+          escola_id?: string
+          id?: string
+          lida_em?: string | null
+          quantidade?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_ator_id_fkey"
+            columns: ["ator_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ofertas: {
         Row: {
           id: string
@@ -2438,6 +2502,17 @@ export type Database = {
           turma_id: string
         }[]
       }
+      notificar: {
+        Args: {
+          p_dados?: Json
+          p_destinatarios: string[]
+          p_destino: string
+          p_entidade_id: string
+          p_escola_id: string
+          p_tipo: string
+        }
+        Returns: undefined
+      }
       ocupacao_turmas: {
         Args: never
         Returns: {
@@ -2456,6 +2531,11 @@ export type Database = {
       professor_pode_ver_estudante: {
         Args: { p_estudante_id: string }
         Returns: boolean
+      }
+      professores_da_turma: { Args: { p_turma_id: string }; Returns: string[] }
+      professores_do_estudante: {
+        Args: { p_estudante_id: string }
+        Returns: string[]
       }
       profissional_complementar_pode_ver_estudante: {
         Args: { p_estudante_id: string }
