@@ -368,3 +368,29 @@ PROVISÓRIO (validar com P.O): 6005 e 6046 têm as duas organizações da Educa�
 5110 têm organização única de mesmo nome e ainda não têm estrutura curricular (matriz opcional,
 bloco 3 só com aviso). Turma antiga da Educação Infantil fica sem `oferta_sere` e precisa
 escolher 6005 ou 6046 na próxima edição.
+
+## Admin da plataforma — operadores e mantenedora (registrado em 2026-10-29)
+
+Os donos do Pertency vão ter um admin próprio (`admin.pertency.com.br`) para cadastrar
+mantenedoras, escolas e o primeiro usuário administrador de cada escola. Será o mesmo
+repositório, publicado num segundo projeto da Vercel. Fase 1 (banco) feita:
+
+- **Operador da plataforma** (`operadores_plataforma` + `is_operador()`, migration
+  `20261029120000_operadores_plataforma.sql`): não tem linha em `usuarios`, então nenhuma
+  política de escola o alcança. O acesso dele vem só das políticas `*_operador` (escolas,
+  mantenedoras, usuários e as auditorias dessas três). Uma conta é operador **ou** usuário
+  de escola, nunca as duas (trigger nos dois lados): senão o admin da escola poderia trocar
+  o login ou gerar link de acesso para a conta do operador. O primeiro operador nasce por
+  script: `pnpm bootstrap:operador <email> "<nome>" [--origin <url>]`.
+- **Autoria na auditoria**: `alterado_por` tem FK para `usuarios` (usada nos históricos via
+  `usuarios!..._alterado_por_fkey`). Quando quem altera é operador, um trigger BEFORE INSERT
+  move o id para `alterado_por_operador` (em `escolas_auditoria`, `mantenedoras_auditoria`,
+  `usuarios_auditoria`).
+- **A escola seleciona a mantenedora** (`escolas.mantenedora_id`, migration
+  `20261029120100_escola_seleciona_mantenedora.sql`); `mantenedoras.escola_id` deixou de
+  existir, e uma mantenedora pode manter várias escolas. Só o operador cria mantenedora e
+  troca a mantenedora da escola (trigger). Em Configurações, sem mantenedora vinculada o card
+  diz que a equipe Pertency faz esse cadastro.
+- **Transitório**: `escolas_update_admin` e `mantenedoras_update_admin` ainda deixam o
+  administrador da escola editar a escola e a mantenedora vinculada. Saem quando o admin da
+  plataforma estiver no ar (junto com a pendência `cadastro_institucional_incompleto`).

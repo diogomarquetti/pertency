@@ -943,7 +943,6 @@ const TABELAS_DADOS = [
   "estudante_autorizados_retirada",
   "estudantes",
   "turmas",
-  "mantenedoras",
   "etapas_ciclos",
   "turnos",
   "anos_letivos",

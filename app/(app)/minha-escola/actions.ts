@@ -80,32 +80,6 @@ function mapMantenedoraFields(data: MantenedoraValues) {
   };
 }
 
-export async function createMantenedora(values: MantenedoraValues) {
-  const parsed = mantenedoraSchema.safeParse(values);
-  if (!parsed.success) {
-    return { error: "Dados inválidos. Confira os campos e tente novamente." };
-  }
-
-  const context = await requireAdminProfile();
-  if ("error" in context) {
-    return context;
-  }
-  const { supabase, escolaId } = context;
-
-  const { error: insertError } = await supabase.from("mantenedoras").insert({
-    escola_id: escolaId,
-    ...mapMantenedoraFields(parsed.data),
-  });
-
-  if (insertError) {
-    return { error: "Não foi possível criar a mantenedora." };
-  }
-
-  revalidatePath("/minha-escola/mantenedora");
-  revalidatePath("/minha-escola");
-  return { success: true } as const;
-}
-
 export async function updateMantenedora(values: MantenedoraValues) {
   const parsed = mantenedoraSchema.safeParse(values);
   if (!parsed.success) {
@@ -118,12 +92,26 @@ export async function updateMantenedora(values: MantenedoraValues) {
   }
   const { supabase, escolaId } = context;
 
-  const { error: updateError } = await supabase
+  // Só a mantenedora vinculada à escola (a RLS também confere). Cadastrar e
+  // vincular uma mantenedora é com o operador da plataforma.
+  const { data: escola } = await supabase
+    .from("escolas")
+    .select("mantenedora_id")
+    .eq("id", escolaId)
+    .maybeSingle();
+
+  if (!escola?.mantenedora_id) {
+    return { error: "Nenhuma mantenedora vinculada a esta escola." };
+  }
+
+  const { data: atualizada, error: updateError } = await supabase
     .from("mantenedoras")
     .update(mapMantenedoraFields(parsed.data))
-    .eq("escola_id", escolaId);
+    .eq("id", escola.mantenedora_id)
+    .select("id")
+    .maybeSingle();
 
-  if (updateError) {
+  if (updateError || !atualizada) {
     return { error: "Não foi possível salvar as alterações." };
   }
 

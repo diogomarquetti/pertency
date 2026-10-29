@@ -42,11 +42,11 @@ export function ConfiguracoesLista({
         icon={Landmark}
         tipo="Mantenedora"
         titulo={mantenedora?.razaoSocial ?? "Mantenedora"}
-        descricao={mantenedora ? mantenedora.cnpj : "Nenhum dado cadastrado ainda."}
+        descricao={mantenedora ? mantenedora.cnpj : "Ainda não vinculada. A equipe Pertency faz esse cadastro."}
         status={mantenedora ? statusBadge(mantenedora.status) : undefined}
         href="/minha-escola/mantenedora"
         preenchido={mantenedora !== null}
-        canEdit={canEdit}
+        canEdit={canEdit && mantenedora !== null}
       />
     </div>
   );

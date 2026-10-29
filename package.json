@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "bootstrap:dev": "tsx scripts/bootstrap-dev.ts",
+    "bootstrap:operador": "tsx scripts/bootstrap-operador.ts",
     "seed:pendencias": "tsx scripts/seed-pendencias-dev.ts"
   },
   "dependencies": {

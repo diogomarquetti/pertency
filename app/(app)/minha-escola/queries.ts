@@ -80,21 +80,29 @@ async function getEscolaIdAtual(): Promise<string | null> {
 export type MantenedoraAtual = MantenedoraValues & { id: string };
 
 /**
- * A mantenedora do tenant — diferente de `escolas`, pode não existir ainda
- * (get-or-create de verdade). `null` aqui significa "ainda não cadastrada",
- * não um erro — a UI decide entre criar ou editar a partir disso.
+ * A mantenedora selecionada pela escola (`escolas.mantenedora_id`) — pode não
+ * existir ainda. `null` aqui significa "ainda não vinculada", não um erro.
+ * Quem cadastra e vincula é o operador da plataforma, no admin.
  */
 export async function getMantenedoraAtual(): Promise<MantenedoraAtual | null> {
   const escolaId = await getEscolaIdAtual();
   if (!escolaId) return null;
 
   const supabase = await createClient();
+  const { data: escola } = await supabase
+    .from("escolas")
+    .select("mantenedora_id")
+    .eq("id", escolaId)
+    .maybeSingle();
+
+  if (!escola?.mantenedora_id) return null;
+
   const { data } = await supabase
     .from("mantenedoras")
     .select(
       "id, razao_social, nome_fantasia, cnpj, logradouro, numero, complemento, bairro, cep, municipio, uf, fone_institucional, whatsapp_institucional, email_institucional, site, presidente_nome, presidente_cpf, presidente_fone, presidente_email, status",
     )
-    .eq("escola_id", escolaId)
+    .eq("id", escola.mantenedora_id)
     .maybeSingle();
 
   if (!data) return null;

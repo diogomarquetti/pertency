@@ -274,11 +274,12 @@ export async function getConfiguracaoEscola(): Promise<ItemConfiguracao[]> {
       destino: "/minha-escola/escola",
     },
     {
-      // Mantenedora é opcional: não cadastrada não é um problema.
+      // Mantenedora é opcional: não vinculada não é um problema. Sem ela, a
+      // página da mantenedora volta para Configurações, que explica o motivo.
       item: "Mantenedora",
-      estado: mantenedora ? estadoCadastro(mantenedora.faltando) : "Não cadastrada",
+      estado: mantenedora ? estadoCadastro(mantenedora.faltando) : "Não vinculada",
       ok: !mantenedora || mantenedora.faltando.length === 0,
-      destino: "/minha-escola/mantenedora",
+      destino: mantenedora ? "/minha-escola/mantenedora" : "/minha-escola",
     },
     {
       // Configuração central (lib/ofertas-config.ts), não editável pela
