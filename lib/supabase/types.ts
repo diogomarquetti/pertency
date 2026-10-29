@@ -1013,6 +1013,7 @@ export type Database = {
           fone_institucional: string | null
           id: string
           logradouro: string | null
+          mantenedora_id: string | null
           modalidade: string
           municipio: string | null
           nome_oficial: string
@@ -1040,6 +1041,7 @@ export type Database = {
           fone_institucional?: string | null
           id?: string
           logradouro?: string | null
+          mantenedora_id?: string | null
           modalidade?: string
           municipio?: string | null
           nome_oficial: string
@@ -1067,6 +1069,7 @@ export type Database = {
           fone_institucional?: string | null
           id?: string
           logradouro?: string | null
+          mantenedora_id?: string | null
           modalidade?: string
           municipio?: string | null
           nome_oficial?: string
@@ -1078,12 +1081,21 @@ export type Database = {
           uf?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "escolas_mantenedora_id_fkey"
+            columns: ["mantenedora_id"]
+            isOneToOne: false
+            referencedRelation: "mantenedoras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escolas_auditoria: {
         Row: {
           alterado_em: string
           alterado_por: string | null
+          alterado_por_operador: string | null
           campo_alterado: string
           escola_id: string
           id: string
@@ -1093,6 +1105,7 @@ export type Database = {
         Insert: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado: string
           escola_id: string
           id?: string
@@ -1102,6 +1115,7 @@ export type Database = {
         Update: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado?: string
           escola_id?: string
           id?: string
@@ -1114,6 +1128,13 @@ export type Database = {
             columns: ["alterado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escolas_auditoria_alterado_por_operador_fkey"
+            columns: ["alterado_por_operador"]
+            isOneToOne: false
+            referencedRelation: "operadores_plataforma"
             referencedColumns: ["id"]
           },
           {
@@ -1410,7 +1431,6 @@ export type Database = {
           complemento: string | null
           created_at: string
           email_institucional: string
-          escola_id: string
           fone_institucional: string
           id: string
           logradouro: string
@@ -1435,7 +1455,6 @@ export type Database = {
           complemento?: string | null
           created_at?: string
           email_institucional: string
-          escola_id: string
           fone_institucional: string
           id?: string
           logradouro: string
@@ -1460,7 +1479,6 @@ export type Database = {
           complemento?: string | null
           created_at?: string
           email_institucional?: string
-          escola_id?: string
           fone_institucional?: string
           id?: string
           logradouro?: string
@@ -1478,20 +1496,13 @@ export type Database = {
           updated_at?: string
           whatsapp_institucional?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "mantenedoras_escola_id_fkey"
-            columns: ["escola_id"]
-            isOneToOne: true
-            referencedRelation: "escolas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       mantenedoras_auditoria: {
         Row: {
           alterado_em: string
           alterado_por: string | null
+          alterado_por_operador: string | null
           campo_alterado: string
           id: string
           mantenedora_id: string
@@ -1501,6 +1512,7 @@ export type Database = {
         Insert: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado: string
           id?: string
           mantenedora_id: string
@@ -1510,6 +1522,7 @@ export type Database = {
         Update: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado?: string
           id?: string
           mantenedora_id?: string
@@ -1522,6 +1535,13 @@ export type Database = {
             columns: ["alterado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mantenedoras_auditoria_alterado_por_operador_fkey"
+            columns: ["alterado_por_operador"]
+            isOneToOne: false
+            referencedRelation: "operadores_plataforma"
             referencedColumns: ["id"]
           },
           {
@@ -1686,6 +1706,27 @@ export type Database = {
           id?: string
           nome?: string
           slug?: string
+        }
+        Relationships: []
+      }
+      operadores_plataforma: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome_completo: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id: string
+          nome_completo: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome_completo?: string
         }
         Relationships: []
       }
@@ -1928,11 +1969,12 @@ export type Database = {
           etapas: number[] | null
           forma_funcionamento: string
           id: string
-          matriz_curricular_id: string
+          matriz_curricular_id: string | null
           nome: string
           objetivo_geral: string | null
           observacoes: string | null
           oferta_id: string
+          oferta_sere: string | null
           status: string
           turno_id: string
           unidades_ocupacionais: string[] | null
@@ -1954,11 +1996,12 @@ export type Database = {
           etapas?: number[] | null
           forma_funcionamento?: string
           id?: string
-          matriz_curricular_id: string
+          matriz_curricular_id?: string | null
           nome: string
           objetivo_geral?: string | null
           observacoes?: string | null
           oferta_id: string
+          oferta_sere?: string | null
           status?: string
           turno_id: string
           unidades_ocupacionais?: string[] | null
@@ -1980,11 +2023,12 @@ export type Database = {
           etapas?: number[] | null
           forma_funcionamento?: string
           id?: string
-          matriz_curricular_id?: string
+          matriz_curricular_id?: string | null
           nome?: string
           objetivo_geral?: string | null
           observacoes?: string | null
           oferta_id?: string
+          oferta_sere?: string | null
           status?: string
           turno_id?: string
           unidades_ocupacionais?: string[] | null
@@ -2273,6 +2317,7 @@ export type Database = {
         Row: {
           alterado_em: string
           alterado_por: string | null
+          alterado_por_operador: string | null
           campo_alterado: string
           id: string
           usuario_id: string
@@ -2282,6 +2327,7 @@ export type Database = {
         Insert: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado: string
           id?: string
           usuario_id: string
@@ -2291,6 +2337,7 @@ export type Database = {
         Update: {
           alterado_em?: string
           alterado_por?: string | null
+          alterado_por_operador?: string | null
           campo_alterado?: string
           id?: string
           usuario_id?: string
@@ -2303,6 +2350,13 @@ export type Database = {
             columns: ["alterado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_auditoria_alterado_por_operador_fkey"
+            columns: ["alterado_por_operador"]
+            isOneToOne: false
+            referencedRelation: "operadores_plataforma"
             referencedColumns: ["id"]
           },
           {
@@ -2494,6 +2548,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      is_operador: { Args: never; Returns: boolean }
       meus_estudantes_por_turma: {
         Args: never
         Returns: {
@@ -2509,6 +2564,17 @@ export type Database = {
           p_destino: string
           p_entidade_id: string
           p_escola_id: string
+          p_tipo: string
+        }
+        Returns: undefined
+      }
+      notificar_entrada_saida: {
+        Args: {
+          p_dados: Json
+          p_destinatarios: string[]
+          p_destino: string
+          p_escola_id: string
+          p_estudante_id: string
           p_tipo: string
         }
         Returns: undefined

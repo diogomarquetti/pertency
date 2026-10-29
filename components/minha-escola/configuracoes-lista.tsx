@@ -19,14 +19,18 @@ function statusBadge(status: "ativa" | "inativa") {
 export function ConfiguracoesLista({
   escola,
   mantenedora,
-  canEdit,
 }: {
   escola: EscolaAtual;
   mantenedora: MantenedoraAtual | null;
-  canEdit: boolean;
 }) {
+  // Só consulta: escola e mantenedora são mantidas pela equipe Pertency.
   return (
     <div className="flex flex-col gap-[16px]">
+      <div className="rounded-md bg-brand-tint px-[14px] py-[12px] text-[13px] leading-relaxed text-brand-ink">
+        Os dados da escola e da mantenedora são mantidos pela equipe Pertency. Se alguma
+        informação estiver errada ou desatualizada, fale com a gente.
+      </div>
+
       <ConfiguracaoCard
         icon={Building2}
         tipo="Escola"
@@ -35,18 +39,16 @@ export function ConfiguracoesLista({
         status={statusBadge(escola.status)}
         href="/minha-escola/escola"
         preenchido
-        canEdit={canEdit}
       />
 
       <ConfiguracaoCard
         icon={Landmark}
         tipo="Mantenedora"
         titulo={mantenedora?.razaoSocial ?? "Mantenedora"}
-        descricao={mantenedora ? mantenedora.cnpj : "Nenhum dado cadastrado ainda."}
+        descricao={mantenedora ? mantenedora.cnpj : "Ainda não vinculada. A equipe Pertency faz esse cadastro."}
         status={mantenedora ? statusBadge(mantenedora.status) : undefined}
         href="/minha-escola/mantenedora"
         preenchido={mantenedora !== null}
-        canEdit={canEdit}
       />
     </div>
   );

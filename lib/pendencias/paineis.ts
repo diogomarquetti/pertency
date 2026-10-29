@@ -5,7 +5,6 @@ import { OFERTAS_SERE } from "@/lib/ofertas-config";
 import { createClient } from "@/lib/supabase/server";
 
 import { dataLocalISO, diasEntre, hojeISO } from "./datas";
-import { getCadastroInstitucional } from "./fontes/configuracao";
 import { getEstudantesEmIngresso } from "./fontes/ingresso";
 import { getTurmasAtivas, listarNomes } from "./fontes/turmas";
 import type { Perfil } from "./perfis";
@@ -245,18 +244,13 @@ export type ItemConfiguracao = { item: string; estado: string; ok: boolean; dest
 export async function getConfiguracaoEscola(): Promise<ItemConfiguracao[]> {
   const supabase = await createClient();
 
-  const [{ escola, mantenedora }, turmas, usuarios] = await Promise.all([
-    getCadastroInstitucional(),
+  // Escola e mantenedora não entram: quem mantém é a equipe Pertency, então
+  // o administrador não teria o que fazer com um "falta preencher".
+  const [turmas, usuarios] = await Promise.all([
     getTurmasAtivas(),
     supabase.from("usuarios").select("senha_definida").eq("status", "ativo"),
   ]);
   if (usuarios.error) throw usuarios.error;
-
-  function estadoCadastro(faltando: string[]) {
-    return faltando.length === 0
-      ? "Completo"
-      : `${faltando.length} ${faltando.length === 1 ? "informação faltando" : "informações faltando"}`;
-  }
 
   const ofertasSemEstrutura = OFERTAS_SERE.filter((oferta) => !oferta.estruturaDefinida).map(
     (oferta) => oferta.codigo,
@@ -267,19 +261,6 @@ export async function getConfiguracaoEscola(): Promise<ItemConfiguracao[]> {
   const ativos = usuarios.data?.length ?? 0;
 
   return [
-    {
-      item: "Escola",
-      estado: escola ? estadoCadastro(escola.faltando) : "Não encontrada",
-      ok: !!escola && escola.faltando.length === 0,
-      destino: "/minha-escola/escola",
-    },
-    {
-      // Mantenedora é opcional: não cadastrada não é um problema.
-      item: "Mantenedora",
-      estado: mantenedora ? estadoCadastro(mantenedora.faltando) : "Não cadastrada",
-      ok: !mantenedora || mantenedora.faltando.length === 0,
-      destino: "/minha-escola/mantenedora",
-    },
     {
       // Configuração central (lib/ofertas-config.ts), não editável pela
       // escola — só informa o que ainda depende do P.O.

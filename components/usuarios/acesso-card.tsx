@@ -17,6 +17,8 @@ type AcessoCardProps = {
   control: Control<UpdateUsuarioValues>;
   /** Número do bloco — 3 quando o card de Turmas vinculadas aparece (professor), senão 2. */
   numero: number;
+  /** Server Action que gera o link — o admin da plataforma passa a dele. */
+  gerarLink?: (usuarioId: string) => Promise<{ link: string } | { error: string }>;
 } & ({ mode: "create" } | { mode: "edit"; usuarioId: string });
 
 export function AcessoCard(props: AcessoCardProps) {
@@ -29,7 +31,7 @@ export function AcessoCard(props: AcessoCardProps) {
     setCopiado(false);
 
     startTransition(async () => {
-      const result = await gerarLinkAcesso(props.usuarioId);
+      const result = await (props.gerarLink ?? gerarLinkAcesso)(props.usuarioId);
       if ("error" in result) {
         toast.error("Não foi possível gerar o link", result.error);
         return;

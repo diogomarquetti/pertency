@@ -244,9 +244,7 @@ Todos os prazos ficam em `lib/pendencias/prazos.ts` (e o limite de ocupação,
 provisório mostra a marca "PROVISÓRIO · validar prazo com P.O" na explicação da regra.
 Outras regras provisórias ficam junto da regra compartilhada que já existia — ex.:
 `documentosPendentes()` em `app/(app)/estudantes/documentos-schema.ts`, usada tanto pela aba
-Documentos quanto pela homepage, para as duas nunca divergirem. Pela mesma razão,
-`cadastro_institucional_incompleto` valida com os próprios `escolaSchema`/`mantenedoraSchema`
-dos formulários de Configurações.
+Documentos quanto pela homepage, para as duas nunca divergirem.
 
 ### Links da homepage
 
@@ -259,7 +257,8 @@ por `?pendencia=` (`/estudantes?pendencia=documentos`, `/turmas?pendencia=organi
 
 `lib/pendencias/paineis.ts` (`PAINEIS_POR_PERFIL`) e `components/inicio/coluna-lateral.tsx`:
 Fila de ingresso (Secretaria, Pedagogo(a), Direção), Ocupação das turmas (Direção), Sua turma
-(Professor(a)) e Configuração da escola (Administrador). Profissional complementar não tem
+(Professor(a)) e Configuração da escola (Administrador — ofertas, turmas e usuários; escola e
+mantenedora não entram, porque são mantidas pela equipe Pertency). Profissional complementar não tem
 painel. Mesmo princípio dos tipos: um painel que falha some sozinho.
 
 Dois painéis precisam de dados que a RLS de `vinculos_escolares_anuais` não libera para todos
@@ -368,3 +367,113 @@ PROVISÓRIO (validar com P.O): 6005 e 6046 têm as duas organizações da Educa�
 5110 têm organização única de mesmo nome e ainda não têm estrutura curricular (matriz opcional,
 bloco 3 só com aviso). Turma antiga da Educação Infantil fica sem `oferta_sere` e precisa
 escolher 6005 ou 6046 na próxima edição.
+
+## Admin da plataforma — operadores e mantenedora (registrado em 2026-10-29)
+
+Os donos do Pertency vão ter um admin próprio (`admin.pertency.com.br`) para cadastrar
+mantenedoras, escolas e o primeiro usuário administrador de cada escola. É o mesmo
+repositório, publicado num segundo projeto da Vercel (ver "Admin da plataforma — app e
+deploy" abaixo). Banco:
+
+- **Operador da plataforma** (`operadores_plataforma` + `is_operador()`, migration
+  `20261029120000_operadores_plataforma.sql`): não tem linha em `usuarios`, então nenhuma
+  política de escola o alcança. O acesso dele vem só das políticas `*_operador` (escolas,
+  mantenedoras, usuários e as auditorias dessas três). Uma conta é operador **ou** usuário
+  de escola, nunca as duas (trigger nos dois lados): senão o admin da escola poderia trocar
+  o login ou gerar link de acesso para a conta do operador. O primeiro operador nasce por
+  script: `pnpm bootstrap:operador <email> "<nome>" [--origin <url>]`.
+- **Autoria na auditoria**: `alterado_por` tem FK para `usuarios` (usada nos históricos via
+  `usuarios!..._alterado_por_fkey`). Quando quem altera é operador, um trigger BEFORE INSERT
+  move o id para `alterado_por_operador` (em `escolas_auditoria`, `mantenedoras_auditoria`,
+  `usuarios_auditoria`).
+- **A escola seleciona a mantenedora** (`escolas.mantenedora_id`, migration
+  `20261029120100_escola_seleciona_mantenedora.sql`); `mantenedoras.escola_id` deixou de
+  existir, e uma mantenedora pode manter várias escolas. Só o operador cria mantenedora e
+  troca a mantenedora da escola (trigger). Em Configurações, sem mantenedora vinculada o card
+  diz que a equipe Pertency faz esse cadastro.
+- **Escola e mantenedora são só do operador**: a migration
+  `20261029150000_escola_mantenedora_so_operador.sql` removeu `escolas_update_admin` e
+  `mantenedoras_update_admin` (transitórias). Em Configurações, o administrador da escola só
+  visualiza os dois cadastros (`EscolaForm`/`MantenedoraForm` sem `salvar` ficam só leitura),
+  com um aviso de que a equipe Pertency mantém esses dados. A pendência
+  `cadastro_institucional_incompleto` e os itens Escola/Mantenedora do painel "Configuração da
+  escola" saíram junto — pediam ao administrador algo que ele não pode mais fazer.
+
+## Admin da plataforma — app e deploy (registrado em 2026-10-29)
+
+**Onde mora o código:** `app/admin/` (login em `app/admin/login`, páginas protegidas em
+`app/admin/(painel)`). No domínio do admin a URL não tem o prefixo: o proxy
+(`lib/supabase/session.ts`) reescreve `/escolas` para `/admin/escolas`. No app das escolas,
+`/admin/*` dá 404. `/auth/*` e `/redefinir-senha` são compartilhadas (link de acesso e
+nova senha funcionam igual nos dois). Links e `redirect()` dentro do admin usam o caminho
+sem prefixo (`/escolas`, `/login`).
+
+**Qual app é qual:** em produção, `PERTENCY_APP` (`admin` ou `escolas`) decide sozinha —
+um host forjado não abre o admin no deploy das escolas. Sem a variável (local), o host
+`admin.*` decide: o mesmo `pnpm dev` serve `http://localhost:3000` (escolas) e
+`http://admin.localhost:3000` (admin). O proxy olha `x-forwarded-host` antes de `host`
+porque o `redirect()` de uma Server Action é buscado pelo Next num fetch interno para a
+origem do servidor (Host `localhost`), com os headers originais.
+
+**Acesso:** o layout de `(painel)` exige operador ativo (`getOperadorAtual()`, em
+`lib/supabase/get-operador.ts`); sessão de outra conta vê "não tem acesso" com botão Sair.
+`loginOperador` recusa e desloga quem não é operador; o login das escolas já recusava quem
+não tem linha em `usuarios`. Os cookies de sessão são por domínio, então estar logado num
+app não dá sessão no outro.
+
+**Shell e login compartilhados:** `AppShell`/`AppSidebar`/`AppTopbar` recebem
+`area: "escola" | "plataforma"` (navegação em `NAV_ITEMS_POR_AREA`; no admin não há sino
+nem "Minha conta"). `LoginScreen` (`components/auth`) e `LoginForm` (recebe a Server Action
+por prop) servem os dois logins.
+
+**Deploy (Vercel):**
+1. Projeto atual (escolas): adicionar `PERTENCY_APP=escolas`.
+2. Novo projeto, importando o mesmo repositório: mesmas variáveis do Supabase
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
+   e `PERTENCY_APP=admin`, e `PERTENCY_ESCOLAS_URL=https://<domínio do app das escolas>`
+   (origem dos links de acesso gerados no admin); domínio `admin.pertency.com.br`.
+3. DNS: `CNAME admin → cname.vercel-dns.com` (o valor exato aparece em Domains no projeto).
+4. Primeiro operador: `pnpm bootstrap:operador <email> "<nome>" --origin https://admin.pertency.com.br`
+   e abrir o link impresso para definir a senha.
+
+## Admin da plataforma — Escolas e Mantenedoras (registrado em 2026-10-29)
+
+`/escolas` e `/mantenedoras` no admin: lista (busca, tabela no desktop e `ListCard` no
+mobile), criação e edição. Reaproveitam os mesmos `EscolaForm`/`MantenedoraForm` e cards de
+Configurações — cada tela passa a própria Server Action em `salvar` (criação no admin
+termina em `redirect` para a lista com `?criada=1`, que vira toast via
+`useToastDeParametro`). A conversão linha ↔ formulário fica num lugar só,
+`app/(app)/minha-escola/mapeamento.ts`, usado pelos dois lados.
+
+- **Mantenedora da escola**: `mantenedoraId` é opcional no `escolaSchema` (Configurações não
+  mostra nem grava) e obrigatório no admin via `escolaComMantenedoraSchema`. O bloco
+  "4. Mantenedora" (`EscolaMantenedoraCard`) só aparece quando o form recebe `mantenedoras`.
+  Mantenedora inativa não pode ser escolhida, mas continua aceita se já for a da escola.
+- **CNPJ único** entre mantenedoras, checado na action (uma mantenedora serve várias
+  escolas; duas fichas do mesmo CNPJ dividiriam as escolas).
+- Guard das actions: `requireOperador()` (`lib/supabase/require-operador.ts`); quem barra
+  de verdade é a RLS `*_operador`.
+
+## Admin da plataforma — Usuários (registrado em 2026-10-29)
+
+`/usuarios` no admin: lista de todos os usuários de todas as escolas (busca por nome/e-mail,
+filtro por escola, selo "Sem primeiro acesso" quando `senha_definida = false`), criação e
+edição. Serve sobretudo para criar o primeiro administrador de cada escola (a função já vem
+como Administrador).
+
+- **Lógica compartilhada**: criar (invite + insert, com compensação), editar (login em
+  `auth.users` + linha em `usuarios`) e gerar link de acesso ficam em `lib/usuarios/acesso.ts`,
+  usado pelas actions do app das escolas e do admin. Antes de usar a service role, o módulo
+  confere pela RLS de quem chama que o usuário está visível — um admin de escola não gera link
+  nem troca o login de conta de outra escola (nem de operador).
+- **Telefone duplicado** é checado dentro da escola do usuário (`usuarioComTelefone` recebe
+  `escolaId`, porque o operador lê todas as escolas).
+- **Escola** é escolhida só na criação ("2. Escola"); na edição aparece só para leitura.
+  Usuário criado por operador fica com `created_by = null` (a FK aponta para `usuarios`); a
+  auditoria de status/função registra o operador em `alterado_por_operador`.
+- **Formulário**: `UsuarioPlataformaForm` (`components/admin`) reaproveita `UsuarioHeroCard`,
+  `DadosGeraisCard` e `AcessoCard` (que recebe a action de gerar link por prop). Sem foto (o
+  upload é do admin da escola, pela RLS do bucket) e sem turmas vinculadas.
+- **Link de acesso aponta para o app das escolas**, mesmo gerado no admin:
+  `PERTENCY_ESCOLAS_URL` no deploy do admin; sem ela, o host da requisição sem o prefixo
+  `admin.` (local: `admin.localhost:3000` → `localhost:3000`).

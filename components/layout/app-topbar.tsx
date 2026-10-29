@@ -19,17 +19,21 @@ import { PageActionButtons } from "@/components/layout/page-action-buttons";
 import { usePageActions } from "@/components/layout/page-actions-context";
 import { usePageBreadcrumb, usePageTitle } from "@/components/layout/page-title-context";
 import { logout } from "@/app/(app)/actions";
+import type { AreaApp } from "@/components/layout/nav-items";
 import type { NotificacoesDoUsuario } from "@/lib/notificacoes";
 
 export function AppTopbar({
+  area,
   userName,
   userEmail,
   notificacoes,
   onMenuClick,
 }: {
+  area: AreaApp;
   userName: string;
   userEmail: string;
-  notificacoes: NotificacoesDoUsuario;
+  /** Só o app das escolas tem sino. */
+  notificacoes: NotificacoesDoUsuario | null;
   onMenuClick: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -93,7 +97,7 @@ export function AppTopbar({
       <div className="flex shrink-0 items-center gap-2">
         {actions && <PageActionButtons actions={actions} className="hidden md:flex" />}
 
-        <NotificacoesMenu inicial={notificacoes} />
+        {notificacoes && <NotificacoesMenu inicial={notificacoes} />}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -112,13 +116,18 @@ export function AppTopbar({
               {userName && <span className="text-[14.5px] font-semibold text-ink">{userName}</span>}
               <span className="text-[12.5px] text-muted">{userEmail}</span>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/minha-conta">
-                <User size={16} strokeWidth={2} aria-hidden="true" />
-                Minha conta
-              </Link>
-            </DropdownMenuItem>
+            {/* Minha conta só existe no app das escolas (é o perfil em `usuarios`). */}
+            {area === "escola" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/minha-conta">
+                    <User size={16} strokeWidth={2} aria-hidden="true" />
+                    Minha conta
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             {/* Sem destino definido ainda — item mantido desabilitado até termos
                 central de ajuda/documentação/e-mail de suporte pra apontar. */}

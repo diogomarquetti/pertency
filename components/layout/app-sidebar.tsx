@@ -3,13 +3,13 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Menu, X } from "lucide-react";
+import { Building2, Menu, ShieldCheck, X } from "lucide-react";
 
 import { LogoHorizontal } from "@/components/brand/logo-horizontal";
 import { Mark } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { NAV_ITEMS_POR_AREA, type AreaApp } from "@/components/layout/nav-items";
 
 const COLLAPSED_STORAGE_KEY = "pertency:sidebar-collapsed";
 // `storage` só dispara em OUTRAS abas — pra refletir o toggle na mesma aba
@@ -40,9 +40,11 @@ function getCollapsedServerSnapshot() {
 const ICON_SLOT_CLASSES = "flex items-center justify-center rounded-sm px-[12px] py-1";
 
 function Nav({
+  area,
   collapsed,
   onNavigate,
 }: {
+  area: AreaApp;
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
@@ -50,8 +52,10 @@ function Nav({
 
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
+      {NAV_ITEMS_POR_AREA[area].map((item) => {
+        // No admin, cada item é uma seção (/escolas/123 ainda é Escolas).
+        const isActive =
+          pathname === item.href || (area === "plataforma" && pathname.startsWith(`${item.href}/`));
         const Icon = item.icon;
 
         const link = (
@@ -87,17 +91,24 @@ function Nav({
 }
 
 function EscolaAtivaFooter({
+  area,
   escolaNome,
   collapsed,
 }: {
+  area: AreaApp;
   escolaNome: string | null;
   collapsed: boolean;
 }) {
-  if (!escolaNome) return null;
+  // No admin, o rodapé deixa claro em que ambiente se está — o shell é o
+  // mesmo do app das escolas.
+  const rotulo = area === "plataforma" ? "Ambiente" : "Escola ativa";
+  const nome = area === "plataforma" ? "Admin da plataforma" : escolaNome;
+  if (!nome) return null;
 
+  const Icone = area === "plataforma" ? ShieldCheck : Building2;
   const icone = (
     <div className="flex size-[32px] shrink-0 items-center justify-center rounded-sm bg-white/8">
-      <Building2 size={16} strokeWidth={2} className="text-white" aria-hidden="true" />
+      <Icone size={16} strokeWidth={2} className="text-white" aria-hidden="true" />
     </div>
   );
 
@@ -108,14 +119,14 @@ function EscolaAtivaFooter({
           <TooltipTrigger asChild>
             <div>{icone}</div>
           </TooltipTrigger>
-          <TooltipContent side="right">{escolaNome}</TooltipContent>
+          <TooltipContent side="right">{nome}</TooltipContent>
         </Tooltip>
       ) : (
         <div className="flex items-center gap-[10px] rounded-sm bg-white/5 px-[12px] py-[10px]">
           {icone}
           <div className="min-w-0">
-            <div className="text-[12.5px] font-medium text-white/55">Escola ativa</div>
-            <div className="truncate text-[13.5px] font-semibold text-white">{escolaNome}</div>
+            <div className="text-[12.5px] font-medium text-white/55">{rotulo}</div>
+            <div className="truncate text-[13.5px] font-semibold text-white">{nome}</div>
           </div>
         </div>
       )}
@@ -124,10 +135,12 @@ function EscolaAtivaFooter({
 }
 
 export function AppSidebar({
+  area,
   open,
   onClose,
   escolaNome,
 }: {
+  area: AreaApp;
   open: boolean;
   onClose: () => void;
   escolaNome: string | null;
@@ -186,9 +199,9 @@ export function AppSidebar({
           )}
         </div>
         <div className="flex-1 overflow-y-auto px-[14px]">
-          <Nav collapsed={collapsed} />
+          <Nav area={area} collapsed={collapsed} />
         </div>
-        <EscolaAtivaFooter escolaNome={escolaNome} collapsed={collapsed} />
+        <EscolaAtivaFooter area={area} escolaNome={escolaNome} collapsed={collapsed} />
       </aside>
 
       <div
@@ -220,9 +233,9 @@ export function AppSidebar({
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-[14px]">
-            <Nav collapsed={false} onNavigate={onClose} />
+            <Nav area={area} collapsed={false} onNavigate={onClose} />
           </div>
-          <EscolaAtivaFooter escolaNome={escolaNome} collapsed={false} />
+          <EscolaAtivaFooter area={area} escolaNome={escolaNome} collapsed={false} />
         </aside>
       </div>
     </>

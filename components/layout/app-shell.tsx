@@ -7,20 +7,27 @@ import { AppTopbar } from "@/components/layout/app-topbar";
 import { PageActionButtons } from "@/components/layout/page-action-buttons";
 import { PageActionsProvider, usePageActions } from "@/components/layout/page-actions-context";
 import { PageTitleProvider } from "@/components/layout/page-title-context";
+import type { AreaApp } from "@/components/layout/nav-items";
 import { Toaster } from "@/components/ui/toaster";
 import type { NotificacoesDoUsuario } from "@/lib/notificacoes";
 
+/**
+ * Shell compartilhado pelo app das escolas e pelo admin da plataforma
+ * (`area`): muda a navegação, o rodapé do menu e o menu do usuário.
+ */
 export function AppShell({
+  area = "escola",
   userName,
   userEmail,
   escolaNome,
   notificacoes,
   children,
 }: {
+  area?: AreaApp;
   userName: string;
   userEmail: string;
   escolaNome: string | null;
-  notificacoes: NotificacoesDoUsuario;
+  notificacoes: NotificacoesDoUsuario | null;
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -40,6 +47,7 @@ export function AppShell({
             refreshAndBlur() em lib/utils.ts. */}
         <div className="fixed inset-0 flex overflow-clip">
           <AppSidebar
+            area={area}
             open={mobileNavOpen}
             onClose={() => setMobileNavOpen(false)}
             escolaNome={escolaNome}
@@ -47,6 +55,7 @@ export function AppShell({
 
           <div className="flex min-w-0 flex-1 flex-col overflow-clip">
             <AppTopbar
+              area={area}
               userName={userName}
               userEmail={userEmail}
               notificacoes={notificacoes}

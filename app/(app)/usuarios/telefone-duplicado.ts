@@ -6,17 +6,21 @@ import type { SupabaseServerClient } from "@/lib/supabase/require-admin-profile"
  * então "(46) 99999-0000" e "46999990000" contam como iguais). Não existe
  * índice único no banco porque já há telefones repetidos cadastrados antes
  * desta regra — a checagem fica aqui, usada no cadastro de usuários e em
- * Minha conta. A RLS restringe a busca à escola de quem está salvando.
+ * Minha conta. A RLS restringe a busca à escola de quem está salvando; o
+ * operador da plataforma lê todas as escolas, então passa `escolaId`.
  */
 export async function usuarioComTelefone(
   supabase: SupabaseServerClient,
   telefone: string | null | undefined,
   ignorarUsuarioId: string | null,
+  escolaId?: string,
 ): Promise<{ id: string; nome: string } | null> {
   const digitos = apenasDigitos(telefone);
   if (!digitos) return null;
 
-  const { data } = await supabase.from("usuarios").select("id, nome_completo, telefone").not("telefone", "is", null);
+  let consulta = supabase.from("usuarios").select("id, nome_completo, telefone").not("telefone", "is", null);
+  if (escolaId) consulta = consulta.eq("escola_id", escolaId);
+  const { data } = await consulta;
 
   const outro = (data ?? []).find(
     (usuario) => usuario.id !== ignorarUsuarioId && apenasDigitos(usuario.telefone) === digitos,

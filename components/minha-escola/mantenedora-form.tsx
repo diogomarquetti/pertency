@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -8,9 +8,7 @@ import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
 import { toast } from "@/lib/use-toast";
 
-import { createMantenedora, updateMantenedora } from "@/app/(app)/minha-escola/actions";
 import { mantenedoraSchema, type MantenedoraValues } from "@/app/(app)/minha-escola/schema";
-import type { MantenedoraAtual } from "@/app/(app)/minha-escola/queries";
 
 import { MantenedoraEnderecoContatoCard } from "./mantenedora-endereco-contato-card";
 import { MantenedoraIdentificacaoCard } from "./mantenedora-identificacao-card";
@@ -18,7 +16,7 @@ import { MantenedoraRepresentacaoLegalCard } from "./mantenedora-representacao-l
 
 const FORM_ID = "mantenedora-form";
 
-const VALORES_VAZIOS: MantenedoraValues = {
+export const MANTENEDORA_VAZIA: MantenedoraValues = {
   razaoSocial: "",
   nomeFantasia: "",
   cnpj: "",
@@ -40,40 +38,33 @@ const VALORES_VAZIOS: MantenedoraValues = {
   status: "ativa",
 };
 
+export type SalvarMantenedora = (
+  values: MantenedoraValues,
+) => Promise<{ error: string } | { success: true } | undefined>;
+
+/**
+ * Formulário da Mantenedora — usado em Configurações (app das escolas, só
+ * leitura) e no admin da plataforma (criação e edição). O admin passa a
+ * própria Server Action em `salvar`; quando ela redireciona (criação), não há
+ * retorno a tratar. Sem `salvar`, o formulário é só leitura.
+ */
 export function MantenedoraForm({
   mantenedora,
-  canEdit,
+  salvar,
+  cancelHref,
+  saveLabel = "Salvar",
 }: {
-  mantenedora: MantenedoraAtual | null;
-  canEdit: boolean;
+  mantenedora: MantenedoraValues & { id?: string };
+  salvar?: SalvarMantenedora;
+  cancelHref: string;
+  saveLabel?: string;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [existe, setExiste] = useState(mantenedora !== null);
+  const canEdit = !!salvar;
   const setPageActions = usePageActionsSetter();
 
-  const defaultValues: MantenedoraValues = mantenedora
-    ? {
-        razaoSocial: mantenedora.razaoSocial,
-        nomeFantasia: mantenedora.nomeFantasia,
-        cnpj: mantenedora.cnpj,
-        logradouro: mantenedora.logradouro,
-        numero: mantenedora.numero,
-        complemento: mantenedora.complemento,
-        bairro: mantenedora.bairro,
-        cep: mantenedora.cep,
-        municipio: mantenedora.municipio,
-        uf: mantenedora.uf,
-        foneInstitucional: mantenedora.foneInstitucional,
-        whatsappInstitucional: mantenedora.whatsappInstitucional,
-        emailInstitucional: mantenedora.emailInstitucional,
-        site: mantenedora.site,
-        presidenteNome: mantenedora.presidenteNome,
-        presidenteCpf: mantenedora.presidenteCpf,
-        presidenteFone: mantenedora.presidenteFone,
-        presidenteEmail: mantenedora.presidenteEmail,
-        status: mantenedora.status,
-      }
-    : VALORES_VAZIOS;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só descarta o id
+  const { id: _id, ...defaultValues } = mantenedora;
 
   const form = useForm<MantenedoraValues>({
     resolver: zodResolver(mantenedoraSchema),
@@ -87,29 +78,28 @@ export function MantenedoraForm({
     setPageActions({
       formId: FORM_ID,
       pending: isPending,
-      saveLabel: existe ? "Salvar" : "Criar mantenedora",
-      cancelHref: "/minha-escola",
+      saveLabel,
+      cancelHref,
       cancelLabel: canEdit ? undefined : "Voltar",
       readOnly: !canEdit,
       isDirty,
     });
     return () => setPageActions(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending, existe, canEdit, isDirty]);
+  }, [isPending, canEdit, isDirty]);
 
   function onSubmit(values: MantenedoraValues) {
-    const eraCriacao = !existe;
-
+    if (!salvar) return;
     startTransition(async () => {
-      const result = eraCriacao ? await createMantenedora(values) : await updateMantenedora(values);
+      const result = await salvar(values);
+      if (!result) return;
 
       if ("error" in result) {
         toast.error("Não foi possível salvar", result.error);
         return;
       }
 
-      setExiste(true);
-      toast.success(eraCriacao ? "Mantenedora criada com sucesso." : "Alterações salvas com sucesso.");
+      toast.success("Alterações salvas com sucesso.");
       form.reset(values);
     });
   }

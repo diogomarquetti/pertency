@@ -132,9 +132,8 @@ async function garantirEscola(supabase: AdminClient) {
     return existente;
   }
 
-  // Sem telefone institucional e sem coordenador(a) — caso do tipo
-  // cadastro_institucional_incompleto. A Mantenedora não é cadastrada (é
-  // opcional e não gera pendência).
+  // Sem telefone institucional e sem coordenador(a), e sem mantenedora — a
+  // escola continua utilizável enquanto a equipe Pertency completa o cadastro.
   const { data, error } = await supabase
     .from("escolas")
     .insert({
@@ -943,7 +942,6 @@ const TABELAS_DADOS = [
   "estudante_autorizados_retirada",
   "estudantes",
   "turmas",
-  "mantenedoras",
   "etapas_ciclos",
   "turnos",
   "anos_letivos",
