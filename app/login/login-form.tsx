@@ -16,10 +16,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-import { login } from "./actions";
 import { loginSchema, type LoginValues } from "./schema";
 
-export function LoginForm() {
+/** `action` é a Server Action de login de cada app (escolas ou admin da plataforma). */
+export function LoginForm({
+  action,
+}: {
+  action: (values: LoginValues) => Promise<{ error: string } | undefined>;
+}) {
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -31,7 +35,7 @@ export function LoginForm() {
   function onSubmit(values: LoginValues) {
     form.clearErrors("root");
     startTransition(async () => {
-      const result = await login(values);
+      const result = await action(values);
       if (result?.error) {
         form.setError("root", { message: result.error });
       }

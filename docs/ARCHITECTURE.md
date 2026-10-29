@@ -372,8 +372,9 @@ escolher 6005 ou 6046 na próxima edição.
 ## Admin da plataforma — operadores e mantenedora (registrado em 2026-10-29)
 
 Os donos do Pertency vão ter um admin próprio (`admin.pertency.com.br`) para cadastrar
-mantenedoras, escolas e o primeiro usuário administrador de cada escola. Será o mesmo
-repositório, publicado num segundo projeto da Vercel. Fase 1 (banco) feita:
+mantenedoras, escolas e o primeiro usuário administrador de cada escola. É o mesmo
+repositório, publicado num segundo projeto da Vercel (ver "Admin da plataforma — app e
+deploy" abaixo). Banco:
 
 - **Operador da plataforma** (`operadores_plataforma` + `is_operador()`, migration
   `20261029120000_operadores_plataforma.sql`): não tem linha em `usuarios`, então nenhuma
@@ -394,3 +395,39 @@ repositório, publicado num segundo projeto da Vercel. Fase 1 (banco) feita:
 - **Transitório**: `escolas_update_admin` e `mantenedoras_update_admin` ainda deixam o
   administrador da escola editar a escola e a mantenedora vinculada. Saem quando o admin da
   plataforma estiver no ar (junto com a pendência `cadastro_institucional_incompleto`).
+
+## Admin da plataforma — app e deploy (registrado em 2026-10-29)
+
+**Onde mora o código:** `app/admin/` (login em `app/admin/login`, páginas protegidas em
+`app/admin/(painel)`). No domínio do admin a URL não tem o prefixo: o proxy
+(`lib/supabase/session.ts`) reescreve `/escolas` para `/admin/escolas`. No app das escolas,
+`/admin/*` dá 404. `/auth/*` e `/redefinir-senha` são compartilhadas (link de acesso e
+nova senha funcionam igual nos dois). Links e `redirect()` dentro do admin usam o caminho
+sem prefixo (`/escolas`, `/login`).
+
+**Qual app é qual:** em produção, `PERTENCY_APP` (`admin` ou `escolas`) decide sozinha —
+um host forjado não abre o admin no deploy das escolas. Sem a variável (local), o host
+`admin.*` decide: o mesmo `pnpm dev` serve `http://localhost:3000` (escolas) e
+`http://admin.localhost:3000` (admin). O proxy olha `x-forwarded-host` antes de `host`
+porque o `redirect()` de uma Server Action é buscado pelo Next num fetch interno para a
+origem do servidor (Host `localhost`), com os headers originais.
+
+**Acesso:** o layout de `(painel)` exige operador ativo (`getOperadorAtual()`, em
+`lib/supabase/get-operador.ts`); sessão de outra conta vê "não tem acesso" com botão Sair.
+`loginOperador` recusa e desloga quem não é operador; o login das escolas já recusava quem
+não tem linha em `usuarios`. Os cookies de sessão são por domínio, então estar logado num
+app não dá sessão no outro.
+
+**Shell e login compartilhados:** `AppShell`/`AppSidebar`/`AppTopbar` recebem
+`area: "escola" | "plataforma"` (navegação em `NAV_ITEMS_POR_AREA`; no admin não há sino
+nem "Minha conta"). `LoginScreen` (`components/auth`) e `LoginForm` (recebe a Server Action
+por prop) servem os dois logins.
+
+**Deploy (Vercel):**
+1. Projeto atual (escolas): adicionar `PERTENCY_APP=escolas`.
+2. Novo projeto, importando o mesmo repositório: mesmas variáveis do Supabase
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
+   e `PERTENCY_APP=admin`; domínio `admin.pertency.com.br`.
+3. DNS: `CNAME admin → cname.vercel-dns.com` (o valor exato aparece em Domains no projeto).
+4. Primeiro operador: `pnpm bootstrap:operador <email> "<nome>" --origin https://admin.pertency.com.br`
+   e abrir o link impresso para definir a senha.

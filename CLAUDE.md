@@ -51,6 +51,10 @@ pnpm lint     # eslint
 `.env.local` (não versionado) precisa de `NEXT_PUBLIC_SUPABASE_URL` e
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` — pegar em Supabase > Project Settings > API.
 
+`PERTENCY_APP` (`escolas` ou `admin`) define, em produção, qual app o deploy serve. Localmente
+fica sem definir: `http://localhost:3000` é o app das escolas e `http://admin.localhost:3000`
+o admin da plataforma (ver `docs/ARCHITECTURE.md` § Admin da plataforma).
+
 ## Convenções
 
 - Nunca redefinir valores de design token localmente num componente — qualquer ajuste visual
