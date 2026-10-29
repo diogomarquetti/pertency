@@ -1,52 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import type { Control } from "react-hook-form";
-import { Link2, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/lib/use-toast";
 
 import { gerarLinkAcesso } from "@/app/(app)/usuarios/actions";
 import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
+
+import { LinkDeAcesso } from "./link-de-acesso";
 
 type AcessoCardProps = {
   control: Control<UpdateUsuarioValues>;
   /** Número do bloco — 3 quando o card de Turmas vinculadas aparece (professor), senão 2. */
   numero: number;
-  /** Server Action que gera o link — o admin da plataforma passa a dele. */
-  gerarLink?: (usuarioId: string) => Promise<{ link: string } | { error: string }>;
 } & ({ mode: "create" } | { mode: "edit"; usuarioId: string });
 
 export function AcessoCard(props: AcessoCardProps) {
-  const [link, setLink] = useState<string | null>(null);
-  const [copiado, setCopiado] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  function handleGerarLink() {
-    if (props.mode !== "edit") return;
-    setCopiado(false);
-
-    startTransition(async () => {
-      const result = await (props.gerarLink ?? gerarLinkAcesso)(props.usuarioId);
-      if ("error" in result) {
-        toast.error("Não foi possível gerar o link", result.error);
-        return;
-      }
-      setLink(result.link);
-    });
-  }
-
-  async function handleCopiar() {
-    if (!link) return;
-    await navigator.clipboard.writeText(link);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  }
-
   // id="acesso": destino da pendência usuario_sem_primeiro_acesso na homepage.
   return (
     <Card id="acesso" className="scroll-mt-2 gap-4 p-[24px]">
@@ -76,37 +47,7 @@ export function AcessoCard(props: AcessoCardProps) {
             Salve o cadastro primeiro para gerar o link de acesso.
           </p>
         ) : (
-          <>
-            <div className="flex items-center justify-between gap-[10px] rounded-sm border border-line bg-bg px-[14px] py-[10px]">
-              <span className="truncate text-[13.5px] font-medium text-brand-ink">
-                {link ?? "Link não gerado"}
-              </span>
-              {link ? (
-                <Button type="button" variant="secondary" size="sm" onClick={handleCopiar}>
-                  {copiado ? "Copiado!" : "Copiar"}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={handleGerarLink}
-                >
-                  {isPending ? (
-                    <Loader2 className="animate-spin" size={14} strokeWidth={2} aria-hidden="true" />
-                  ) : (
-                    <Link2 size={14} strokeWidth={2} aria-hidden="true" />
-                  )}
-                  Gerar link
-                </Button>
-              )}
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-muted">
-              O usuário recebe este link e define a própria senha no primeiro acesso. Copie e
-              envie por onde preferir — e-mail, WhatsApp, etc.
-            </p>
-          </>
+          <LinkDeAcesso gerar={() => gerarLinkAcesso(props.usuarioId)} />
         )}
       </div>
     </Card>

@@ -1,15 +1,11 @@
 import { PageTitle } from "@/components/layout/page-title";
-import { UsuarioPlataformaForm } from "@/components/admin/usuario-plataforma-form";
+import { ConvidarOperadorForm } from "@/components/admin/operador-form";
 
-import { listarOpcoesEscola } from "../queries";
-
-export default async function NovoUsuarioPage() {
-  const escolas = await listarOpcoesEscola();
-
+export default function ConvidarOperadorPage() {
   return (
     <div>
-      <PageTitle value="Novo usuário" breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: "Novo usuário" }]} />
-      <UsuarioPlataformaForm mode="create" escolas={escolas} />
+      <PageTitle value="Convidar" breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: "Convidar" }]} />
+      <ConvidarOperadorForm />
     </div>
   );
 }

@@ -454,26 +454,28 @@ termina em `redirect` para a lista com `?criada=1`, que vira toast via
 - Guard das actions: `requireOperador()` (`lib/supabase/require-operador.ts`); quem barra
   de verdade é a RLS `*_operador`.
 
-## Admin da plataforma — Usuários (registrado em 2026-10-29)
+## Admin da plataforma — Equipe e onboarding da escola (registrado em 2026-10-29)
 
-`/usuarios` no admin: lista de todos os usuários de todas as escolas (busca por nome/e-mail,
-filtro por escola, selo "Sem primeiro acesso" quando `senha_definida = false`), criação e
-edição. Serve sobretudo para criar o primeiro administrador de cada escola (a função já vem
-como Administrador).
+O admin é só da equipe Pertency e serve para o onboarding do cliente: cadastrar mantenedora e
+escola, criar o **primeiro administrador** da escola e passar o acesso. Daí em diante a escola
+gerencia sozinha a própria equipe, turmas e estudantes — o admin não lista nem edita os demais
+usuários das escolas.
 
-- **Lógica compartilhada**: criar (invite + insert, com compensação), editar (login em
-  `auth.users` + linha em `usuarios`) e gerar link de acesso ficam em `lib/usuarios/acesso.ts`,
-  usado pelas actions do app das escolas e do admin. Antes de usar a service role, o módulo
-  confere pela RLS de quem chama que o usuário está visível — um admin de escola não gera link
-  nem troca o login de conta de outra escola (nem de operador).
-- **Telefone duplicado** é checado dentro da escola do usuário (`usuarioComTelefone` recebe
-  `escolaId`, porque o operador lê todas as escolas).
-- **Escola** é escolhida só na criação ("2. Escola"); na edição aparece só para leitura.
-  Usuário criado por operador fica com `created_by = null` (a FK aponta para `usuarios`); a
-  auditoria de status/função registra o operador em `alterado_por_operador`.
-- **Formulário**: `UsuarioPlataformaForm` (`components/admin`) reaproveita `UsuarioHeroCard`,
-  `DadosGeraisCard` e `AcessoCard` (que recebe a action de gerar link por prop). Sem foto (o
-  upload é do admin da escola, pela RLS do bucket) e sem turmas vinculadas.
-- **Link de acesso aponta para o app das escolas**, mesmo gerado no admin:
-  `PERTENCY_ESCOLAS_URL` no deploy do admin; sem ela, o host da requisição sem o prefixo
-  `admin.` (local: `admin.localhost:3000` → `localhost:3000`).
+- **Usuários = a equipe** (`/usuarios` no admin): lista de operadores (último acesso, ativo),
+  convite (nome + e-mail; recusa e-mail que já é login de escola) e edição (nome, ativo, link
+  de acesso para o próprio admin). Ninguém desativa o próprio acesso. `operadores_plataforma`
+  não tem escrita para o client: as actions usam a service role depois de `requireOperador()`.
+  `pnpm bootstrap:operador` continua existindo só para o primeiro operador de um ambiente novo.
+- **Administrador da escola** (bloco na página da escola, `AdministradorEscolaCard`): enquanto a
+  escola não tem administrador, um formulário curto (nome, e-mail de login, telefone) cria um
+  usuário `administrador` ativo; depois mostra quem é, se já fez o primeiro acesso e gera o
+  link. Não edita. Criar escola leva direto para essa página (`?criada=1`).
+- **Lógica compartilhada** em `lib/usuarios/acesso.ts`: `provisionarUsuario`, `atualizarUsuario`,
+  `gerarLinkDeAcesso` (usuário de escola, sempre para o app das escolas) e `linkDeRecuperacao`
+  (qualquer login, com a origem escolhida por quem chama). Antes de usar a service role, o
+  módulo confere pela RLS de quem chama que o usuário está visível — um admin de escola não
+  gera link nem troca o login de conta de outra escola (nem de operador). `LinkDeAcesso`
+  (`components/usuarios`) é a caixa "Gerar link / Copiar" usada nos três lugares.
+- **Link de acesso do usuário de escola aponta para o app das escolas**, mesmo gerado no
+  admin: `PERTENCY_ESCOLAS_URL` no deploy do admin; sem ela, a origem da requisição sem o
+  prefixo `admin.` (local: `admin.localhost:3000` → `localhost:3000`).

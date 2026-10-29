@@ -3,73 +3,112 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { apenasDigitos } from "@/lib/telefone";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOperador } from "@/lib/supabase/require-operador";
+import { linkDeRecuperacao, origemDaRequisicao } from "@/lib/usuarios/acesso";
+
 import {
-  atualizarUsuario as atualizarUsuarioDaEscola,
-  gerarLinkDeAcesso,
-  provisionarUsuario,
-  telefoneDuplicadoCom,
-} from "@/lib/usuarios/acesso";
+  atualizarOperadorSchema,
+  convidarOperadorSchema,
+  type AtualizarOperadorValues,
+  type ConvidarOperadorValues,
+} from "./schema";
 
-import { usuarioPlataformaSchema, type UsuarioPlataformaValues } from "./schema";
+// `operadores_plataforma` não tem escrita para o client (só a service role):
+// quem barra é requireOperador(), antes de qualquer escrita.
 
-export async function verificarTelefone(telefone: string, usuarioId: string | null, escolaId: string) {
-  const context = await requireOperador();
-  if ("error" in context || !escolaId || ![10, 11].includes(apenasDigitos(telefone).length)) {
-    return { duplicadoCom: null };
+async function buscarLoginPorEmail(email: string) {
+  const admin = createAdminClient();
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw error;
+    const encontrado = data.users.find((user) => user.email?.toLowerCase() === email);
+    if (encontrado) return encontrado;
+    if (data.users.length < 200) return null;
   }
-  return { duplicadoCom: await telefoneDuplicadoCom(context.supabase, telefone, usuarioId, escolaId) };
 }
 
-export async function criarUsuario(values: UsuarioPlataformaValues) {
-  const parsed = usuarioPlataformaSchema.safeParse(values);
+export async function convidarOperador(values: ConvidarOperadorValues) {
+  const parsed = convidarOperadorSchema.safeParse(values);
   if (!parsed.success) {
     return { error: "Dados inválidos. Confira os campos e tente novamente." };
   }
-  const { escolaId, ...data } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
 
   const context = await requireOperador();
   if ("error" in context) return context;
-  const { supabase } = context;
 
-  const { data: escola } = await supabase.from("escolas").select("status").eq("id", escolaId).maybeSingle();
-  if (!escola) return { error: "Escola não encontrada." };
-  if (escola.status !== "ativa") return { error: "Esta escola está inativa." };
+  const admin = createAdminClient();
+  const existente = await buscarLoginPorEmail(email);
+  let id: string;
 
-  // created_by aponta para `usuarios`; operador não tem linha lá.
-  const result = await provisionarUsuario({ supabase, escolaId, criadoPor: null, data });
-  if ("error" in result) return result;
+  if (existente) {
+    // Conta de escola e conta de operador nunca se misturam (o banco também
+    // barra): senão o admin da escola poderia trocar o login do operador.
+    const { data: usuarioEscola } = await admin.from("usuarios").select("id").eq("id", existente.id).maybeSingle();
+    if (usuarioEscola) {
+      return { error: "Este e-mail já é login de um usuário de escola. Use outro e-mail." };
+    }
+    const { data: jaOperador } = await admin
+      .from("operadores_plataforma")
+      .select("id")
+      .eq("id", existente.id)
+      .maybeSingle();
+    if (jaOperador) return { error: "Este e-mail já é da equipe." };
+    id = existente.id;
+  } else {
+    const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
+    if (error || !data.user) return { error: "Não foi possível criar o acesso." };
+    id = data.user.id;
+  }
+
+  const { error } = await admin
+    .from("operadores_plataforma")
+    .insert({ id, nome_completo: parsed.data.nomeCompleto, ativo: true });
+
+  if (error) {
+    if (!existente) await admin.auth.admin.deleteUser(id);
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
 
   revalidatePath("/admin/usuarios");
-  redirect(`/usuarios/${result.id}?criado=1`);
+  redirect(`/usuarios/${id}?convidado=1`);
 }
 
-export async function atualizarUsuario(id: string, values: UsuarioPlataformaValues) {
-  const parsed = usuarioPlataformaSchema.safeParse(values);
+export async function atualizarOperador(id: string, values: AtualizarOperadorValues) {
+  const parsed = atualizarOperadorSchema.safeParse(values);
   if (!parsed.success) {
     return { error: "Dados inválidos. Confira os campos e tente novamente." };
   }
-  // A escola do usuário não muda depois de criado — vale a gravada, não a do formulário.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { escolaId: _escolaId, ...data } = parsed.data;
 
   const context = await requireOperador();
   if ("error" in context) return context;
-  const { supabase } = context;
 
-  const { data: atual } = await supabase.from("usuarios").select("escola_id").eq("id", id).maybeSingle();
-  if (!atual) return { error: "Usuário não encontrado." };
+  // Desativar a si mesmo poderia deixar o admin sem ninguém para entrar.
+  if (id === context.operadorId && !parsed.data.ativo) {
+    return { error: "Você não pode desativar o seu próprio acesso." };
+  }
 
-  const result = await atualizarUsuarioDaEscola({ supabase, id, escolaId: atual.escola_id, data });
-  if ("error" in result) return result;
+  const { data, error } = await createAdminClient()
+    .from("operadores_plataforma")
+    .update({ nome_completo: parsed.data.nomeCompleto, ativo: parsed.data.ativo })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) return { error: "Não foi possível salvar as alterações." };
 
   revalidatePath("/admin/usuarios");
   return { success: true } as const;
 }
 
-export async function gerarLink(usuarioId: string): Promise<{ link: string } | { error: string }> {
+/** Link de acesso de um operador — aponta para o próprio admin. */
+export async function gerarLinkOperador(id: string): Promise<{ link: string } | { error: string }> {
   const context = await requireOperador();
   if ("error" in context) return context;
-  return gerarLinkDeAcesso(context.supabase, usuarioId);
+
+  const { data } = await context.supabase.from("operadores_plataforma").select("id").eq("id", id).maybeSingle();
+  if (!data) return { error: "Usuário não encontrado." };
+
+  return linkDeRecuperacao(id, await origemDaRequisicao());
 }

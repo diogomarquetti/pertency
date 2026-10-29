@@ -12,8 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { EscolaListItem } from "@/app/admin/(painel)/escolas/queries";
 
-import { useToastDeParametro } from "./use-toast-de-parametro";
-
 function MantenedoraTexto({ nome }: { nome: string | null }) {
   return nome ? <>{nome}</> : <span className="text-muted">Sem mantenedora</span>;
 }
@@ -24,7 +22,6 @@ function StatusBadge({ status }: { status: "ativa" | "inativa" }) {
 
 export function EscolasLista({ escolas }: { escolas: EscolaListItem[] }) {
   const [busca, setBusca] = useState("");
-  useToastDeParametro("criada", "Escola criada com sucesso.");
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();

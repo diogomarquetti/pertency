@@ -1,7 +1,8 @@
 /**
  * Cria (ou reativa) um operador da plataforma — os donos do Pertency, que
- * usam o admin (admin.pertency.com.br). Não existe tela para isso: o admin
- * só abre para quem já é operador, então o primeiro precisa nascer aqui.
+ * usam o admin (admin.pertency.com.br). Os demais são convidados no próprio
+ * admin (Usuários); este script é só para o primeiro de um ambiente novo,
+ * já que o admin só abre para quem já é operador.
  *
  * Se o e-mail ainda não tem login, cria o usuário de auth (sem senha) e
  * imprime um link de acesso para definir a senha. Se já tem login e ele é
