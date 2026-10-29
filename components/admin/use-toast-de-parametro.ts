@@ -11,7 +11,7 @@ import { toast } from "@/lib/use-toast";
  * `?salvo=1` em usuarios-lista.tsx. Dispara o toast uma vez e limpa a URL; o
  * ref evita disparar duas vezes sob o StrictMode do dev.
  */
-export function useToastDeParametro(parametro: string, mensagem: string) {
+export function useToastDeParametro(parametro: string, mensagem: string, descricao?: string) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,7 +20,7 @@ export function useToastDeParametro(parametro: string, mensagem: string) {
   useEffect(() => {
     if (searchParams.get(parametro) === "1" && !disparado.current) {
       disparado.current = true;
-      toast.success(mensagem);
+      toast.success(mensagem, descricao);
       router.replace(pathname, { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

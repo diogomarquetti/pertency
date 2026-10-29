@@ -54,6 +54,8 @@ pnpm lint     # eslint
 `PERTENCY_APP` (`escolas` ou `admin`) define, em produção, qual app o deploy serve. Localmente
 fica sem definir: `http://localhost:3000` é o app das escolas e `http://admin.localhost:3000`
 o admin da plataforma (ver `docs/ARCHITECTURE.md` § Admin da plataforma).
+No deploy do admin, `PERTENCY_ESCOLAS_URL` é a origem do app das escolas, usada nos links de
+acesso gerados ali.
 
 ## Convenções
 

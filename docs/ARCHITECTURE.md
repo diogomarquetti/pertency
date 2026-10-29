@@ -427,7 +427,8 @@ por prop) servem os dois logins.
 1. Projeto atual (escolas): adicionar `PERTENCY_APP=escolas`.
 2. Novo projeto, importando o mesmo repositório: mesmas variáveis do Supabase
    (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
-   e `PERTENCY_APP=admin`; domínio `admin.pertency.com.br`.
+   e `PERTENCY_APP=admin`, e `PERTENCY_ESCOLAS_URL=https://<domínio do app das escolas>`
+   (origem dos links de acesso gerados no admin); domínio `admin.pertency.com.br`.
 3. DNS: `CNAME admin → cname.vercel-dns.com` (o valor exato aparece em Domains no projeto).
 4. Primeiro operador: `pnpm bootstrap:operador <email> "<nome>" --origin https://admin.pertency.com.br`
    e abrir o link impresso para definir a senha.
@@ -449,3 +450,27 @@ termina em `redirect` para a lista com `?criada=1`, que vira toast via
   escolas; duas fichas do mesmo CNPJ dividiriam as escolas).
 - Guard das actions: `requireOperador()` (`lib/supabase/require-operador.ts`); quem barra
   de verdade é a RLS `*_operador`.
+
+## Admin da plataforma — Usuários (registrado em 2026-10-29)
+
+`/usuarios` no admin: lista de todos os usuários de todas as escolas (busca por nome/e-mail,
+filtro por escola, selo "Sem primeiro acesso" quando `senha_definida = false`), criação e
+edição. Serve sobretudo para criar o primeiro administrador de cada escola (a função já vem
+como Administrador).
+
+- **Lógica compartilhada**: criar (invite + insert, com compensação), editar (login em
+  `auth.users` + linha em `usuarios`) e gerar link de acesso ficam em `lib/usuarios/acesso.ts`,
+  usado pelas actions do app das escolas e do admin. Antes de usar a service role, o módulo
+  confere pela RLS de quem chama que o usuário está visível — um admin de escola não gera link
+  nem troca o login de conta de outra escola (nem de operador).
+- **Telefone duplicado** é checado dentro da escola do usuário (`usuarioComTelefone` recebe
+  `escolaId`, porque o operador lê todas as escolas).
+- **Escola** é escolhida só na criação ("2. Escola"); na edição aparece só para leitura.
+  Usuário criado por operador fica com `created_by = null` (a FK aponta para `usuarios`); a
+  auditoria de status/função registra o operador em `alterado_por_operador`.
+- **Formulário**: `UsuarioPlataformaForm` (`components/admin`) reaproveita `UsuarioHeroCard`,
+  `DadosGeraisCard` e `AcessoCard` (que recebe a action de gerar link por prop). Sem foto (o
+  upload é do admin da escola, pela RLS do bucket) e sem turmas vinculadas.
+- **Link de acesso aponta para o app das escolas**, mesmo gerado no admin:
+  `PERTENCY_ESCOLAS_URL` no deploy do admin; sem ela, o host da requisição sem o prefixo
+  `admin.` (local: `admin.localhost:3000` → `localhost:3000`).
