@@ -1,6 +1,5 @@
 import { avaliacaoNaoIniciada } from "./tipos/avaliacao-nao-iniciada";
 import { avaliacaoParada } from "./tipos/avaliacao-parada";
-import { cadastroInstitucionalIncompleto } from "./tipos/cadastro-institucional-incompleto";
 import { componenteSemProfessor } from "./tipos/componente-sem-professor";
 import { contribuicaoPendente } from "./tipos/contribuicao-pendente";
 import { documentosPendentes } from "./tipos/documentos-pendentes";
@@ -24,6 +23,5 @@ export const TIPOS_PENDENCIA: TipoPendencia[] = [
   documentosPendentes,
   turmaOrganizacaoLegada,
   componenteSemProfessor,
-  cadastroInstitucionalIncompleto,
   usuarioSemPrimeiroAcesso,
 ];

@@ -12,7 +12,6 @@ export default function NovaMantenedoraPage() {
       />
       <MantenedoraForm
         mantenedora={MANTENEDORA_VAZIA}
-        canEdit
         salvar={criarMantenedora}
         cancelHref="/mantenedoras"
         saveLabel="Criar mantenedora"

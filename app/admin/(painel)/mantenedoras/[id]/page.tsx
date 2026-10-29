@@ -20,7 +20,6 @@ export default async function EditarMantenedoraPage({ params }: { params: Promis
       />
       <MantenedoraForm
         mantenedora={mantenedora}
-        canEdit
         salvar={atualizarMantenedora.bind(null, id)}
         cancelHref="/mantenedoras"
       />

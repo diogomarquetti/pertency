@@ -24,27 +24,27 @@ const FORM_ID = "escola-form";
 export type SalvarEscola = (values: EscolaValues) => Promise<{ error: string } | { success: true } | undefined>;
 
 /**
- * Formulário da Escola — usado em Configurações (app das escolas) e no admin
- * da plataforma. Cada um passa a própria Server Action em `salvar`; quando
- * ela redireciona (criação no admin), não há retorno a tratar. Com
- * `mantenedoras`, aparece o bloco de seleção da mantenedora (só no admin).
+ * Formulário da Escola — usado em Configurações (app das escolas, só
+ * leitura) e no admin da plataforma. O admin passa a própria Server Action
+ * em `salvar`; quando ela redireciona (criação), não há retorno a tratar.
+ * Sem `salvar`, o formulário é só leitura. Com `mantenedoras`, aparece o
+ * bloco de seleção da mantenedora (só no admin).
  */
 export function EscolaForm({
   escola,
-  canEdit,
   salvar,
   cancelHref,
   saveLabel = "Salvar escola",
   mantenedoras,
 }: {
   escola: EscolaValues & { id?: string };
-  canEdit: boolean;
-  salvar: SalvarEscola;
+  salvar?: SalvarEscola;
   cancelHref: string;
   saveLabel?: string;
   mantenedoras?: MantenedoraOpcao[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const canEdit = !!salvar;
   const setPageActions = usePageActionsSetter();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só descarta o id
@@ -73,6 +73,7 @@ export function EscolaForm({
   }, [isPending, canEdit, isDirty]);
 
   function onSubmit(values: EscolaValues) {
+    if (!salvar) return;
     startTransition(async () => {
       const result = await salvar(values);
       if (!result) return;

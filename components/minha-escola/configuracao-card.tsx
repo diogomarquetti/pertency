@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Pencil, Plus, type LucideIcon } from "lucide-react";
+import { Eye, type LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ export function ConfiguracaoCard({
   status,
   href,
   preenchido,
-  canEdit,
 }: {
   icon: LucideIcon;
   tipo: string;
@@ -22,7 +21,6 @@ export function ConfiguracaoCard({
   status?: { label: string; variant: "success" | "neutral" };
   href: string;
   preenchido: boolean;
-  canEdit: boolean;
 }) {
   return (
     <Card className="flex-col gap-4 p-[24px] sm:flex-row sm:items-center">
@@ -40,28 +38,14 @@ export function ConfiguracaoCard({
         </div>
       </div>
 
-      {preenchido && canEdit ? (
-        <Button variant="secondary" size="sm" asChild className="shrink-0">
-          <Link href={href}>
-            <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-            Editar
-          </Link>
-        </Button>
-      ) : preenchido ? (
+      {preenchido && (
         <Button variant="secondary" size="sm" asChild className="shrink-0">
           <Link href={href}>
             <Eye size={14} strokeWidth={2} aria-hidden="true" />
             Visualizar
           </Link>
         </Button>
-      ) : canEdit ? (
-        <Button variant="secondary" size="sm" asChild className="shrink-0">
-          <Link href={href}>
-            <Plus size={14} strokeWidth={2} aria-hidden="true" />
-            Iniciar cadastro
-          </Link>
-        </Button>
-      ) : null}
+      )}
     </Card>
   );
 }

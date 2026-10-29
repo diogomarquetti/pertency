@@ -20,7 +20,6 @@ export default async function EditarEscolaPage({ params }: { params: Promise<{ i
       />
       <EscolaForm
         escola={escola}
-        canEdit
         salvar={atualizarEscola.bind(null, id)}
         cancelHref="/escolas"
         mantenedoras={mantenedoras}

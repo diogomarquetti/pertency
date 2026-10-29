@@ -244,9 +244,7 @@ Todos os prazos ficam em `lib/pendencias/prazos.ts` (e o limite de ocupação,
 provisório mostra a marca "PROVISÓRIO · validar prazo com P.O" na explicação da regra.
 Outras regras provisórias ficam junto da regra compartilhada que já existia — ex.:
 `documentosPendentes()` em `app/(app)/estudantes/documentos-schema.ts`, usada tanto pela aba
-Documentos quanto pela homepage, para as duas nunca divergirem. Pela mesma razão,
-`cadastro_institucional_incompleto` valida com os próprios `escolaSchema`/`mantenedoraSchema`
-dos formulários de Configurações.
+Documentos quanto pela homepage, para as duas nunca divergirem.
 
 ### Links da homepage
 
@@ -259,7 +257,8 @@ por `?pendencia=` (`/estudantes?pendencia=documentos`, `/turmas?pendencia=organi
 
 `lib/pendencias/paineis.ts` (`PAINEIS_POR_PERFIL`) e `components/inicio/coluna-lateral.tsx`:
 Fila de ingresso (Secretaria, Pedagogo(a), Direção), Ocupação das turmas (Direção), Sua turma
-(Professor(a)) e Configuração da escola (Administrador). Profissional complementar não tem
+(Professor(a)) e Configuração da escola (Administrador — ofertas, turmas e usuários; escola e
+mantenedora não entram, porque são mantidas pela equipe Pertency). Profissional complementar não tem
 painel. Mesmo princípio dos tipos: um painel que falha some sozinho.
 
 Dois painéis precisam de dados que a RLS de `vinculos_escolares_anuais` não libera para todos
@@ -392,9 +391,13 @@ deploy" abaixo). Banco:
   existir, e uma mantenedora pode manter várias escolas. Só o operador cria mantenedora e
   troca a mantenedora da escola (trigger). Em Configurações, sem mantenedora vinculada o card
   diz que a equipe Pertency faz esse cadastro.
-- **Transitório**: `escolas_update_admin` e `mantenedoras_update_admin` ainda deixam o
-  administrador da escola editar a escola e a mantenedora vinculada. Saem quando o admin da
-  plataforma estiver no ar (junto com a pendência `cadastro_institucional_incompleto`).
+- **Escola e mantenedora são só do operador**: a migration
+  `20261029150000_escola_mantenedora_so_operador.sql` removeu `escolas_update_admin` e
+  `mantenedoras_update_admin` (transitórias). Em Configurações, o administrador da escola só
+  visualiza os dois cadastros (`EscolaForm`/`MantenedoraForm` sem `salvar` ficam só leitura),
+  com um aviso de que a equipe Pertency mantém esses dados. A pendência
+  `cadastro_institucional_incompleto` e os itens Escola/Mantenedora do painel "Configuração da
+  escola" saíram junto — pediam ao administrador algo que ele não pode mais fazer.
 
 ## Admin da plataforma — app e deploy (registrado em 2026-10-29)
 

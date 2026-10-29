@@ -44,24 +44,23 @@ export type SalvarMantenedora = (
 
 /**
  * Formulário da Mantenedora — usado em Configurações (app das escolas, só
- * edição) e no admin da plataforma (criação e edição). Cada um passa a
+ * leitura) e no admin da plataforma (criação e edição). O admin passa a
  * própria Server Action em `salvar`; quando ela redireciona (criação), não há
- * retorno a tratar.
+ * retorno a tratar. Sem `salvar`, o formulário é só leitura.
  */
 export function MantenedoraForm({
   mantenedora,
-  canEdit,
   salvar,
   cancelHref,
   saveLabel = "Salvar",
 }: {
   mantenedora: MantenedoraValues & { id?: string };
-  canEdit: boolean;
-  salvar: SalvarMantenedora;
+  salvar?: SalvarMantenedora;
   cancelHref: string;
   saveLabel?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const canEdit = !!salvar;
   const setPageActions = usePageActionsSetter();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só descarta o id
@@ -90,6 +89,7 @@ export function MantenedoraForm({
   }, [isPending, canEdit, isDirty]);
 
   function onSubmit(values: MantenedoraValues) {
+    if (!salvar) return;
     startTransition(async () => {
       const result = await salvar(values);
       if (!result) return;

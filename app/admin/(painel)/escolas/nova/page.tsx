@@ -39,7 +39,6 @@ export default async function NovaEscolaPage() {
       <PageTitle value="Nova escola" breadcrumb={[{ label: "Escolas", href: "/escolas" }, { label: "Nova escola" }]} />
       <EscolaForm
         escola={ESCOLA_VAZIA}
-        canEdit
         salvar={criarEscola}
         cancelHref="/escolas"
         saveLabel="Criar escola"
