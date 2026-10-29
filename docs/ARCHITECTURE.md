@@ -431,3 +431,21 @@ por prop) servem os dois logins.
 3. DNS: `CNAME admin → cname.vercel-dns.com` (o valor exato aparece em Domains no projeto).
 4. Primeiro operador: `pnpm bootstrap:operador <email> "<nome>" --origin https://admin.pertency.com.br`
    e abrir o link impresso para definir a senha.
+
+## Admin da plataforma — Escolas e Mantenedoras (registrado em 2026-10-29)
+
+`/escolas` e `/mantenedoras` no admin: lista (busca, tabela no desktop e `ListCard` no
+mobile), criação e edição. Reaproveitam os mesmos `EscolaForm`/`MantenedoraForm` e cards de
+Configurações — cada tela passa a própria Server Action em `salvar` (criação no admin
+termina em `redirect` para a lista com `?criada=1`, que vira toast via
+`useToastDeParametro`). A conversão linha ↔ formulário fica num lugar só,
+`app/(app)/minha-escola/mapeamento.ts`, usado pelos dois lados.
+
+- **Mantenedora da escola**: `mantenedoraId` é opcional no `escolaSchema` (Configurações não
+  mostra nem grava) e obrigatório no admin via `escolaComMantenedoraSchema`. O bloco
+  "4. Mantenedora" (`EscolaMantenedoraCard`) só aparece quando o form recebe `mantenedoras`.
+  Mantenedora inativa não pode ser escolhida, mas continua aceita se já for a da escola.
+- **CNPJ único** entre mantenedoras, checado na action (uma mantenedora serve várias
+  escolas; duas fichas do mesmo CNPJ dividiriam as escolas).
+- Guard das actions: `requireOperador()` (`lib/supabase/require-operador.ts`); quem barra
+  de verdade é a RLS `*_operador`.

@@ -4,6 +4,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { MantenedoraForm } from "@/components/minha-escola/mantenedora-form";
 import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 
+import { updateMantenedora } from "../actions";
 import { getMantenedoraAtual } from "../queries";
 
 export default async function MantenedoraPage() {
@@ -21,7 +22,12 @@ export default async function MantenedoraPage() {
         value="Mantenedora"
         breadcrumb={[{ label: "Configurações", href: "/minha-escola" }, { label: "Mantenedora" }]}
       />
-      <MantenedoraForm mantenedora={mantenedora} canEdit={canEdit} />
+      <MantenedoraForm
+        mantenedora={mantenedora}
+        canEdit={canEdit}
+        salvar={updateMantenedora}
+        cancelHref="/minha-escola"
+      />
     </div>
   );
 }

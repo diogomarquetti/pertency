@@ -2,6 +2,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { EscolaForm } from "@/components/minha-escola/escola-form";
 import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
 
+import { updateEscola } from "../actions";
 import { getEscolaAtualCompleta } from "../queries";
 
 export default async function EscolaPage() {
@@ -19,7 +20,7 @@ export default async function EscolaPage() {
         value="Escola"
         breadcrumb={[{ label: "Configurações", href: "/minha-escola" }, { label: "Escola" }]}
       />
-      <EscolaForm escola={escola} canEdit={canEdit} />
+      <EscolaForm escola={escola} canEdit={canEdit} salvar={updateEscola} cancelHref="/minha-escola" />
     </div>
   );
 }

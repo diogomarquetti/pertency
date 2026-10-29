@@ -8,17 +8,42 @@ import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
 import { toast } from "@/lib/use-toast";
 
-import { updateEscola } from "@/app/(app)/minha-escola/actions";
-import { escolaSchema, type EscolaValues } from "@/app/(app)/minha-escola/schema";
-import type { EscolaAtual } from "@/app/(app)/minha-escola/queries";
+import {
+  escolaComMantenedoraSchema,
+  escolaSchema,
+  type EscolaValues,
+} from "@/app/(app)/minha-escola/schema";
 
 import { EscolaEnderecoContatoCard } from "./escola-endereco-contato-card";
 import { EscolaIdentificacaoCard } from "./escola-identificacao-card";
+import { EscolaMantenedoraCard, type MantenedoraOpcao } from "./escola-mantenedora-card";
 import { EscolaResponsaveisCard } from "./escola-responsaveis-card";
 
 const FORM_ID = "escola-form";
 
-export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: boolean }) {
+export type SalvarEscola = (values: EscolaValues) => Promise<{ error: string } | { success: true } | undefined>;
+
+/**
+ * Formulário da Escola — usado em Configurações (app das escolas) e no admin
+ * da plataforma. Cada um passa a própria Server Action em `salvar`; quando
+ * ela redireciona (criação no admin), não há retorno a tratar. Com
+ * `mantenedoras`, aparece o bloco de seleção da mantenedora (só no admin).
+ */
+export function EscolaForm({
+  escola,
+  canEdit,
+  salvar,
+  cancelHref,
+  saveLabel = "Salvar escola",
+  mantenedoras,
+}: {
+  escola: EscolaValues & { id?: string };
+  canEdit: boolean;
+  salvar: SalvarEscola;
+  cancelHref: string;
+  saveLabel?: string;
+  mantenedoras?: MantenedoraOpcao[];
+}) {
   const [isPending, startTransition] = useTransition();
   const setPageActions = usePageActionsSetter();
 
@@ -26,7 +51,7 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
   const { id: _id, ...defaultValues } = escola;
 
   const form = useForm<EscolaValues>({
-    resolver: zodResolver(escolaSchema),
+    resolver: zodResolver(mantenedoras ? escolaComMantenedoraSchema : escolaSchema),
     defaultValues,
   });
 
@@ -37,8 +62,8 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
     setPageActions({
       formId: FORM_ID,
       pending: isPending,
-      saveLabel: "Salvar escola",
-      cancelHref: "/minha-escola",
+      saveLabel,
+      cancelHref,
       cancelLabel: canEdit ? undefined : "Voltar",
       readOnly: !canEdit,
       isDirty,
@@ -49,7 +74,8 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
 
   function onSubmit(values: EscolaValues) {
     startTransition(async () => {
-      const result = await updateEscola(values);
+      const result = await salvar(values);
+      if (!result) return;
       if ("error" in result) {
         toast.error("Não foi possível salvar", result.error);
         return;
@@ -67,6 +93,7 @@ export function EscolaForm({ escola, canEdit }: { escola: EscolaAtual; canEdit: 
             <EscolaIdentificacaoCard control={form.control} statusAtual={statusAtual} />
             <EscolaEnderecoContatoCard control={form.control} />
             <EscolaResponsaveisCard control={form.control} />
+            {mantenedoras && <EscolaMantenedoraCard control={form.control} mantenedoras={mantenedoras} />}
 
             <div className="rounded-md bg-brand-tint px-[14px] py-[12px] text-[13px] leading-relaxed text-brand-ink">
               <span className="font-semibold">Importante:</span> As informações cadastradas serão

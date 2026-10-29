@@ -1,13 +1,15 @@
-import { Landmark } from "lucide-react";
-
 import { PageTitle } from "@/components/layout/page-title";
-import { FutureModuleCard } from "@/components/ui/future-module-card";
+import { MantenedorasLista } from "@/components/admin/mantenedoras-lista";
 
-export default function AdminMantenedorasPage() {
+import { listarMantenedoras } from "./queries";
+
+export default async function AdminMantenedorasPage() {
+  const mantenedoras = await listarMantenedoras();
+
   return (
     <div>
       <PageTitle value="Mantenedoras" />
-      <FutureModuleCard icon={Landmark} titulo="Cadastro de mantenedoras" descricao="Criar e editar as mantenedoras que as escolas selecionam." />
+      <MantenedorasLista mantenedoras={mantenedoras} />
     </div>
   );
 }

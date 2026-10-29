@@ -58,6 +58,16 @@ export const escolaSchema = z.object({
   coordenadorNome: z.string().min(1, "Informe o nome do(a) coordenador(a)"),
   coordenadorFone: z.string().min(1, "Informe o telefone do(a) coordenador(a)"),
   coordenadorEmail: z.email({ message: "Informe um e-mail válido" }),
+
+  // Bloco 4 — Mantenedora: só o admin da plataforma mostra e grava (ver
+  // escolaComMantenedoraSchema). Em Configurações o campo não existe.
+  mantenedoraId: z.string().optional(),
+});
+
+/** Admin da plataforma: a escola precisa selecionar a mantenedora. */
+export const escolaComMantenedoraSchema = escolaSchema.refine((valores) => !!valores.mantenedoraId, {
+  path: ["mantenedoraId"],
+  message: "Selecione a mantenedora",
 });
 
 export type EscolaValues = z.infer<typeof escolaSchema>;
