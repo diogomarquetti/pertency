@@ -1,6 +1,7 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { createClient } from "@/lib/supabase/server";
 import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getOfertaSere, ofertaSereLabel } from "@/lib/ofertas-config";
 import { getTurmasAtivas } from "@/lib/pendencias/fontes/turmas";
 
 import { TurmasLista, type FiltroPendencia, type TurmaListItem } from "./turmas-lista";
@@ -12,13 +13,14 @@ export default async function TurmasPage({
 }) {
   const supabase = await createClient();
   const { pendencia } = await searchParams;
-  const [{ data: turmas }, canEdit] = await Promise.all([
+  const [{ data: turmas }, { data: anosLetivos }, canEdit] = await Promise.all([
     supabase
       .from("turmas")
       .select(
-        "id, nome, status, ofertas(slug, nome), turnos(nome), anos_letivos(ano)",
+        "id, nome, status, oferta_sere, ofertas(slug, nome), turnos(nome), anos_letivos(ano)",
       )
       .order("nome"),
+    supabase.from("anos_letivos").select("ano"),
     getViewerIsAdmin(),
   ]);
 
@@ -26,13 +28,14 @@ export default async function TurmasPage({
     const oferta = turma.ofertas as unknown as { slug: string; nome: string } | null;
     const turno = turma.turnos as unknown as { nome: string } | null;
     const anoLetivo = turma.anos_letivos as unknown as { ano: number } | null;
+    const ofertaSere = getOfertaSere(turma.oferta_sere as string | null);
 
     return {
       id: turma.id,
       nome: turma.nome,
       status: turma.status as TurmaListItem["status"],
-      ofertaSlug: oferta?.slug ?? "",
-      ofertaNome: oferta?.nome ?? "",
+      ofertaSere: ofertaSere?.codigo ?? "",
+      ofertaNome: ofertaSere ? ofertaSereLabel(ofertaSere) : (oferta?.nome ?? ""),
       turnoNome: turno?.nome ?? "",
       anoLetivo: anoLetivo?.ano ?? 0,
     };
@@ -55,7 +58,14 @@ export default async function TurmasPage({
   return (
     <div>
       <PageTitle value="Turmas" />
-      <TurmasLista turmas={items} canEdit={canEdit} filtroPendencia={filtroPendencia} />
+      <TurmasLista
+        turmas={items}
+        anos={[...new Set([...(anosLetivos ?? []).map((a) => a.ano as number), ...items.map((t) => t.anoLetivo)])]
+          .filter(Boolean)
+          .sort((a, b) => b - a)}
+        canEdit={canEdit}
+        filtroPendencia={filtroPendencia}
+      />
     </div>
   );
 }

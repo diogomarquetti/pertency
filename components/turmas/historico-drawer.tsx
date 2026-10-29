@@ -23,7 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { FORMA_FUNCIONAMENTO_OPTIONS, cicloLabel } from "@/lib/ofertas-config";
+import { FORMA_FUNCIONAMENTO_OPTIONS, cicloLabel, getOfertaSere, ofertaSereLabel } from "@/lib/ofertas-config";
 import { STATUS_OPTIONS } from "@/app/(app)/turmas/schema";
 import type { AuditoriaTurmaRow, ReferenciaTurmaForm } from "@/app/(app)/turmas/queries";
 
@@ -42,6 +42,10 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 function formatValor(campo: string, valor: string | null, referencia: ReferenciaTurmaForm) {
   if (valor === null) return null;
   if (campo === "status") return STATUS_LABEL[valor] ?? valor;
+  if (campo === "oferta_sere") {
+    const oferta = getOfertaSere(valor);
+    return oferta ? ofertaSereLabel(oferta) : valor;
+  }
   if (campo === "oferta_id") {
     return referencia.ofertas.find((oferta) => oferta.id === valor)?.nome ?? "Oferta removida do sistema";
   }
@@ -62,6 +66,7 @@ const CAMPO_META: Record<string, { icon: LucideIcon; label: string }> = {
   status: { icon: Clock, label: "Status" },
   nome: { icon: TypeIcon, label: "Nome da turma" },
   capacidade: { icon: Users, label: "Capacidade" },
+  oferta_sere: { icon: BookOpen, label: "Oferta (código SERE)" },
   oferta_id: { icon: BookOpen, label: "Oferta" },
   etapa_ciclo_id: { icon: Network, label: "Organização da oferta" },
   ciclo: { icon: Layers, label: "Ciclo" },

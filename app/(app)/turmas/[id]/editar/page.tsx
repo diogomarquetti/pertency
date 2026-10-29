@@ -29,7 +29,7 @@ export default async function EditarTurmaPage({
     .from("turmas")
     .select(
       `nome, ano_letivo_id, turno_id, capacidade, status, data_inicio, data_fim, observacoes,
-       objetivo_geral, areas_conhecimento, unidades_ocupacionais, eixos_funcionais, oferta_id,
+       objetivo_geral, areas_conhecimento, unidades_ocupacionais, eixos_funcionais, oferta_sere, oferta_id,
        etapa_ciclo_id, ciclo, etapas, matriz_curricular_id, forma_funcionamento, ofertas(slug)`,
     )
     .eq("id", id)
@@ -47,7 +47,7 @@ export default async function EditarTurmaPage({
     professoresVinculados,
     professoresElegiveis,
     estudantesVinculados,
-    canEdit,
+    isAdmin,
   ] = await Promise.all([
     getReferenciaTurmaForm(),
     getComponentesTurma(id),
@@ -58,6 +58,9 @@ export default async function EditarTurmaPage({
     getEstudantesVinculados(id),
     getViewerIsAdmin(),
   ]);
+
+  // Turma encerrada não é editada, só visualizada (inclusive pelo administrador).
+  const canEdit = isAdmin && turma.status !== "encerrada";
 
   const ofertaSlug = (turma.ofertas as unknown as { slug: string } | null)?.slug ?? "";
 
@@ -81,12 +84,14 @@ export default async function EditarTurmaPage({
     anoLetivoId: turma.ano_letivo_id,
     turnoId: turma.turno_id,
     capacidade: turma.capacidade ? String(turma.capacidade) : "",
+    // Vazio em turma antiga da Educação Infantil (6005 ou 6046): escolhida na edição.
+    ofertaSere: turma.oferta_sere ?? "",
     ofertaSlug: ofertaSlug as UpdateTurmaValues["ofertaSlug"],
     ofertaId: turma.oferta_id,
     organizacaoId: turma.etapa_ciclo_id,
     ciclo: turma.ciclo ? String(turma.ciclo) : "",
     etapas: (turma.etapas as number[] | null) ?? [],
-    matrizCurricularId: turma.matriz_curricular_id,
+    matrizCurricularId: turma.matriz_curricular_id ?? "",
     formaFuncionamento: (turma.forma_funcionamento ?? "diaria") as UpdateTurmaValues["formaFuncionamento"],
     status: turma.status as UpdateTurmaValues["status"],
     dataInicio: turma.data_inicio,

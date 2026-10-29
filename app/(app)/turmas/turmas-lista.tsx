@@ -31,8 +31,9 @@ import {
   ListCardList,
 } from "@/components/ui/list-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { OFERTAS_SERE, ofertaSereLabel } from "@/lib/ofertas-config";
 
-import { OFERTA_OPTIONS, STATUS_OPTIONS } from "./schema";
+import { STATUS_OPTIONS } from "./schema";
 
 const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   STATUS_OPTIONS.map((option) => [option.value, option.label]),
@@ -45,11 +46,19 @@ const STATUS_BADGE: Record<string, "success" | "neutral" | "danger"> = {
 
 const TODAS_OFERTAS = "todas";
 
+/** Ano mostrado ao abrir a lista: o atual; sem turmas nele, o mais recente até hoje. */
+function anoPadrao(anos: number[]) {
+  const atual = new Date().getFullYear();
+  if (anos.includes(atual)) return atual;
+  return anos.find((ano) => ano < atual) ?? anos[0] ?? atual;
+}
+
 export type TurmaListItem = {
   id: string;
   nome: string;
   status: "ativa" | "inativa" | "encerrada";
-  ofertaSlug: string;
+  /** Vazio em turma antiga da Educação Infantil ainda sem 6005/6046. */
+  ofertaSere: string;
   ofertaNome: string;
   turnoNome: string;
   anoLetivo: number;
@@ -67,15 +76,20 @@ export type FiltroPendencia = {
 
 export function TurmasLista({
   turmas,
+  anos,
   canEdit,
   filtroPendencia = null,
 }: {
   turmas: TurmaListItem[];
+  /** Anos letivos com turma ou cadastrados, do mais recente ao mais antigo. */
+  anos: number[];
   canEdit: boolean;
   filtroPendencia?: FiltroPendencia | null;
 }) {
   const [busca, setBusca] = useState("");
   const [ofertaFiltro, setOfertaFiltro] = useState(TODAS_OFERTAS);
+  // Um ano por vez — não existe "todos os anos".
+  const [anoFiltro, setAnoFiltro] = useState(() => anoPadrao(anos));
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -93,12 +107,13 @@ export function TurmasLista({
     const termo = busca.trim().toLowerCase();
 
     return turmas.filter((turma) => {
+      const combinaAno = turma.anoLetivo === anoFiltro;
       const combinaBusca = !termo || turma.nome.toLowerCase().includes(termo);
-      const combinaOferta = ofertaFiltro === TODAS_OFERTAS || turma.ofertaSlug === ofertaFiltro;
+      const combinaOferta = ofertaFiltro === TODAS_OFERTAS || turma.ofertaSere === ofertaFiltro;
       const combinaPendencia = !filtroPendencia || turma.id in filtroPendencia.motivoPorTurma;
-      return combinaBusca && combinaOferta && combinaPendencia;
+      return combinaAno && combinaBusca && combinaOferta && combinaPendencia;
     });
-  }, [turmas, busca, ofertaFiltro, filtroPendencia]);
+  }, [turmas, busca, anoFiltro, ofertaFiltro, filtroPendencia]);
 
   return (
     <div>
@@ -120,15 +135,28 @@ export function TurmasLista({
             />
           </div>
 
+          <Select value={String(anoFiltro)} onValueChange={(value) => setAnoFiltro(Number(value))}>
+            <SelectTrigger className="w-full sm:w-[110px]" aria-label="Ano letivo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(anos.length ? anos : [anoFiltro]).map((ano) => (
+                <SelectItem key={ano} value={String(ano)}>
+                  {ano}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={ofertaFiltro} onValueChange={setOfertaFiltro}>
-            <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectTrigger className="w-full sm:w-[300px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={TODAS_OFERTAS}>Todas as ofertas</SelectItem>
-              {OFERTA_OPTIONS.map((option) => (
-                <SelectItem key={option.slug} value={option.slug}>
-                  {option.nome}
+              {OFERTAS_SERE.map((oferta) => (
+                <SelectItem key={oferta.codigo} value={oferta.codigo}>
+                  {ofertaSereLabel(oferta)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -172,42 +200,45 @@ export function TurmasLista({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {turmasFiltradas.map((turma) => (
-                <TableRow key={turma.id}>
-                  <TableCell>
-                    <div className="font-semibold text-ink">{turma.nome}</div>
-                    <div className="text-[12.5px] text-muted">
-                      {filtroPendencia?.motivoPorTurma[turma.id] ?? turma.anoLetivo}
-                    </div>
-                  </TableCell>
-                  <TableCell>{turma.ofertaNome}</TableCell>
-                  <TableCell>{turma.turnoNome}</TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_BADGE[turma.status]}>{STATUS_LABEL[turma.status]}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="secondary" size="sm" icon asChild>
-                            <Link
-                              href={`/turmas/${turma.id}/editar`}
-                              aria-label={canEdit ? "Editar turma" : "Visualizar turma"}
-                            >
-                              {canEdit ? (
-                                <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                              ) : (
-                                <Eye size={14} strokeWidth={2} aria-hidden="true" />
-                              )}
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{canEdit ? "Editar" : "Visualizar"}</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {turmasFiltradas.map((turma) => {
+                const editavel = canEdit && turma.status !== "encerrada";
+                return (
+                  <TableRow key={turma.id}>
+                    <TableCell>
+                      <div className="font-semibold text-ink">{turma.nome}</div>
+                      <div className="text-[12.5px] text-muted">
+                        {filtroPendencia?.motivoPorTurma[turma.id] ?? turma.anoLetivo}
+                      </div>
+                    </TableCell>
+                    <TableCell>{turma.ofertaNome}</TableCell>
+                    <TableCell>{turma.turnoNome}</TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_BADGE[turma.status]}>{STATUS_LABEL[turma.status]}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="secondary" size="sm" icon asChild>
+                              <Link
+                                href={`/turmas/${turma.id}/editar`}
+                                aria-label={editavel ? "Editar turma" : "Visualizar turma"}
+                              >
+                                {editavel ? (
+                                  <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                                ) : (
+                                  <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                                )}
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{editavel ? "Editar" : "Visualizar"}</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           </div>
@@ -246,7 +277,7 @@ export function TurmasLista({
           <p className="mt-1 text-[13px] text-muted">
             {filtroPendencia
               ? "Nenhuma turma com essa pendência. Remova o filtro para ver todas."
-              : "Ajuste a busca ou o filtro de oferta e tente novamente."}
+              : `Nenhuma turma no ano letivo ${anoFiltro} com esses filtros. Ajuste a busca, a oferta ou o ano.`}
           </p>
         </div>
       )}

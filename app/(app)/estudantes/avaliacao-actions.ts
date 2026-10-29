@@ -7,7 +7,7 @@ import {
   requireRelatorioGeracaoProfile,
 } from "@/lib/supabase/require-admin-profile";
 
-import { avaliacaoSchema, type AvaliacaoValues } from "./avaliacao-schema";
+import { avaliacaoSchema, podeComporEquipe, type AvaliacaoValues } from "./avaliacao-schema";
 
 function toAvaliacaoRow(escolaId: string, estudanteId: string, data: AvaliacaoValues) {
   return {
@@ -77,6 +77,17 @@ export async function salvarAvaliacao(estudanteId: string, avaliacaoId: string |
     return context;
   }
   const { supabase, userId, escolaId } = context;
+
+  // Secretaria não compõe a equipe (ver podeComporEquipe) — retificação de
+  // avaliação antiga que a tinha perde o vínculo ao salvar.
+  if (data.equipeResponsavelIds.length > 0) {
+    const { data: membros } = await supabase
+      .from("usuarios")
+      .select("id, funcao")
+      .in("id", data.equipeResponsavelIds);
+    const fora = new Set((membros ?? []).filter((m) => !podeComporEquipe(m.funcao)).map((m) => m.id));
+    data.equipeResponsavelIds = data.equipeResponsavelIds.filter((id) => !fora.has(id));
+  }
 
   const row = toAvaliacaoRow(escolaId, estudanteId, data);
 

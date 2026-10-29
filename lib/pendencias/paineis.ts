@@ -1,7 +1,7 @@
 import { ENCAMINHAMENTO_OPTIONS } from "@/app/(app)/estudantes/avaliacao-schema";
 import { montarAlertas, type Alerta } from "@/app/(app)/estudantes/perfil-funcional-alertas";
 import { mapPerfilFuncional, PERFIL_FUNCIONAL_COLUNAS } from "@/app/(app)/estudantes/queries";
-import { OFERTAS, ORGANIZACOES_CONFIG } from "@/lib/ofertas-config";
+import { OFERTAS_SERE } from "@/lib/ofertas-config";
 import { createClient } from "@/lib/supabase/server";
 
 import { dataLocalISO, diasEntre, hojeISO } from "./datas";
@@ -258,9 +258,9 @@ export async function getConfiguracaoEscola(): Promise<ItemConfiguracao[]> {
       : `${faltando.length} ${faltando.length === 1 ? "informação faltando" : "informações faltando"}`;
   }
 
-  const ofertasSemSere = OFERTAS.filter((oferta) =>
-    ORGANIZACOES_CONFIG.some((organizacao) => organizacao.ofertaSlug === oferta.slug && !organizacao.codigoSere),
-  ).map((oferta) => oferta.nome);
+  const ofertasSemEstrutura = OFERTAS_SERE.filter((oferta) => !oferta.estruturaDefinida).map(
+    (oferta) => oferta.codigo,
+  );
 
   const aRevisar = turmas.filter((turma) => turma.organizacaoDescontinuada).length;
   const semAcesso = (usuarios.data ?? []).filter((usuario) => !usuario.senha_definida).length;
@@ -284,7 +284,9 @@ export async function getConfiguracaoEscola(): Promise<ItemConfiguracao[]> {
       // Configuração central (lib/ofertas-config.ts), não editável pela
       // escola — só informa o que ainda depende do P.O.
       item: "Ofertas e códigos SERE",
-      estado: ofertasSemSere.length ? `${listarNomes(ofertasSemSere)} aguardando P.O` : "Completo",
+      estado: ofertasSemEstrutura.length
+        ? `${listarNomes(ofertasSemEstrutura)}: estrutura curricular aguardando P.O`
+        : "Completo",
       ok: true,
       destino: null,
     },

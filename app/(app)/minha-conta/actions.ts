@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/supabase/require-user";
+import { telefoneMudou, usuarioComTelefone } from "@/app/(app)/usuarios/telefone-duplicado";
 
 import { minhaContaSchema, type MinhaContaValues } from "./schema";
 
@@ -18,6 +19,12 @@ export async function updateMinhaConta(values: MinhaContaValues) {
     return context;
   }
   const { supabase, userId } = context;
+
+  if (await telefoneMudou(supabase, userId, data.telefone)) {
+    if (await usuarioComTelefone(supabase, data.telefone, userId)) {
+      return { error: "Este telefone já está cadastrado para outro usuário.", campo: "telefone" as const };
+    }
+  }
 
   const { data: updated, error: updateError } = await supabase
     .from("usuarios")

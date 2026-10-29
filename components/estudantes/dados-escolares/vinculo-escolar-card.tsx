@@ -33,6 +33,7 @@ import type {
   VinculoEscolarAnual,
 } from "@/app/(app)/estudantes/queries";
 import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
+import { useSelecaoUnica } from "@/lib/use-selecao-unica";
 import type { OfertaSlug } from "@/app/(app)/turmas/schema";
 
 function limparCamposDependentes(form: UseFormReturn<DadosEscolaresValues>) {
@@ -84,6 +85,7 @@ export function VinculoEscolarCard({
   turmasReferencia,
   anosLetivos,
   vinculosEscolaresAnuais,
+  canEdit,
 }: {
   form: UseFormReturn<DadosEscolaresValues>;
   avaliacao: AvaliacaoIngresso | null;
@@ -92,6 +94,7 @@ export function VinculoEscolarCard({
   turmasReferencia: TurmaOption[];
   anosLetivos: AnoLetivoOption[];
   vinculosEscolaresAnuais: VinculoEscolarAnual[];
+  canEdit: boolean;
 }) {
   const anoLetivoId = form.watch("anoLetivoId");
   const ofertaAtualSlug = form.watch("ofertaAtualSlug");
@@ -121,6 +124,14 @@ export function VinculoEscolarCard({
   const turmasFiltradas = turmasReferencia.filter((turma) =>
     turmaCompativel(turma, { organizacaoId: organizacaoAtualId ?? "", turnoId: turnoId ?? "" }),
   );
+  // Uma só opção já vem escolhida: organização da oferta e turma compatível.
+  useSelecaoUnica(
+    organizacaoAtualId,
+    ofertaAtualId ? organizacoesFiltradas : [],
+    (id) => form.setValue("organizacaoAtualId", id, { shouldDirty: true, shouldValidate: true }),
+    canEdit,
+  );
+
   const faltaFiltroTurma = !anoLetivoId
     ? "Selecione o ano letivo primeiro"
     : !ofertaAtualId
@@ -128,6 +139,13 @@ export function VinculoEscolarCard({
       : !organizacaoAtualId || !turnoId
         ? "Selecione organização e turno primeiro"
         : null;
+  // Turma só é obrigatória (e só vem escolhida) para estudante Ativo.
+  useSelecaoUnica(
+    form.watch("turmaId"),
+    !faltaFiltroTurma && form.watch("situacao") === "ativo" ? turmasFiltradas : [],
+    (id) => form.setValue("turmaId", id, { shouldDirty: true, shouldValidate: true }),
+    canEdit,
+  );
 
   // Trocar organização ou turno só limpa a turma se ela deixar de ser
   // compatível com o novo filtro.

@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { getOfertaSere } from "@/lib/ofertas-config";
 import {
   AREAS_CONHECIMENTO_EJA,
   EIXOS_FUNCIONAIS,
@@ -120,6 +121,7 @@ export function EstruturaCurricularCard({
   referencia: ReferenciaTurmaForm;
 }) {
   const ofertaSlug = form.watch("ofertaSlug");
+  const ofertaSere = getOfertaSere(form.watch("ofertaSere"));
   const matrizId = form.watch("matrizCurricularId");
   const matriz = referencia.matrizes.find((m) => m.id === matrizId);
   const componenteOptions = referencia.componentes.map((c) => ({ value: c.id, label: c.nome }));
@@ -141,6 +143,11 @@ export function EstruturaCurricularCard({
         <p className="text-[13px] text-muted">
           Selecione a oferta no bloco anterior para ver a organização específica da turma.
         </p>
+      )}
+
+      {/* PROVISÓRIO: validar com P.O — estrutura curricular de 6036 e 5110. */}
+      {ofertaSere && !ofertaSere.estruturaDefinida && (
+        <p className="text-[13px] text-muted">Estrutura curricular ainda não definida para esta oferta.</p>
       )}
 
       {(ofertaSlug === "ei" || ofertaSlug === "ef") && !matriz && (

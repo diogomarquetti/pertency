@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { OFERTAS, getEtapasDoCicloEf, type OfertaSlug } from "@/lib/ofertas-config";
+import { OFERTAS, getEtapasDoCicloEf, getOfertaSere, type OfertaSlug } from "@/lib/ofertas-config";
 
 // Ofertas, organizações e as regras de cada uma vêm da configuração central
-// (lib/ofertas-config.ts). Slug é usado pra lógica condicional do
-// formulário; ofertaId (uuid real, vindo de `referencia.ofertas`) é o que é
-// persistido.
+// (lib/ofertas-config.ts). O usuário escolhe a oferta SERE (ofertaSere); o
+// grupo dela dá o slug, usado pra lógica condicional do formulário, e o
+// ofertaId (uuid real, vindo de `referencia.ofertas`) que é persistido.
 export const OFERTA_OPTIONS = OFERTAS;
 export type { OfertaSlug };
 const OFERTA_SLUGS = OFERTAS.map((o) => o.slug) as [OfertaSlug, ...OfertaSlug[]];
@@ -46,13 +46,15 @@ const turmaFields = {
   anoLetivoId: z.uuid({ message: "Selecione o ano letivo" }),
   turnoId: z.uuid({ message: "Selecione o turno" }),
   capacidade: z.string().optional().or(z.literal("")),
+  ofertaSere: z.string().min(1, "Selecione a oferta"),
   ofertaSlug: z.enum(OFERTA_SLUGS, { message: "Selecione a oferta" }),
   ofertaId: z.uuid({ message: "Selecione a oferta" }),
   organizacaoId: z.uuid({ message: "Selecione a organização da oferta" }),
   // Ensino Fundamental: ciclo + etapas (seleção múltipla), no bloco 2.
   ciclo: z.string().optional().or(z.literal("")),
   etapas: z.array(z.number().int()),
-  matrizCurricularId: z.uuid({ message: "Selecione a matriz curricular" }),
+  // Obrigatória, exceto nas ofertas sem estrutura curricular definida.
+  matrizCurricularId: z.uuid({ message: "Selecione a matriz curricular" }).or(z.literal("")),
   formaFuncionamento: z.enum(["diaria", "cronograma"] as const, {
     message: "Selecione a forma de funcionamento",
   }),
@@ -74,7 +76,9 @@ const turmaFields = {
 };
 
 type TurmaFieldsShape = {
+  ofertaSere: string;
   ofertaSlug: OfertaSlug;
+  matrizCurricularId: string;
   ciclo?: string;
   etapas: number[];
   formaFuncionamento: "diaria" | "cronograma";
@@ -93,6 +97,14 @@ type TurmaFieldsShape = {
  * etapas do Ensino Fundamental moram no bloco 2.
  */
 function refineOfertaOrganizacao(data: TurmaFieldsShape, ctx: z.RefinementCtx) {
+  const ofertaSere = getOfertaSere(data.ofertaSere);
+  if (data.ofertaSere && (!ofertaSere || ofertaSere.ofertaSlug !== data.ofertaSlug)) {
+    ctx.addIssue({ code: "custom", path: ["ofertaSere"], message: "Selecione a oferta" });
+  }
+  if (ofertaSere?.estruturaDefinida && !data.matrizCurricularId) {
+    ctx.addIssue({ code: "custom", path: ["matrizCurricularId"], message: "Selecione a matriz curricular" });
+  }
+
   if (data.ofertaSlug === "ef") {
     const ciclo = Number(data.ciclo);
     if (!data.ciclo) {

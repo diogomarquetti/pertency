@@ -25,6 +25,11 @@ export function avaliacaoEditavel(statusAvaliacao: string) {
   return statusAvaliacao === "rascunho" || statusAvaliacao === "em_andamento";
 }
 
+/** Secretaria não compõe a equipe responsável da Avaliação de Ingresso (pedido do P.O, 2026-10-29). */
+export function podeComporEquipe(perfil: string) {
+  return perfil !== "secretaria";
+}
+
 export const NIVEL_APOIO_OPTIONS = [
   { value: "intermitente", label: "Intermitente" },
   { value: "limitado", label: "Limitado" },

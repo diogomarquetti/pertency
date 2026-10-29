@@ -580,6 +580,7 @@ async function garantirTurmaEf(supabase: AdminClient, escolaId: string, refs: Re
     { escola_id: escolaId, nome: TURMA_EF },
     {
       ano_letivo_id: refs.anoLetivoId,
+      oferta_sere: "6053",
       oferta_id: refs.ofertas.ef,
       etapa_ciclo_id: refs.organizacoes.ef_ciclo_continuo,
       matriz_curricular_id: matriz.id,

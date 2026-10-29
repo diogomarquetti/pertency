@@ -67,7 +67,11 @@ export function DadosDrawer({
     startTransition(async () => {
       const result = await updateMinhaConta(values);
       if ("error" in result) {
-        form.setError("root", { message: result.error });
+        if ("campo" in result && result.campo === "telefone") {
+          form.setError("telefone", { message: result.error }, { shouldFocus: true });
+        } else {
+          form.setError("root", { message: result.error });
+        }
         return;
       }
 

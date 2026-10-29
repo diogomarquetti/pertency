@@ -241,6 +241,7 @@ function AvaliacaoVersaoForm({
               equipeElegivel={equipeElegivel}
               referenciaOfertas={referenciaOfertas}
               podeConcluir={podeConcluir}
+              canEdit={canEdit}
             />
             <AvaliacaoHistoricoCard control={form.control} />
             <AvaliacaoDimensoesCard control={form.control} />

@@ -141,10 +141,17 @@ export type UsuarioElegivel = {
   nome: string;
   /** Mesma regra do relatório: área de atuação quando houver, senão o perfil. */
   funcao: string;
+  /** `usuarios.funcao` cru (ex.: "secretaria"). */
+  perfil: string;
   areaAtuacao: string | null;
 };
 
-/** Usuários ativos da escola — pool da "Equipe responsável" da Avaliação de Ingresso. */
+/**
+ * Usuários ativos da escola — pool da "Equipe responsável" da Avaliação de
+ * Ingresso. Secretaria vem junto só pra continuar aparecendo, em leitura,
+ * nas avaliações antigas que já a tinham na equipe; não é selecionável (ver
+ * podeComporEquipe).
+ */
 export async function getEquipeElegivel(): Promise<UsuarioElegivel[]> {
   const supabase = await createClient();
 
@@ -158,6 +165,7 @@ export async function getEquipeElegivel(): Promise<UsuarioElegivel[]> {
     id: usuario.id,
     nome: usuario.nome_completo,
     funcao: funcaoExibicao(usuario),
+    perfil: usuario.funcao,
     areaAtuacao: usuario.area_atuacao,
   }));
 }

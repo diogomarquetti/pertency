@@ -10,7 +10,7 @@ import { Form } from "@/components/ui/form";
 import { usePageActionsSetter } from "@/components/layout/page-actions-context";
 import { toast } from "@/lib/use-toast";
 
-import { createUsuario, updateUsuario } from "@/app/(app)/usuarios/actions";
+import { createUsuario, updateUsuario, verificarTelefoneUsuario } from "@/app/(app)/usuarios/actions";
 import {
   isFuncaoProfessor,
   createUsuarioSchema,
@@ -154,9 +154,26 @@ export function UserForm(props: UserFormProps) {
       // `?salvo=1` na página de destino (ver useEffect acima e
       // usuarios-lista.tsx).
       if (result?.error) {
+        if ("campo" in result && result.campo === "telefone") {
+          form.setError("telefone", { message: result.error }, { shouldFocus: true });
+        }
         toast.error("Não foi possível salvar", result.error);
       }
     });
+  }
+
+  // Avisa telefone duplicado já ao sair do campo, sem esperar o Salvar (que
+  // checa de novo no servidor).
+  async function checarTelefone() {
+    const telefone = form.getValues("telefone");
+    if (!telefone || !(await form.trigger("telefone"))) return;
+    const { duplicadoCom } = await verificarTelefoneUsuario(
+      telefone,
+      props.mode === "edit" ? props.usuarioId : null,
+    );
+    if (duplicadoCom && form.getValues("telefone") === telefone) {
+      form.setError("telefone", { message: `Este telefone já está cadastrado para ${duplicadoCom}.` });
+    }
   }
 
   return (
@@ -202,7 +219,7 @@ export function UserForm(props: UserFormProps) {
           </Card>
 
           <fieldset disabled={!props.canEdit} className="contents">
-            <DadosGeraisCard control={form.control} />
+            <DadosGeraisCard control={form.control} onTelefoneBlur={checarTelefone} />
 
             {/* Só consulta — o vínculo é feito no Cadastro de Turma. */}
             {isProfessor && (

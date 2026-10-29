@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
+import { useSelecaoUnica } from "@/lib/use-selecao-unica";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,8 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -28,18 +26,23 @@ import {
   CICLOS_EF,
   FORMA_FUNCIONAMENTO_OPTIONS,
   etapaLabel,
+  OFERTAS_SERE,
   getEtapasDoCicloEf,
-  getOrganizacaoConfig,
+  getOfertaSere,
+  isOrganizacaoAtiva,
+  ofertaSereLabel,
   organizacaoLabel,
-  organizacoesSelecionaveis,
+  organizacaoPermitida,
+  type OfertaSereConfig,
 } from "@/lib/ofertas-config";
-import { OFERTA_OPTIONS, type OfertaSlug, type UpdateTurmaValues } from "@/app/(app)/turmas/schema";
+import type { UpdateTurmaValues } from "@/app/(app)/turmas/schema";
 import type { ReferenciaTurmaForm } from "@/app/(app)/turmas/queries";
 
 /**
  * Trocar a oferta reseta organização, ciclo, etapas, matriz e todos os
  * campos do bloco de organização específica — eles são específicos da
- * oferta anterior e não fazem sentido carregados pra outra.
+ * oferta anterior e não fazem sentido carregados pra outra. (Exceção: entre
+ * 6005 e 6046 a organização continua valendo, então nada é limpo.)
  */
 function limparCamposDependentes(form: UseFormReturn<UpdateTurmaValues>) {
   form.setValue("organizacaoId", "", { shouldDirty: true });
@@ -53,9 +56,9 @@ function limparCamposDependentes(form: UseFormReturn<UpdateTurmaValues>) {
   form.setValue("eixosFuncionais", []);
 }
 
-/** Forma de funcionamento fixada pela organização, quando a regra não é "livre". */
-function aplicarRegraFuncionamento(form: UseFormReturn<UpdateTurmaValues>, codigo: string | null | undefined) {
-  const regra = getOrganizacaoConfig(codigo)?.formaFuncionamentoRegra;
+/** Forma de funcionamento fixada pela oferta, quando a regra não é "livre". */
+function aplicarRegraFuncionamento(form: UseFormReturn<UpdateTurmaValues>, ofertaSere: OfertaSereConfig | undefined) {
+  const regra = ofertaSere?.formaFuncionamentoRegra;
   if (regra && regra !== "livre") {
     form.setValue("formaFuncionamento", regra, { shouldDirty: true, shouldValidate: true });
   }
@@ -64,20 +67,28 @@ function aplicarRegraFuncionamento(form: UseFormReturn<UpdateTurmaValues>, codig
 export function OfertaCard({
   form,
   referencia,
+  canEdit,
 }: {
   form: UseFormReturn<UpdateTurmaValues>;
   referencia: ReferenciaTurmaForm;
+  canEdit: boolean;
 }) {
+  const ofertaSere = form.watch("ofertaSere");
   const ofertaSlug = form.watch("ofertaSlug");
   const ofertaId = form.watch("ofertaId");
   const organizacaoId = form.watch("organizacaoId");
   const ciclo = form.watch("ciclo");
 
+  const ofertaSereAtual = getOfertaSere(ofertaSere);
   const organizacaoAtual = referencia.organizacoes.find((o) => o.id === organizacaoId);
-  const configAtual = getOrganizacaoConfig(organizacaoAtual?.codigo);
-  const organizacoesFiltradas = organizacoesSelecionaveis(referencia.organizacoes, ofertaId, organizacaoId);
-  const organizacoesAtivas = organizacoesFiltradas.filter((o) => getOrganizacaoConfig(o.codigo));
-  const organizacaoUnica = organizacoesAtivas.length === 1 && organizacaoAtual?.id === organizacoesAtivas[0].id;
+  // As permitidas na oferta, mais a já gravada (pra turma antiga continuar abrindo).
+  const organizacoesFiltradas = referencia.organizacoes.filter(
+    (o) => o.ofertaId === ofertaId && (organizacaoPermitida(ofertaSere, o.codigo) || o.id === organizacaoId),
+  );
+  const organizacoesPermitidas = organizacoesFiltradas.filter((o) => organizacaoPermitida(ofertaSere, o.codigo));
+  const organizacaoUnica =
+    organizacoesPermitidas.length === 1 && organizacaoAtual?.id === organizacoesPermitidas[0].id;
+  const temMatriz = !ofertaSereAtual || ofertaSereAtual.estruturaDefinida;
 
   const isEf = ofertaSlug === "ef";
   const etapasDoCiclo = getEtapasDoCicloEf(Number(ciclo) || null);
@@ -87,21 +98,37 @@ export function OfertaCard({
     (m) => m.id === matrizIdAtual || (m.ofertaId === ofertaId && (!isEf || m.ciclo === Number(ciclo))),
   );
 
-  const regraFuncionamento = configAtual?.formaFuncionamentoRegra;
+  const regraFuncionamento = ofertaSereAtual?.formaFuncionamentoRegra;
   const funcionamentoTravado = !!regraFuncionamento && regraFuncionamento !== "livre";
 
   function selecionarOrganizacao(id: string) {
     form.setValue("organizacaoId", id, { shouldDirty: true, shouldValidate: !!id });
-    aplicarRegraFuncionamento(form, referencia.organizacoes.find((o) => o.id === id)?.codigo);
   }
 
-  // Matriz é escolhida automaticamente quando só uma serve (ex.: EF com
-  // ciclo escolhido — uma matriz por ciclo).
-  useEffect(() => {
-    if (!matrizIdAtual && matrizesFiltradas.length === 1) {
-      form.setValue("matrizCurricularId", matrizesFiltradas[0].id, { shouldDirty: true, shouldValidate: true });
-    }
-  }, [form, matrizIdAtual, matrizesFiltradas]);
+  function selecionarOferta(codigo: string) {
+    const nova = getOfertaSere(codigo);
+    const grupo = referencia.ofertas.find((o) => o.slug === nova?.ofertaSlug);
+    const mantemOrganizacao =
+      grupo?.id === ofertaId && organizacaoPermitida(codigo, organizacaoAtual?.codigo);
+
+    form.setValue("ofertaId", grupo?.id ?? "", { shouldDirty: true });
+    form.setValue("ofertaSlug", (nova?.ofertaSlug ?? "") as UpdateTurmaValues["ofertaSlug"], { shouldDirty: true });
+    form.setValue("ofertaSere", codigo, { shouldDirty: true, shouldValidate: true });
+    aplicarRegraFuncionamento(form, nova);
+    if (mantemOrganizacao) return;
+
+    limparCamposDependentes(form);
+  }
+
+  // Uma só opção já vem escolhida (ex.: 6053 → Ciclo Contínuo; EF com
+  // ciclo escolhido → a matriz do ciclo).
+  useSelecaoUnica(organizacaoId, organizacoesPermitidas, selecionarOrganizacao, canEdit);
+  useSelecaoUnica(
+    matrizIdAtual,
+    temMatriz && (!isEf || ciclo) ? matrizesFiltradas : [],
+    (id) => form.setValue("matrizCurricularId", id, { shouldDirty: true, shouldValidate: true }),
+    canEdit,
+  );
 
   return (
     <Card className="gap-4 p-[24px]">
@@ -112,39 +139,29 @@ export function OfertaCard({
       <div className="grid gap-5 sm:grid-cols-2">
         <FormField
           control={form.control}
-          name="ofertaId"
+          name="ofertaSere"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Oferta</FormLabel>
-              <Select
-                value={ofertaSlug}
-                onValueChange={(slug) => {
-                  const oferta = referencia.ofertas.find((o) => o.slug === slug);
-                  field.onChange(oferta?.id ?? "");
-                  form.setValue("ofertaSlug", slug as OfertaSlug, { shouldDirty: true });
-                  limparCamposDependentes(form);
-                  // Oferta com uma só organização ativa já vem preenchida.
-                  const ativas = referencia.organizacoes.filter(
-                    (o) => o.ofertaId === oferta?.id && getOrganizacaoConfig(o.codigo),
-                  );
-                  if (ativas.length === 1) {
-                    selecionarOrganizacao(ativas[0].id);
-                  }
-                }}
-              >
+              <Select value={field.value} onValueChange={selecionarOferta}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a oferta" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {OFERTA_OPTIONS.map((oferta) => (
-                    <SelectItem key={oferta.slug} value={oferta.slug}>
-                      {oferta.nome}
+                  {OFERTAS_SERE.map((oferta) => (
+                    <SelectItem key={oferta.codigo} value={oferta.codigo}>
+                      {ofertaSereLabel(oferta)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {!field.value && organizacaoId && (
+                <FormDescription className="text-danger">
+                  Escolha a oferta com o código SERE para salvar a turma.
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -158,13 +175,14 @@ export function OfertaCard({
               <FormLabel>Organização da oferta</FormLabel>
               <Select
                 value={field.value}
-                onValueChange={selecionarOrganizacao}
-                disabled={!ofertaId || organizacaoUnica}
+                // O select às vezes devolve "" enquanto as opções trocam.
+                onValueChange={(id) => id && selecionarOrganizacao(id)}
+                disabled={!ofertaSere || organizacaoUnica}
               >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={ofertaId ? "Selecione…" : "Selecione a oferta primeiro"}
+                      placeholder={ofertaSere ? "Selecione…" : "Selecione a oferta primeiro"}
                     />
                   </SelectTrigger>
                 </FormControl>
@@ -176,7 +194,7 @@ export function OfertaCard({
                   ))}
                 </SelectContent>
               </Select>
-              {organizacaoAtual && !configAtual && (
+              {organizacaoAtual && !isOrganizacaoAtiva(organizacaoAtual.codigo) && (
                 <FormDescription className="text-danger">
                   Esta organização foi descontinuada. Escolha uma nova para salvar a turma.
                 </FormDescription>
@@ -186,19 +204,12 @@ export function OfertaCard({
           )}
         />
 
-        {configAtual?.codigoSere && (
-          <div className="grid gap-2">
-            <Label htmlFor="turma-codigo-sere">Código SERE</Label>
-            <Input id="turma-codigo-sere" value={configAtual.codigoSere} disabled readOnly />
-          </div>
-        )}
-
         {isEf && (
           <FormField
             control={form.control}
             name="ciclo"
             render={({ field }) => (
-              <FormItem className={cn(!configAtual?.codigoSere && "sm:col-start-1")}>
+              <FormItem className="sm:col-start-1">
                 <FormLabel>Ciclo</FormLabel>
                 <Select
                   value={field.value}
@@ -269,6 +280,7 @@ export function OfertaCard({
           />
         )}
 
+        {temMatriz && (
         <FormField
           control={form.control}
           name="matrizCurricularId"
@@ -278,13 +290,13 @@ export function OfertaCard({
               <Select
                 value={field.value}
                 onValueChange={field.onChange}
-                disabled={!ofertaId || (isEf && !ciclo)}
+                disabled={!ofertaSere || (isEf && !ciclo)}
               >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue
                       placeholder={
-                        !ofertaId
+                        !ofertaSere
                           ? "Selecione a oferta primeiro"
                           : isEf && !ciclo
                             ? "Selecione o ciclo primeiro"
@@ -305,22 +317,23 @@ export function OfertaCard({
             </FormItem>
           )}
         />
+        )}
 
         <FormField
           control={form.control}
           name="formaFuncionamento"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className={cn(!temMatriz && "sm:col-start-1")}>
               <FormLabel>Forma de funcionamento</FormLabel>
               <Select
                 value={field.value ?? ""}
                 onValueChange={field.onChange}
-                disabled={!organizacaoId || funcionamentoTravado}
+                disabled={!ofertaSere || funcionamentoTravado}
               >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={organizacaoId ? "Selecione…" : "Selecione a organização primeiro"}
+                      placeholder={ofertaSere ? "Selecione…" : "Selecione a oferta primeiro"}
                     />
                   </SelectTrigger>
                 </FormControl>
@@ -333,11 +346,7 @@ export function OfertaCard({
                 </SelectContent>
               </Select>
               {funcionamentoTravado && (
-                <FormDescription>
-                  {configAtual?.codigoSere
-                    ? `Definido pela oferta (SERE ${configAtual.codigoSere})`
-                    : "Definido pela oferta"}
-                </FormDescription>
+                <FormDescription>Definido pela oferta</FormDescription>
               )}
               <FormMessage />
             </FormItem>

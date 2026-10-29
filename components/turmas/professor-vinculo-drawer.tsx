@@ -24,6 +24,7 @@ import {
   vincularProfessor,
   type EscopoProfessorInput,
 } from "@/app/(app)/turmas/professores-actions";
+import { especialidadeDaFuncao, regraComponentesDoProfessor } from "@/app/(app)/turmas/professor-componentes";
 import type { ProfessorElegivel, ProfessorVinculado } from "@/app/(app)/turmas/queries";
 import type { OfertaSlug } from "@/app/(app)/turmas/schema";
 
@@ -145,28 +146,33 @@ function ComponentesChecklist({
   componentes,
   value,
   onChange,
+  travado = false,
+  vazio = "Nenhum componente selecionado no Bloco 3 desta turma ainda.",
 }: {
   componentes: { id: string; nome: string }[];
   value: string[];
   onChange: (value: string[]) => void;
+  /** Marcado e sem poder desmarcar (professor de Arte / Educação Física). */
+  travado?: boolean;
+  vazio?: string;
 }) {
   return (
     <div className="rounded-sm border border-line px-[10px]">
       {componentes.length === 0 ? (
-        <p className="py-[9px] text-[13px] text-muted">
-          Nenhum componente selecionado no Bloco 3 desta turma ainda.
-        </p>
+        <p className="py-[9px] text-[13px] text-muted">{vazio}</p>
       ) : (
         componentes.map((componente, index) => (
           <label
             key={componente.id}
             className={cn(
-              "flex cursor-pointer items-center gap-[10px] py-[9px] text-[14px] text-ink",
+              "flex items-center gap-[10px] py-[9px] text-[14px] text-ink",
+              travado ? "cursor-not-allowed" : "cursor-pointer",
               index > 0 && "border-t border-line",
             )}
           >
             <Checkbox
-              checked={value.includes(componente.id)}
+              checked={travado || value.includes(componente.id)}
+              disabled={travado}
               onCheckedChange={() => onChange(toggleValue(value, componente.id))}
             />
             {componente.nome}
@@ -238,13 +244,26 @@ function DrawerBody({
     (p) => !jaVinculadosIds.has(p.id) || p.id === usuarioId,
   );
 
+  // Ensino Fundamental: Arte e Educação Física só com o próprio componente
+  // (marcado e travado); regente sem esses dois.
+  const funcao = professoresElegiveis.find((p) => p.id === usuarioId)?.funcao ?? editing?.funcao;
+  const especialidade = especialidadeDaFuncao(funcao);
+  const regra = regraComponentesDoProfessor(funcao, pool.componentes);
+  const componentesEf = regra.fixo
+    ? regra.opcoes.map((c) => c.id)
+    : componenteIds.filter((id) => regra.opcoes.some((c) => c.id === id));
+
   function handleSubmit() {
     if (!usuarioId) {
       setError("Selecione um professor.");
       return;
     }
-    if (pool.ofertaSlug === "ef" && componenteIds.length === 0) {
-      setError("Selecione ao menos um componente curricular.");
+    if (pool.ofertaSlug === "ef" && componentesEf.length === 0) {
+      setError(
+        especialidade
+          ? `A matriz desta turma não tem ${especialidade}.`
+          : "Selecione ao menos um componente curricular.",
+      );
       return;
     }
     setError(null);
@@ -252,7 +271,7 @@ function DrawerBody({
     // EJA também aceita componentes (opcionais) — os que a turma tiver na
     // estrutura curricular. EI não tem componentes (campos de experiência).
     const escopo: EscopoProfessorInput = {
-      componenteIds: pool.ofertaSlug === "ef" || pool.ofertaSlug === "eja" ? componenteIds : [],
+      componenteIds: pool.ofertaSlug === "ef" ? componentesEf : pool.ofertaSlug === "eja" ? componenteIds : [],
       escopoEja: pool.ofertaSlug === "eja" ? escopoEja : [],
     };
 
@@ -289,22 +308,38 @@ function DrawerBody({
           />
         </div>
 
-        {/* PROVISÓRIO: validar com P.O — na Educação Infantil o professor
-            continua vinculado à turma inteira. */}
+        {/* PROVISÓRIO: validar com P.O — na Educação Infantil (e em 6036 e
+            5110, ainda sem estrutura curricular) o professor continua
+            vinculado à turma inteira. */}
         {pool.ofertaSlug === "ei" && (
           <p className="text-[13px] text-muted">
             Educação Infantil: o professor é vinculado à turma inteira, sem escopo adicional.
           </p>
         )}
+        {(pool.ofertaSlug === "aee_infantil" || pool.ofertaSlug === "curriculo_funcional") && (
+          <p className="text-[13px] text-muted">O professor é vinculado à turma inteira, sem escopo adicional.</p>
+        )}
 
         {pool.ofertaSlug === "ef" && (
           <div className="grid gap-2">
             <Label>Componentes curriculares</Label>
-            <span className="text-[12.5px] text-muted">Selecione ao menos um</span>
+            {usuarioId && (
+              <span className="text-[12.5px] text-muted">
+                {especialidade ? `Professor(a) de ${especialidade}: só ${especialidade}` : "Selecione ao menos um"}
+              </span>
+            )}
             <ComponentesChecklist
-              componentes={pool.componentes}
-              value={componenteIds}
+              componentes={usuarioId ? regra.opcoes : []}
+              value={componentesEf}
               onChange={setComponenteIds}
+              travado={regra.fixo}
+              vazio={
+                !usuarioId
+                  ? "Selecione o professor primeiro."
+                  : especialidade
+                    ? `A matriz desta turma não tem ${especialidade}.`
+                    : "A matriz desta turma não tem componentes curriculares."
+              }
             />
           </div>
         )}

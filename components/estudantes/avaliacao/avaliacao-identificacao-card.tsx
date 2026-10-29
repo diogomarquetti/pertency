@@ -23,7 +23,12 @@ import {
 } from "@/components/ui/select";
 
 import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
-import { STATUS_AVALIACAO_OPTIONS, type AvaliacaoValues } from "@/app/(app)/estudantes/avaliacao-schema";
+import { useSelecaoUnica } from "@/lib/use-selecao-unica";
+import {
+  STATUS_AVALIACAO_OPTIONS,
+  podeComporEquipe,
+  type AvaliacaoValues,
+} from "@/app/(app)/estudantes/avaliacao-schema";
 import type { ReferenciaOfertas, UsuarioElegivel } from "@/app/(app)/estudantes/queries";
 
 function toggleValue(current: string[], value: string) {
@@ -35,19 +40,33 @@ export function AvaliacaoIdentificacaoCard({
   equipeElegivel,
   referenciaOfertas,
   podeConcluir,
+  canEdit,
 }: {
   form: UseFormReturn<AvaliacaoValues>;
   equipeElegivel: UsuarioElegivel[];
   referenciaOfertas: ReferenciaOfertas;
   /** Concluir: Pedagogo(a) e Administrador — ver pode_concluir_avaliacao(). */
   podeConcluir: boolean;
+  canEdit: boolean;
 }) {
+  // Secretaria não é selecionável; só continua visível (em leitura) onde já
+  // estava na equipe de uma avaliação antiga.
+  const equipeSelecionada = form.watch("equipeResponsavelIds");
+  const equipeVisivel = equipeElegivel.filter(
+    (usuario) => podeComporEquipe(usuario.perfil) || (!canEdit && equipeSelecionada.includes(usuario.id)),
+  );
   const ofertaPretendidaId = form.watch("ofertaPretendidaId");
   const organizacaoPretendidaId = form.watch("organizacaoPretendidaId");
   const organizacoesFiltradas = organizacoesSelecionaveis(
     referenciaOfertas.organizacoes,
     ofertaPretendidaId,
     organizacaoPretendidaId,
+  );
+  useSelecaoUnica(
+    organizacaoPretendidaId,
+    ofertaPretendidaId ? organizacoesFiltradas : [],
+    (id) => form.setValue("organizacaoPretendidaId", id, { shouldDirty: true, shouldValidate: true }),
+    canEdit,
   );
 
   return (
@@ -59,7 +78,7 @@ export function AvaliacaoIdentificacaoCard({
       <div className="grid gap-2">
         <Label>Equipe responsável</Label>
         <div className="rounded-sm border border-line px-[10px]">
-          {equipeElegivel.length === 0 ? (
+          {equipeVisivel.length === 0 ? (
             <p className="py-[9px] text-[13px] text-muted">Nenhum usuário ativo encontrado.</p>
           ) : (
             <FormField
@@ -67,7 +86,7 @@ export function AvaliacaoIdentificacaoCard({
               name="equipeResponsavelIds"
               render={({ field }) => (
                 <>
-                  {equipeElegivel.map((usuario, index) => (
+                  {equipeVisivel.map((usuario, index) => (
                     <label
                       key={usuario.id}
                       className={cn(

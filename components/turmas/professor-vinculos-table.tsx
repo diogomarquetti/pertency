@@ -18,8 +18,8 @@ import type { ProfessorVinculado } from "@/app/(app)/turmas/queries";
 import type { OfertaSlug } from "@/app/(app)/turmas/schema";
 
 function escopoLabel(professor: ProfessorVinculado, ofertaSlug: OfertaSlug) {
-  if (ofertaSlug === "ei") return "Turma inteira";
   if (ofertaSlug === "ef") return professor.componentesNomes.join(", ") || "—";
+  if (ofertaSlug !== "eja") return "Turma inteira";
   // EJA: escopo de atuação + componentes (opcionais), quando houver.
   return [...professor.escopoEja, ...professor.componentesNomes].join(", ") || "—";
 }

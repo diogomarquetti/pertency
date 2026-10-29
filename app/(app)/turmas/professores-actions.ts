@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
+import { componentesPermitidos } from "./professor-componentes";
+import { turmaEncerrada } from "./turma-encerrada";
+
+const ERRO_ENCERRADA = { error: "Turma encerrada não pode ser editada." };
+
 export type EscopoProfessorInput = {
   componenteIds: string[];
   escopoEja: string[];
@@ -38,6 +43,40 @@ async function replaceComponentesVinculo(
   return null;
 }
 
+/**
+ * Ensino Fundamental: aplica a regra de componentes por função (ver
+ * professor-componentes.ts) sobre os componentes da matriz da turma. Nas
+ * outras ofertas os componentes escolhidos passam como vieram.
+ */
+async function ajustarComponentes(
+  supabase: SupabaseServerClient,
+  turmaId: string,
+  usuarioId: string,
+  componenteIds: string[],
+): Promise<{ error: string } | { componenteIds: string[] }> {
+  const [{ data: turma }, { data: usuario }] = await Promise.all([
+    supabase.from("turmas").select("matriz_curricular_id, ofertas(slug)").eq("id", turmaId).maybeSingle(),
+    supabase.from("usuarios").select("funcao").eq("id", usuarioId).maybeSingle(),
+  ]);
+  const slug = (turma?.ofertas as unknown as { slug: string } | null)?.slug;
+  if (slug !== "ef") return { componenteIds };
+
+  const { data: links } = await supabase
+    .from("matriz_componentes")
+    .select("componentes_curriculares(id, nome)")
+    .eq("matriz_id", turma?.matriz_curricular_id ?? "");
+  const componentes = (links ?? []).flatMap((link) => {
+    const componente = link.componentes_curriculares as unknown as { id: string; nome: string } | null;
+    return componente ? [componente] : [];
+  });
+
+  const permitidos = componentesPermitidos(usuario?.funcao, componentes, componenteIds);
+  if (permitidos.length === 0) {
+    return { error: "Selecione ao menos um componente curricular que o professor leciona." };
+  }
+  return { componenteIds: permitidos };
+}
+
 export async function vincularProfessor(
   turmaId: string,
   usuarioId: string,
@@ -48,6 +87,10 @@ export async function vincularProfessor(
     return context;
   }
   const { supabase, adminId } = context;
+  if (await turmaEncerrada(supabase, turmaId)) return ERRO_ENCERRADA;
+
+  const componentes = await ajustarComponentes(supabase, turmaId, usuarioId, escopo.componenteIds);
+  if ("error" in componentes) return componentes;
 
   const { data: vinculo, error } = await supabase
     .from("usuario_turmas")
@@ -67,8 +110,8 @@ export async function vincularProfessor(
     return { error: "Não foi possível vincular o professor." };
   }
 
-  if (escopo.componenteIds.length > 0) {
-    const compError = await replaceComponentesVinculo(supabase, vinculo.id, escopo.componenteIds);
+  if (componentes.componenteIds.length > 0) {
+    const compError = await replaceComponentesVinculo(supabase, vinculo.id, componentes.componenteIds);
     if (compError) return compError;
   }
 
@@ -87,6 +130,18 @@ export async function atualizarVinculoProfessor(
     return context;
   }
   const { supabase } = context;
+  if (await turmaEncerrada(supabase, turmaId)) return ERRO_ENCERRADA;
+
+  const { data: vinculoAtual } = await supabase
+    .from("usuario_turmas")
+    .select("usuario_id")
+    .eq("id", vinculoId)
+    .maybeSingle();
+  if (!vinculoAtual) {
+    return { error: "Não foi possível atualizar o vínculo." };
+  }
+  const componentes = await ajustarComponentes(supabase, turmaId, vinculoAtual.usuario_id, escopo.componenteIds);
+  if ("error" in componentes) return componentes;
 
   const { error } = await supabase
     .from("usuario_turmas")
@@ -97,7 +152,7 @@ export async function atualizarVinculoProfessor(
     return { error: "Não foi possível atualizar o vínculo." };
   }
 
-  const compError = await replaceComponentesVinculo(supabase, vinculoId, escopo.componenteIds);
+  const compError = await replaceComponentesVinculo(supabase, vinculoId, componentes.componenteIds);
   if (compError) return compError;
 
   revalidatePath(`/turmas/${turmaId}/editar`);
@@ -110,6 +165,7 @@ export async function removerVinculoProfessor(turmaId: string, vinculoId: string
     return context;
   }
   const { supabase } = context;
+  if (await turmaEncerrada(supabase, turmaId)) return ERRO_ENCERRADA;
 
   const { error } = await supabase.from("usuario_turmas").delete().eq("id", vinculoId);
   if (error) {

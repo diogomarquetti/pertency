@@ -354,3 +354,17 @@ pendência que ficou atrasada).
 O seed (`pnpm seed:pendencias`) grava 5 exemplos na primeira vez (Professor, Profissional
 complementar, Pedagoga e Secretaria; Direção e Administrador ficam com o estado vazio) e o
 `--reset` apaga `notificacoes` junto com o resto.
+
+## Ofertas com código SERE no cadastro da turma (registrado em 2026-10-29)
+
+A turma escolhe a **oferta SERE** (`turmas.oferta_sere`: 6005, 6046, 6036, 6053, 6039, 6054,
+5110), exibida como "Nome (código)". `turmas.oferta_id` continua sendo o grupo (`ofertas.slug`:
+ei, ef, eja, aee_infantil, curriculo_funcional), que o resto do sistema usa (avaliação, dados
+escolares, vínculo de professor). As regras de cada oferta SERE — organizações permitidas e
+forma de funcionamento (diária, cronograma ou livre) — ficam em `OFERTAS_SERE`, em
+`lib/ofertas-config.ts` (migration `20261029090000_ofertas_sere.sql`).
+
+PROVISÓRIO (validar com P.O): 6005 e 6046 têm as duas organizações da Educação Infantil; 6036 e
+5110 têm organização única de mesmo nome e ainda não têm estrutura curricular (matriz opcional,
+bloco 3 só com aviso). Turma antiga da Educação Infantil fica sem `oferta_sere` e precisa
+escolher 6005 ou 6046 na próxima edição.

@@ -24,7 +24,7 @@ import type {
   ReferenciaTurmaForm,
 } from "@/app/(app)/turmas/queries";
 
-import { getOrganizacaoConfig } from "@/lib/ofertas-config";
+import { getOfertaSere, ofertaSereLabel, organizacaoPermitida } from "@/lib/ofertas-config";
 
 import { CronogramaCard } from "./cronograma-card";
 import { EstruturaCurricularCard } from "./estrutura-curricular-card";
@@ -44,6 +44,7 @@ const EMPTY_VALUES: UpdateTurmaValues = {
   anoLetivoId: "",
   turnoId: "",
   capacidade: "",
+  ofertaSere: "",
   ofertaSlug: "" as never,
   ofertaId: "",
   organizacaoId: "",
@@ -128,11 +129,14 @@ export function TurmaForm(props: TurmaFormProps) {
   const { isDirty } = form.formState;
 
   // Card de topo acompanha o que está sendo digitado, não só o valor salvo.
-  const [nome, status, ofertaId, organizacaoId, anoLetivoId, turnoId, formaFuncionamento] = useWatch({
+  const [nome, status, ofertaSere, ofertaId, organizacaoId, anoLetivoId, turnoId, formaFuncionamento] = useWatch({
     control: form.control,
-    name: ["nome", "status", "ofertaId", "organizacaoId", "anoLetivoId", "turnoId", "formaFuncionamento"],
+    name: ["nome", "status", "ofertaSere", "ofertaId", "organizacaoId", "anoLetivoId", "turnoId", "formaFuncionamento"],
   });
-  const ofertaNome = props.referencia.ofertas.find((oferta) => oferta.id === ofertaId)?.nome;
+  const ofertaSereAtual = getOfertaSere(ofertaSere);
+  const ofertaNome = ofertaSereAtual
+    ? ofertaSereLabel(ofertaSereAtual)
+    : props.referencia.ofertas.find((oferta) => oferta.id === ofertaId)?.nome;
   const organizacaoNome = props.referencia.organizacoes.find((org) => org.id === organizacaoId)?.nome;
   const ano = props.referencia.anosLetivos.find((item) => item.id === anoLetivoId)?.ano;
   const turnoNome = props.referencia.turnos.find((turno) => turno.id === turnoId)?.nome;
@@ -179,9 +183,9 @@ export function TurmaForm(props: TurmaFormProps) {
 
   function onSubmit(values: UpdateTurmaValues) {
     const organizacao = props.referencia.organizacoes.find((o) => o.id === values.organizacaoId);
-    if (!getOrganizacaoConfig(organizacao?.codigo)) {
-      form.setError("organizacaoId", { message: "Escolha uma organização ativa" });
-      toast.error("A organização da oferta foi descontinuada. Escolha uma nova organização.");
+    if (!organizacaoPermitida(values.ofertaSere, organizacao?.codigo)) {
+      form.setError("organizacaoId", { message: "Escolha uma organização da oferta" });
+      toast.error("A organização não pertence à oferta escolhida. Escolha uma nova organização.");
       return;
     }
 
@@ -218,7 +222,7 @@ export function TurmaForm(props: TurmaFormProps) {
           <fieldset disabled={!props.canEdit} className="contents">
             <div className="flex min-w-0 flex-col gap-[24px]">
               <IdentificacaoCard control={form.control} referencia={props.referencia} />
-              <OfertaCard form={form} referencia={props.referencia} />
+              <OfertaCard form={form} referencia={props.referencia} canEdit={props.canEdit} />
 
               {props.mode === "edit" && (
                 <>

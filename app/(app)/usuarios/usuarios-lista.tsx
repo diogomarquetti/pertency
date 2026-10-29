@@ -54,9 +54,12 @@ export type UsuarioListItem = {
 export function UsuariosLista({
   usuarios,
   canEdit,
+  podeAbrir,
 }: {
   usuarios: UsuarioListItem[];
   canEdit: boolean;
+  /** false = professor: vê a lista, mas não abre o cadastro de cada usuário. */
+  podeAbrir: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [funcaoFiltro, setFuncaoFiltro] = useState(TODAS_FUNCOES);
@@ -144,7 +147,7 @@ export function UsuariosLista({
                 <TableHead>Usuário</TableHead>
                 <TableHead>Função</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead />
+                {podeAbrir && <TableHead />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,19 +179,20 @@ export function UsuariosLista({
                       {usuario.status === "ativo" ? "Ativo" : "Inativo"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="secondary" size="sm" icon asChild>
-                            <Link
-                              href={`/usuarios/${usuario.id}/editar`}
-                              aria-label={canEdit ? "Editar usuário" : "Visualizar usuário"}
-                            >
-                              {canEdit ? (
-                                <Pencil size={14} strokeWidth={2} aria-hidden="true" />
-                              ) : (
-                                <Eye size={14} strokeWidth={2} aria-hidden="true" />
+                  {podeAbrir && (
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="secondary" size="sm" icon asChild>
+                              <Link
+                                href={`/usuarios/${usuario.id}/editar`}
+                                aria-label={canEdit ? "Editar usuário" : "Visualizar usuário"}
+                              >
+                                {canEdit ? (
+                                  <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+                                ) : (
+                                  <Eye size={14} strokeWidth={2} aria-hidden="true" />
                               )}
                             </Link>
                           </Button>
@@ -197,6 +201,7 @@ export function UsuariosLista({
                       </Tooltip>
                     </div>
                   </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -212,9 +217,13 @@ export function UsuariosLista({
                   <AvatarFallback>{getInitials(usuario.nome_completo)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <ListCardLink href={`/usuarios/${usuario.id}/editar`}>
-                    {usuario.nome_completo}
-                  </ListCardLink>
+                  {podeAbrir ? (
+                    <ListCardLink href={`/usuarios/${usuario.id}/editar`}>
+                      {usuario.nome_completo}
+                    </ListCardLink>
+                  ) : (
+                    <div className="truncate font-semibold text-ink">{usuario.nome_completo}</div>
+                  )}
                   <div className="truncate text-[12.5px] text-muted">{usuario.email}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-1">
                     <Badge variant="brand" dot={false}>
@@ -225,7 +234,9 @@ export function UsuariosLista({
                     </Badge>
                   </div>
                 </div>
-                <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+                {podeAbrir && (
+                  <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+                )}
               </ListCard>
             ))}
           </ListCardList>

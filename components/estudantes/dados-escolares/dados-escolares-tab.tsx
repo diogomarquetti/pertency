@@ -167,6 +167,7 @@ export function DadosEscolaresTab({
               turmasReferencia={turmasReferencia}
               anosLetivos={anosLetivos}
               vinculosEscolaresAnuais={vinculosEscolaresAnuais}
+              canEdit={canEdit}
             />
             <OrigemCard form={form} />
             {mostrarEncerramento && <EncerramentoCard form={form} numero={3} />}

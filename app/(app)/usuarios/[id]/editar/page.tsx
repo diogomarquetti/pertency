@@ -4,7 +4,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { UserForm } from "@/components/usuarios/user-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getViewerIsAdmin, getViewerPodeAbrirCadastroUsuario } from "@/lib/supabase/get-viewer-role";
 
 import { getAuditoriaUsuario, getEscolaIdAtual, getReferenciaTurmas, getVinculosUsuario } from "../../queries";
 import type { VinculoLocal } from "@/components/usuarios/vinculo-types";
@@ -15,6 +15,10 @@ export default async function EditarUsuarioPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  if (!(await getViewerPodeAbrirCadastroUsuario())) {
+    notFound();
+  }
 
   const supabase = await createClient();
   const { data: usuario } = await supabase

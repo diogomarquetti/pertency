@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminProfile } from "@/lib/supabase/require-admin-profile";
+import { apenasDigitos } from "@/lib/telefone";
 
 import {
   createUsuarioSchema,
@@ -14,6 +15,27 @@ import {
   type CreateUsuarioValues,
   type UpdateUsuarioValues,
 } from "./schema";
+import { telefoneMudou, usuarioComTelefone } from "./telefone-duplicado";
+
+function erroTelefoneDuplicado(nome: string) {
+  return { error: `Este telefone já está cadastrado para ${nome}.`, campo: "telefone" as const };
+}
+
+/**
+ * Checagem ao sair do campo Telefone, antes de salvar. Na edição, telefone
+ * igual ao já gravado não é checado (ver telefoneMudou).
+ */
+export async function verificarTelefoneUsuario(telefone: string, usuarioId: string | null) {
+  const context = await requireAdminProfile();
+  if ("error" in context || ![10, 11].includes(apenasDigitos(telefone).length)) {
+    return { duplicadoCom: null };
+  }
+  if (usuarioId && !(await telefoneMudou(context.supabase, usuarioId, telefone))) {
+    return { duplicadoCom: null };
+  }
+  const outro = await usuarioComTelefone(context.supabase, telefone, usuarioId);
+  return { duplicadoCom: outro?.nome ?? null };
+}
 
 /**
  * Área de atuação só vale pros perfis que a têm (ver funcaoTemAreaAtuacao) —
@@ -51,6 +73,10 @@ export async function createUsuario(values: CreateUsuarioValues) {
     return context;
   }
   const { supabase, adminId, escolaId } = context;
+
+  // Antes de criar o acesso, pra não deixar login órfão.
+  const duplicado = await usuarioComTelefone(supabase, data.telefone, null);
+  if (duplicado) return erroTelefoneDuplicado(duplicado.nome);
 
   const admin = createAdminClient();
 
@@ -108,6 +134,11 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
     return context;
   }
   const { supabase } = context;
+
+  if (await telefoneMudou(supabase, id, data.telefone)) {
+    const duplicado = await usuarioComTelefone(supabase, data.telefone, id);
+    if (duplicado) return erroTelefoneDuplicado(duplicado.nome);
+  }
 
   const admin = createAdminClient();
 

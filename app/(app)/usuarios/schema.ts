@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AREA_ATUACAO_LABEL } from "@/lib/area-atuacao";
+import { telefoneOpcionalSchema } from "@/lib/telefone";
 
 export const FUNCAO_OPTIONS = [
   { value: "administrador", label: "Administrador" },
@@ -84,7 +85,7 @@ export const STATUS_OPTIONS = [
 const usuarioFields = {
   nomeCompleto: z.string().min(1, "Informe o nome completo"),
   email: z.email({ message: "Informe um e-mail válido" }),
-  telefone: z.string().optional().or(z.literal("")),
+  telefone: telefoneOpcionalSchema,
   funcao: z.enum(FUNCAO_VALUES, { message: "Selecione a função" }),
   areaAtuacao: z.string().optional().or(z.literal("")),
   areaAtuacaoOutro: z.string().optional().or(z.literal("")),

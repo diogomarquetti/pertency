@@ -3,9 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { getOrganizacaoConfig } from "@/lib/ofertas-config";
+import { getOfertaSere, organizacaoPermitida } from "@/lib/ofertas-config";
 import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
+import { turmaEncerrada } from "./turma-encerrada";
 import {
   createTurmaSchema,
   updateTurmaSchema,
@@ -40,11 +41,12 @@ function toTurmaRow(
     ano_letivo_id: data.anoLetivoId,
     turno_id: data.turnoId,
     capacidade: data.capacidade ? Number(data.capacidade) : null,
+    oferta_sere: data.ofertaSere,
     oferta_id: data.ofertaId,
     etapa_ciclo_id: data.organizacaoId,
     ciclo: isEf ? Number(data.ciclo) : null,
     etapas: isEf ? [...data.etapas].sort((a, b) => a - b) : null,
-    matriz_curricular_id: data.matrizCurricularId,
+    matriz_curricular_id: data.matrizCurricularId || null,
     forma_funcionamento: formaFuncionamento,
     status: data.status,
     data_inicio: data.dataInicio,
@@ -67,8 +69,9 @@ function toTurmaRow(
 
 /**
  * Confere a organização escolhida contra a configuração central: precisa
- * estar ativa (organização descontinuada só aparece em registro antigo) e
- * define a forma de funcionamento quando a regra não é "livre".
+ * ser uma das permitidas na oferta SERE (organização descontinuada só
+ * aparece em registro antigo). A oferta define a forma de funcionamento
+ * quando a regra não é "livre".
  */
 async function resolverOrganizacao(
   supabase: SupabaseServerClient,
@@ -80,13 +83,20 @@ async function resolverOrganizacao(
     .eq("id", data.organizacaoId)
     .maybeSingle();
 
-  const config = getOrganizacaoConfig(organizacao?.codigo as string | null | undefined);
-  if (!organizacao || organizacao.oferta_id !== data.ofertaId || !config) {
-    return { error: "A organização da oferta foi descontinuada. Escolha uma nova organização." };
+  const ofertaSere = getOfertaSere(data.ofertaSere);
+  if (!ofertaSere) {
+    return { error: "Selecione a oferta." };
+  }
+  if (
+    !organizacao ||
+    organizacao.oferta_id !== data.ofertaId ||
+    !organizacaoPermitida(data.ofertaSere, organizacao.codigo as string | null)
+  ) {
+    return { error: "A organização não pertence à oferta escolhida. Escolha uma nova organização." };
   }
 
   const formaFuncionamento =
-    config.formaFuncionamentoRegra === "livre" ? data.formaFuncionamento : config.formaFuncionamentoRegra;
+    ofertaSere.formaFuncionamentoRegra === "livre" ? data.formaFuncionamento : ofertaSere.formaFuncionamentoRegra;
   return { formaFuncionamento };
 }
 
@@ -176,6 +186,10 @@ export async function updateTurma(id: string, values: UpdateTurmaValues) {
     return context;
   }
   const { supabase } = context;
+
+  if (await turmaEncerrada(supabase, id)) {
+    return { error: "Turma encerrada não pode ser editada." };
+  }
 
   const organizacao = await resolverOrganizacao(supabase, data);
   if ("error" in organizacao) {

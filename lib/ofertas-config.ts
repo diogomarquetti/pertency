@@ -8,76 +8,143 @@
  * selecionável — ver `isOrganizacaoAtiva`.
  */
 
-export type OfertaSlug = "ei" | "ef" | "eja";
+/** Grupo da oferta — linha de `ofertas`; define o comportamento do formulário. */
+export type OfertaSlug = "ei" | "ef" | "eja" | "aee_infantil" | "curriculo_funcional";
 
 export type FormaFuncionamento = "diaria" | "cronograma";
 export type FormaFuncionamentoRegra = FormaFuncionamento | "livre";
 
 export const OFERTAS: readonly { slug: OfertaSlug; nome: string }[] = [
   { slug: "ei", nome: "Educação Infantil" },
+  { slug: "aee_infantil", nome: "Apoio Educacional Infantil Especializado" },
   { slug: "ef", nome: "Ensino Fundamental" },
   { slug: "eja", nome: "EJA" },
+  { slug: "curriculo_funcional", nome: "Programa Pedagógico do Currículo Funcional" },
 ];
 
 export type OrganizacaoConfig = {
   codigo: string;
   ofertaSlug: OfertaSlug;
   nome: string;
-  /** null = não exibir o código na tela. */
-  codigoSere: string | null;
-  formaFuncionamentoRegra: FormaFuncionamentoRegra;
   exigeCiclo: boolean;
 };
 
-// PROVISÓRIO: validar com P.O — mapeamento SERE da Educação Infantil (6005
-// ou 6046) ainda não confirmado; até lá o código fica vazio e não aparece.
-// PROVISÓRIO: validar com P.O — forma de funcionamento por organização.
 export const ORGANIZACOES_CONFIG: readonly OrganizacaoConfig[] = [
+  { codigo: "ei_estimulacao_essencial", ofertaSlug: "ei", nome: "Estimulação Essencial", exigeCiclo: false },
+  { codigo: "ei_pre_escolar", ofertaSlug: "ei", nome: "Pré-Escolar", exigeCiclo: false },
   {
-    codigo: "ei_estimulacao_essencial",
-    ofertaSlug: "ei",
-    nome: "Estimulação Essencial",
-    codigoSere: null,
-    formaFuncionamentoRegra: "diaria",
+    codigo: "aee_infantil",
+    ofertaSlug: "aee_infantil",
+    nome: "Apoio Educacional Infantil Especializado",
     exigeCiclo: false,
   },
-  {
-    codigo: "ei_pre_escolar",
-    ofertaSlug: "ei",
-    nome: "Pré-Escolar",
-    codigoSere: null,
-    formaFuncionamentoRegra: "diaria",
-    exigeCiclo: false,
-  },
-  {
-    codigo: "ef_ciclo_continuo",
-    ofertaSlug: "ef",
-    nome: "Ciclo Contínuo – Multietapas",
-    codigoSere: "6053",
-    formaFuncionamentoRegra: "diaria",
-    exigeCiclo: true,
-  },
-  {
-    codigo: "eja_fase_1",
-    ofertaSlug: "eja",
-    nome: "EJA Fase I",
-    codigoSere: "6039",
-    formaFuncionamentoRegra: "diaria",
-    exigeCiclo: false,
-  },
+  { codigo: "ef_ciclo_continuo", ofertaSlug: "ef", nome: "Ciclo Contínuo – Multietapas", exigeCiclo: true },
+  { codigo: "eja_fase_1", ofertaSlug: "eja", nome: "EJA Fase I", exigeCiclo: false },
   {
     codigo: "eja_fase_1_especial",
     ofertaSlug: "eja",
     nome: "EJA Fase I – Educação Especial – Etapa Única",
-    codigoSere: "6054",
-    formaFuncionamentoRegra: "cronograma",
     exigeCiclo: false,
   },
-  // Fora do escopo por enquanto — a estrutura curricular delas ainda não foi
-  // definida, então não são ofertas selecionáveis:
-  // { codigo: "apoio_ei_especializado", nome: "Apoio Educacional Infantil Especializado", codigoSere: "6036", ... },
-  // { codigo: "curriculo_funcional", nome: "Programa Pedagógico do Currículo Funcional", codigoSere: "5110", formaFuncionamentoRegra: "livre", ... },
+  {
+    codigo: "curriculo_funcional",
+    ofertaSlug: "curriculo_funcional",
+    nome: "Programa Pedagógico do Currículo Funcional",
+    exigeCiclo: false,
+  },
 ];
+
+/**
+ * Oferta como a turma é cadastrada: o código SERE (gravado em
+ * `turmas.oferta_sere`), as organizações permitidas e a forma de
+ * funcionamento (tabela do P.O de 2026-10-29).
+ */
+export type OfertaSereConfig = {
+  codigo: string;
+  nome: string;
+  ofertaSlug: OfertaSlug;
+  organizacoes: readonly string[];
+  formaFuncionamentoRegra: FormaFuncionamentoRegra;
+  /** false = estrutura curricular ainda não definida: matriz opcional, bloco 3 só com aviso. */
+  estruturaDefinida: boolean;
+};
+
+// PROVISÓRIO: validar com P.O — as duas ofertas de Educação Infantil (6005 e
+// 6046) com as duas organizações cada uma; 6036 e 5110 com organização única
+// de mesmo nome e sem estrutura curricular / matriz.
+export const OFERTAS_SERE: readonly OfertaSereConfig[] = [
+  {
+    codigo: "6005",
+    nome: "Educação Infantil",
+    ofertaSlug: "ei",
+    organizacoes: ["ei_estimulacao_essencial", "ei_pre_escolar"],
+    formaFuncionamentoRegra: "diaria",
+    estruturaDefinida: true,
+  },
+  {
+    codigo: "6046",
+    nome: "Educação Infantil",
+    ofertaSlug: "ei",
+    organizacoes: ["ei_estimulacao_essencial", "ei_pre_escolar"],
+    formaFuncionamentoRegra: "diaria",
+    estruturaDefinida: true,
+  },
+  {
+    codigo: "6036",
+    nome: "Apoio Educacional Infantil Especializado",
+    ofertaSlug: "aee_infantil",
+    organizacoes: ["aee_infantil"],
+    formaFuncionamentoRegra: "cronograma",
+    estruturaDefinida: false,
+  },
+  {
+    codigo: "6053",
+    nome: "Ensino Fundamental",
+    ofertaSlug: "ef",
+    organizacoes: ["ef_ciclo_continuo"],
+    formaFuncionamentoRegra: "diaria",
+    estruturaDefinida: true,
+  },
+  {
+    codigo: "6039",
+    nome: "EJA Fase I",
+    ofertaSlug: "eja",
+    organizacoes: ["eja_fase_1"],
+    formaFuncionamentoRegra: "diaria",
+    estruturaDefinida: true,
+  },
+  {
+    codigo: "6054",
+    nome: "EJA Fase I Especial",
+    ofertaSlug: "eja",
+    organizacoes: ["eja_fase_1_especial"],
+    formaFuncionamentoRegra: "cronograma",
+    estruturaDefinida: true,
+  },
+  {
+    codigo: "5110",
+    nome: "Programa Pedagógico do Currículo Funcional",
+    ofertaSlug: "curriculo_funcional",
+    organizacoes: ["curriculo_funcional"],
+    formaFuncionamentoRegra: "livre",
+    estruturaDefinida: false,
+  },
+];
+
+export function getOfertaSere(codigo: string | null | undefined) {
+  if (!codigo) return undefined;
+  return OFERTAS_SERE.find((oferta) => oferta.codigo === codigo);
+}
+
+/** "Educação Infantil (6005)". */
+export function ofertaSereLabel(oferta: { nome: string; codigo: string }) {
+  return `${oferta.nome} (${oferta.codigo})`;
+}
+
+/** A organização (pelo `codigo` de etapas_ciclos) é permitida nessa oferta SERE? */
+export function organizacaoPermitida(ofertaSere: string | null | undefined, codigo: string | null | undefined) {
+  return !!codigo && !!getOfertaSere(ofertaSere)?.organizacoes.includes(codigo);
+}
 
 export function getOrganizacaoConfig(codigo: string | null | undefined) {
   if (!codigo) return undefined;

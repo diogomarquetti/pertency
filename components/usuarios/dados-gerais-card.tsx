@@ -27,7 +27,14 @@ import {
 } from "@/app/(app)/usuarios/schema";
 import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
 
-export function DadosGeraisCard({ control }: { control: Control<UpdateUsuarioValues> }) {
+export function DadosGeraisCard({
+  control,
+  onTelefoneBlur,
+}: {
+  control: Control<UpdateUsuarioValues>;
+  /** Checa telefone duplicado ao sair do campo. */
+  onTelefoneBlur?: () => void;
+}) {
   const [funcao, areaAtuacao] = useWatch({ control, name: ["funcao", "areaAtuacao"] });
   const mostrarAreaAtuacao = funcaoTemAreaAtuacao(funcao);
   const areaObrigatoria = funcaoExigeAreaAtuacao(funcao);
@@ -95,7 +102,14 @@ export function DadosGeraisCard({ control }: { control: Control<UpdateUsuarioVal
                 Telefone <span className="font-normal text-muted">(opcional)</span>
               </FormLabel>
               <FormControl>
-                <PhoneInput value={field.value} onChange={field.onChange} />
+                <PhoneInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={() => {
+                    field.onBlur();
+                    onTelefoneBlur?.();
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
