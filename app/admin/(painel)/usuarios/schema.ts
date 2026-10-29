@@ -1,10 +1,15 @@
 import { z } from "zod";
 
-import { createUsuarioSchema } from "@/app/(app)/usuarios/schema";
+export const convidarOperadorSchema = z.object({
+  nomeCompleto: z.string().trim().min(1, "Informe o nome completo"),
+  email: z.email({ message: "Informe um e-mail válido" }),
+});
 
-/** Mesmo cadastro do app das escolas, mais a escola — que o operador escolhe ao criar. */
-export const usuarioPlataformaSchema = createUsuarioSchema.and(
-  z.object({ escolaId: z.string().min(1, "Selecione a escola") }),
-);
+export type ConvidarOperadorValues = z.infer<typeof convidarOperadorSchema>;
 
-export type UsuarioPlataformaValues = z.infer<typeof usuarioPlataformaSchema>;
+export const atualizarOperadorSchema = z.object({
+  nomeCompleto: z.string().trim().min(1, "Informe o nome completo"),
+  ativo: z.boolean(),
+});
+
+export type AtualizarOperadorValues = z.infer<typeof atualizarOperadorSchema>;

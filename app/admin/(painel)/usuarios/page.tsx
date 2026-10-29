@@ -1,15 +1,16 @@
 import { PageTitle } from "@/components/layout/page-title";
-import { UsuariosPlataformaLista } from "@/components/admin/usuarios-plataforma-lista";
+import { OperadoresLista } from "@/components/admin/operadores-lista";
+import { getOperadorAtual } from "@/lib/supabase/get-operador";
 
-import { listarOpcoesEscola, listarUsuarios } from "./queries";
+import { listarOperadores } from "./queries";
 
 export default async function AdminUsuariosPage() {
-  const [usuarios, escolas] = await Promise.all([listarUsuarios(), listarOpcoesEscola()]);
+  const [operadores, eu] = await Promise.all([listarOperadores(), getOperadorAtual()]);
 
   return (
     <div>
       <PageTitle value="Usuários" />
-      <UsuariosPlataformaLista usuarios={usuarios} escolas={escolas} />
+      <OperadoresLista operadores={operadores} eu={eu?.id ?? ""} />
     </div>
   );
 }

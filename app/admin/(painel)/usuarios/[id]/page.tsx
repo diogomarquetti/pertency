@@ -1,23 +1,24 @@
 import { notFound } from "next/navigation";
 
 import { PageTitle } from "@/components/layout/page-title";
-import { UsuarioPlataformaForm } from "@/components/admin/usuario-plataforma-form";
+import { OperadorForm } from "@/components/admin/operador-form";
+import { getOperadorAtual } from "@/lib/supabase/get-operador";
 
-import { getUsuario } from "../queries";
+import { getOperador } from "../queries";
 
-export default async function EditarUsuarioPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditarOperadorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const usuario = await getUsuario(id);
+  const [operador, eu] = await Promise.all([getOperador(id), getOperadorAtual()]);
 
-  if (!usuario) notFound();
+  if (!operador) notFound();
 
   return (
     <div>
       <PageTitle
-        value={usuario.valores.nomeCompleto}
-        breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: usuario.valores.nomeCompleto }]}
+        value={operador.nomeCompleto}
+        breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: operador.nomeCompleto }]}
       />
-      <UsuarioPlataformaForm mode="edit" usuarioId={id} escola={usuario.escola} defaultValues={usuario.valores} />
+      <OperadorForm operador={operador} ehVoce={operador.id === eu?.id} />
     </div>
   );
 }

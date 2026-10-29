@@ -175,37 +175,43 @@ export async function atualizarUsuario({
   return { success: true };
 }
 
+/** Origem (protocolo + host) da requisição atual. */
+export async function origemDaRequisicao() {
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "";
+  const proto = headersList.get("x-forwarded-proto") ?? (/^(admin\.)?localhost/.test(host) ? "http" : "https");
+  return host ? `${proto}://${host}` : "";
+}
+
 /**
  * Origem do app das escolas, para onde o link de acesso de um usuário de
  * escola tem que apontar — mesmo quando é gerado no admin da plataforma
  * (senão, depois de definir a senha, ele cairia no admin). Em produção vem
- * de PERTENCY_ESCOLAS_URL no deploy do admin; sem ela, é o host da própria
+ * de PERTENCY_ESCOLAS_URL no deploy do admin; sem ela, é a origem da própria
  * requisição sem o prefixo `admin.` (localmente: admin.localhost:3000 →
  * localhost:3000).
  */
 async function origemAppEscolas() {
   const configurada = process.env.PERTENCY_ESCOLAS_URL;
   if (configurada) return configurada.replace(/\/$/, "");
-
-  const headersList = await headers();
-  const host = (headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "").replace(/^admin\./, "");
-  const proto = headersList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return host ? `${proto}://${host}` : "";
+  return (await origemDaRequisicao()).replace("://admin.", "://");
 }
 
 /**
- * Gera um link de acesso pro usuário já existente — 'recovery', não
- * 'invite', porque nesse ponto o usuário de auth já existe (FK
- * usuarios.id -> auth.users.id garante isso). Não persiste nada.
+ * Link de acesso ('recovery') para um login que já existe — a pessoa abre e
+ * define a própria senha. Não persiste nada.
+ *
+ * Não usamos `action_link` (aponta pro endpoint hospedado do Supabase, que
+ * devolve a sessão via #access_token= — formato "implicit" que o client do
+ * navegador não processa, já que roda em flowType "pkce", padrão do
+ * @supabase/ssr). Em vez disso, montamos um link pra nossa própria rota
+ * (app/auth/confirm), que troca o hashed_token por uma sessão via cookie no
+ * servidor — funciona com qualquer flowType.
  */
-export async function gerarLinkDeAcesso(
-  supabase: SupabaseServerClient,
+export async function linkDeRecuperacao(
   usuarioId: string,
+  origem: string,
 ): Promise<{ link: string } | { error: string }> {
-  // Mesmo cuidado de atualizarUsuario: só gera link de quem a RLS deixa ver —
-  // nunca de conta de outra escola nem de operador da plataforma.
-  if (!(await usuarioVisivel(supabase, usuarioId))) return { error: "Usuário não encontrado." };
-
   const admin = createAdminClient();
 
   const { data: authUser, error: getAuthError } = await admin.auth.admin.getUserById(usuarioId);
@@ -222,12 +228,16 @@ export async function gerarLinkDeAcesso(
     return { error: "Não foi possível gerar o link de acesso." };
   }
 
-  // Não usamos `action_link` (aponta pro endpoint hospedado do Supabase,
-  // que devolve a sessão via #access_token= — formato "implicit" que o
-  // client do navegador não processa, já que roda em flowType "pkce", padrão
-  // do @supabase/ssr). Em vez disso, montamos um link pra nossa própria rota
-  // (app/auth/confirm), que troca o hashed_token por uma sessão via cookie
-  // no servidor — funciona com qualquer flowType.
-  const origem = await origemAppEscolas();
   return { link: `${origem}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery` };
+}
+
+/** Link de acesso de um usuário de escola — sempre para o app das escolas. */
+export async function gerarLinkDeAcesso(
+  supabase: SupabaseServerClient,
+  usuarioId: string,
+): Promise<{ link: string } | { error: string }> {
+  // Mesmo cuidado de atualizarUsuario: só gera link de quem a RLS deixa ver —
+  // nunca de conta de outra escola nem de operador da plataforma.
+  if (!(await usuarioVisivel(supabase, usuarioId))) return { error: "Usuário não encontrado." };
+  return linkDeRecuperacao(usuarioId, await origemAppEscolas());
 }

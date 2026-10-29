@@ -60,3 +60,31 @@ export async function listarOpcoesMantenedora(): Promise<MantenedoraOpcao[]> {
     status: linha.status as "ativa" | "inativa",
   }));
 }
+
+export type AdministradorEscola = {
+  id: string;
+  nomeCompleto: string;
+  email: string;
+  status: "ativo" | "inativo";
+  senhaDefinida: boolean;
+};
+
+export async function listarAdministradores(escolaId: string): Promise<AdministradorEscola[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("id, nome_completo, email, status, senha_definida")
+    .eq("escola_id", escolaId)
+    .eq("funcao", "administrador")
+    .order("created_at");
+
+  if (error) throw error;
+
+  return (data ?? []).map((linha) => ({
+    id: linha.id,
+    nomeCompleto: linha.nome_completo,
+    email: linha.email,
+    status: linha.status,
+    senhaDefinida: linha.senha_definida,
+  }));
+}
