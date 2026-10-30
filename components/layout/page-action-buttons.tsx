@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -74,12 +73,9 @@ export function PageActionButtons({
         <Button
           type="submit"
           form={actions.formId}
-          disabled={actions.pending}
+          loading={actions.pending}
           className={buttonClassName}
         >
-          {actions.pending && (
-            <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
-          )}
           {actions.saveLabel ?? "Salvar"}
         </Button>
       )}

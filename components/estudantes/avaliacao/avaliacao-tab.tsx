@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -250,10 +249,7 @@ function AvaliacaoVersaoForm({
 
             {canEdit && (
               <div className="flex justify-end">
-                <Button type="submit" disabled={isPending}>
-                  {isPending && (
-                    <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
-                  )}
+                <Button type="submit" loading={isPending}>
                   Salvar avaliação
                 </Button>
               </div>

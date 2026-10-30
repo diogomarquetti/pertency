@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -121,8 +121,7 @@ export function RedefinirSenhaForm({ isInvite }: { isInvite: boolean }) {
           </p>
         )}
 
-        <Button type="submit" size="lg" className="mt-1 w-full" disabled={isPending}>
-          {isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+        <Button type="submit" size="lg" className="mt-1 w-full" loading={isPending}>
           {isInvite ? "Salvar e prosseguir" : "Salvar nova senha"}
         </Button>
       </form>

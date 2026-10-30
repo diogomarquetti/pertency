@@ -479,3 +479,23 @@ usuários das escolas.
 - **Link de acesso do usuário de escola aponta para o app das escolas**, mesmo gerado no
   admin: `PERTENCY_ESCOLAS_URL` no deploy do admin; sem ela, a origem da requisição sem o
   prefixo `admin.` (local: `admin.localhost:3000` → `localhost:3000`).
+
+## Desempenho da navegação (registrado em 2026-10-30)
+
+O clique parecia lento porque o Next segurava a página antiga até a nova chegar inteira, e cada
+página encadeava várias idas ao Supabase (~250 ms cada daqui até `us-west-2`).
+
+- **Feedback imediato:** `loading.tsx` em cada seção (reexportam
+  `components/layout/page-loading.tsx`) — o menu e a topbar ficam, o conteúdo vira esqueleto.
+  O esqueleto só aparece se houver um `loading.tsx` acima do trecho da URL que muda — rota
+  nova numa pasta nova pode precisar do seu; trocar só o `?` da URL não mostra o esqueleto.
+  `Button` tem `loading` (spinner no lugar do ícone de entrada, desabilitado, `aria-busy`).
+- **Sessão sem ida à rede:** o proxy e `getCurrentUser()` usam `getClaims()`, que valida o JWT
+  localmente (o projeto usa JWT Signing Keys assimétricas, ES256). Uma sessão revogada no
+  servidor vale até o token expirar — o mesmo critério do PostgREST para a RLS.
+- **Menos consultas em série:** a função do usuário logado é lida uma vez por requisição
+  (`getFuncaoDoViewer()` em `get-viewer-role.ts`); na Início, pendências e coluna lateral são
+  componentes irmãos e carregam em paralelo.
+- **Região das funções:** `vercel.json` fixa `regions: ["pdx1"]` (Portland), ao lado do banco
+  em `us-west-2`, para que as consultas em série fiquem no mesmo datacenter. Se o banco migrar
+  (ex: `sa-east-1`), trocar junto (`gru1`).

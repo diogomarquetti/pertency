@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,8 +127,7 @@ function DrawerBody({
         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isPending}>
           Cancelar
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={isPending}>
-          {isPending && <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />}
+        <Button type="button" onClick={handleSubmit} loading={isPending}>
           {editing ? "Salvar" : "Adicionar"}
         </Button>
       </SheetFooter>

@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -145,12 +145,8 @@ function NovoAdministrador({ escolaId }: { escolaId: string }) {
           />
         </div>
         <div>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="animate-spin" size={16} strokeWidth={2} aria-hidden="true" />
-            ) : (
-              <UserPlus size={16} strokeWidth={2} aria-hidden="true" />
-            )}
+          <Button type="submit" loading={isPending}>
+            <UserPlus size={16} strokeWidth={2} aria-hidden="true" />
             Criar administrador
           </Button>
         </div>
