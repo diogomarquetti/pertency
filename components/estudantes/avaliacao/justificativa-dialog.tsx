@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -69,10 +68,10 @@ export function JustificativaDialog({
           <Button
             type="button"
             variant={variant}
-            disabled={pending || !justificativa.trim()}
+            loading={pending}
+            disabled={!justificativa.trim()}
             onClick={() => onConfirm(justificativa.trim())}
           >
-            {pending && <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />}
             {confirmarLabel}
           </Button>
         </AlertDialogFooter>

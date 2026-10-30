@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Check, Circle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Circle, Eye, EyeOff } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -172,8 +172,7 @@ export function SenhaDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
           <Button type="button" variant="secondary" onClick={handleCancel} disabled={isPending}>
             Cancelar
           </Button>
-          <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending && <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />}
+          <Button type="submit" form={FORM_ID} loading={isPending}>
             Salvar nova senha
           </Button>
         </SheetFooter>

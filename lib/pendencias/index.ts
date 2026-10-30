@@ -49,6 +49,26 @@ function montarPendencia(tipo: TipoPendencia, ocorrencia: Ocorrencia, hoje: stri
 }
 
 /**
+ * Quem está logado e o perfil dele no catálogo. Separado de getPendencias()
+ * para a homepage já saber o perfil (coluna lateral) sem esperar todas as
+ * pendências — as duas partes carregam em paralelo.
+ */
+export const getUsuarioDasPendencias = cache(async (): Promise<PendenciasDoUsuario["usuario"] | null> => {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("usuarios")
+    .select("nome_completo, funcao")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!data) return null;
+
+  return { id: user.id, nomeCompleto: data.nome_completo, perfil: perfilDaFuncao(data.funcao) };
+});
+
+/**
  * Pendências do usuário logado, já separadas em "resolver" e "acompanhar".
  * Roda sob a RLS do próprio usuário (client normal), então o escopo da
  * escola ativa e o que cada perfil pode ler vêm do banco. Só os tipos em
@@ -57,21 +77,13 @@ function montarPendencia(tipo: TipoPendencia, ocorrencia: Ocorrencia, hoje: stri
  * layout (sino) e a página reaproveitarem o mesmo cálculo na requisição.
  */
 export const getPendencias = cache(async (): Promise<PendenciasDoUsuario | null> => {
-  const user = await getCurrentUser();
-  if (!user) return null;
-
-  const supabase = await createClient();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("nome_completo, funcao")
-    .eq("id", user.id)
-    .maybeSingle();
+  const usuario = await getUsuarioDasPendencias();
   if (!usuario) return null;
 
   const contexto: ContextoPendencias = {
-    supabase,
-    usuarioId: user.id,
-    perfil: perfilDaFuncao(usuario.funcao),
+    supabase: await createClient(),
+    usuarioId: usuario.id,
+    perfil: usuario.perfil,
     hoje: hojeISO(),
   };
 
@@ -99,7 +111,7 @@ export const getPendencias = cache(async (): Promise<PendenciasDoUsuario | null>
   });
 
   return {
-    usuario: { id: contexto.usuarioId, nomeCompleto: usuario.nome_completo, perfil: contexto.perfil },
+    usuario,
     resolver: ordenarPendencias(resolver),
     acompanhar: ordenarPendencias(acompanhar),
   };

@@ -95,9 +95,14 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() e não getUser(): o proxy roda em toda requisição (navegação,
+  // prefetch de link, Server Action), e getUser() sempre vai até o servidor
+  // de Auth. getClaims() renova a sessão quando o token expira e valida a
+  // assinatura localmente (chaves JWKS em cache) quando o projeto usa JWT
+  // Signing Keys assimétricas; sem elas, cai na mesma chamada de rede. A
+  // checagem completa continua no layout e nas actions (getCurrentUser()).
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) =>
     request.nextUrl.pathname.startsWith(route),

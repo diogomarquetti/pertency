@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -39,9 +39,8 @@ export function ConfirmarForm({
         size="lg"
         className="w-full"
         onClick={handleClick}
-        disabled={isPending}
+        loading={isPending}
       >
-        {isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
         Confirmar acesso
       </Button>
 

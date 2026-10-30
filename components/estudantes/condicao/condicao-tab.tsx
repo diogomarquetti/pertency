@@ -4,7 +4,7 @@ import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Info, Loader2 } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -94,10 +94,7 @@ export function CondicaoTab({
 
               {canEdit && (
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isPending}>
-                    {isPending && (
-                      <Loader2 className="animate-spin" size={15} strokeWidth={2} aria-hidden="true" />
-                    )}
+                  <Button type="submit" loading={isPending}>
                     Salvar condição do estudante
                   </Button>
                 </div>

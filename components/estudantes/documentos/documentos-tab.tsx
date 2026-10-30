@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Eye, Loader2, Plus } from "lucide-react";
+import { AlertTriangle, Eye, Plus } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { refreshAndBlur } from "@/lib/utils";
@@ -224,8 +224,7 @@ export function DocumentosTab({
               placeholder="Nome do documento"
               className="max-w-[320px]"
             />
-            <Button type="button" size="sm" onClick={handleAdicionar} disabled={isPending}>
-              {isPending && <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
+            <Button type="button" size="sm" onClick={handleAdicionar} loading={isPending}>
               Adicionar
             </Button>
             <Button

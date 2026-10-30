@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,8 +104,7 @@ export function LoginForm({
           </p>
         )}
 
-        <Button type="submit" size="lg" className="mt-1 w-full" disabled={isPending}>
-          {isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+        <Button type="submit" size="lg" className="mt-1 w-full" loading={isPending}>
           Entrar
         </Button>
       </form>

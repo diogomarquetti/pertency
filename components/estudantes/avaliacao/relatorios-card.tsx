@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Eye, FileText, Loader2 } from "lucide-react";
+import { ChevronDown, Eye, FileText } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/use-toast";
@@ -127,8 +127,7 @@ export function RelatoriosCard({
           <div className="flex flex-wrap justify-end gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="sm" disabled={isPending}>
-                  {isPending && <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
+                <Button type="button" variant="ghost" size="sm" loading={isPending}>
                   Visualizar prévia
                   <ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
                 </Button>

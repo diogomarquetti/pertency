@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Link2, Loader2 } from "lucide-react";
+import { Link2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/use-toast";
@@ -46,12 +46,8 @@ export function LinkDeAcesso({ gerar }: { gerar: GerarLink }) {
             {copiado ? "Copiado!" : "Copiar"}
           </Button>
         ) : (
-          <Button type="button" variant="secondary" size="sm" disabled={isPending} onClick={handleGerarLink}>
-            {isPending ? (
-              <Loader2 className="animate-spin" size={14} strokeWidth={2} aria-hidden="true" />
-            ) : (
-              <Link2 size={14} strokeWidth={2} aria-hidden="true" />
-            )}
+          <Button type="button" variant="secondary" size="sm" loading={isPending} onClick={handleGerarLink}>
+            <Link2 size={14} strokeWidth={2} aria-hidden="true" />
             Gerar link
           </Button>
         )}

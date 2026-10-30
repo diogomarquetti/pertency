@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -46,25 +47,58 @@ const buttonVariants = cva(
   },
 );
 
+/**
+ * `loading` desabilita o botão e mostra o spinner no lugar do ícone de
+ * entrada (o primeiro ícone, se houver) — o rótulo continua, então o botão
+ * não muda de largura. Com `asChild` (ex: link) não há spinner: o Slot só
+ * aceita um filho.
+ */
 function Button({
   className,
   variant,
   size,
   icon,
   asChild = false,
+  loading = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
+    loading?: boolean;
   }) {
-  const Comp = asChild ? Slot : "button";
+  if (asChild) {
+    return (
+      <Slot
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, icon, className }))}
+        {...props}
+      >
+        {children}
+      </Slot>
+    );
+  }
+
+  let conteudo = children;
+  if (loading) {
+    const filhos = React.Children.toArray(children);
+    // Ícone de entrada: um elemento antes do rótulo, ou o único filho de um
+    // botão só de ícone.
+    const temIconeDeEntrada = React.isValidElement(filhos[0]) && (filhos.length > 1 || icon);
+    const spinner = <Loader2 key="spinner" className="animate-spin" aria-hidden="true" />;
+    conteudo = [spinner, ...(temIconeDeEntrada ? filhos.slice(1) : filhos)];
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
       className={cn(buttonVariants({ variant, size, icon, className }))}
+      aria-busy={loading || undefined}
       {...props}
-    />
+      disabled={props.disabled || loading}
+    >
+      {conteudo}
+    </button>
   );
 }
 

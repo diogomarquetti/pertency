@@ -2,20 +2,26 @@ import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 
+export type UsuarioDaSessao = { id: string; email: string | undefined };
+
 /**
- * `supabase.auth.getUser()` faz uma chamada de rede pro servidor de Auth
- * (valida o JWT contra a Supabase, não é só ler o cookie) — cada função que
- * precisa saber quem está logado costumava chamar isso por conta própria, e
- * várias delas rodam na mesma renderização (layout + página + queries), o
- * que virou N requisições redundantes por carregamento de página. `cache()`
- * do React garante que, dentro de uma mesma renderização de Server
- * Component, só a primeira chamada bate na rede — as demais reaproveitam o
- * resultado.
+ * Quem está logado, a partir do JWT da sessão. `getClaims()` valida a
+ * assinatura localmente (o projeto usa JWT Signing Keys assimétricas, com as
+ * chaves públicas em cache) e renova a sessão se o token expirou — sem a ida
+ * ao servidor de Auth que `getUser()` faz a cada chamada (~250 ms daqui até
+ * o Supabase, e era o primeiro passo em série de toda página e action).
+ *
+ * O que muda em relação a `getUser()`: uma sessão revogada no servidor (ex:
+ * logout em outro aparelho) continua valendo até o token expirar. É o mesmo
+ * critério que o PostgREST já usa para aplicar a RLS — quem decide o acesso
+ * aos dados continua sendo o banco.
+ *
+ * `cache()` do React: dentro de uma mesma renderização, só a primeira
+ * chamada valida o token — as demais reaproveitam o resultado.
  */
-export const getCurrentUser = cache(async () => {
+export const getCurrentUser = cache(async (): Promise<UsuarioDaSessao | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  const { data } = await supabase.auth.getClaims();
+  if (!data) return null;
+  return { id: data.claims.sub, email: data.claims.email };
 });
