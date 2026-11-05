@@ -483,7 +483,7 @@ usuários das escolas.
 ## Desempenho da navegação (registrado em 2026-10-30)
 
 O clique parecia lento porque o Next segurava a página antiga até a nova chegar inteira, e cada
-página encadeava várias idas ao Supabase (~250 ms cada daqui até `us-west-2`).
+página encadeava várias idas ao Supabase (~250 ms cada daqui até `us-west-2`, onde o banco ficava até 2026-11-05).
 
 - **Feedback imediato:** `loading.tsx` em cada seção (reexportam
   `components/layout/page-loading.tsx`) — o menu e a topbar ficam, o conteúdo vira esqueleto.
@@ -496,6 +496,15 @@ página encadeava várias idas ao Supabase (~250 ms cada daqui até `us-west-2`)
 - **Menos consultas em série:** a função do usuário logado é lida uma vez por requisição
   (`getFuncaoDoViewer()` em `get-viewer-role.ts`); na Início, pendências e coluna lateral são
   componentes irmãos e carregam em paralelo.
-- **Região das funções:** `vercel.json` fixa `regions: ["pdx1"]` (Portland), ao lado do banco
-  em `us-west-2`, para que as consultas em série fiquem no mesmo datacenter. Se o banco migrar
-  (ex: `sa-east-1`), trocar junto (`gru1`).
+- **Região das funções:** `vercel.json` fixa `regions: ["gru1"]` (São Paulo), ao lado do banco
+  em `sa-east-1`, para que as consultas em série fiquem no mesmo datacenter. Se o banco mudar
+  de região, trocar junto.
+
+### Banco em São Paulo (registrado em 2026-11-05)
+
+O Supabase saiu de `us-west-2` (projeto `wmxugjbqivihqzcumifi`, conta pessoal) para
+`sa-east-1` (projeto `rftbkbpirieoymktwutn`, organização Marquetti Labs), por dump/restore
+completo — dados, logins com as senhas, arquivos do Storage, policies de storage, trigger de
+auth e histórico de migrations. As funções da Vercel foram junto para `gru1`. O app usa as
+chaves no formato novo (`sb_publishable_…` / `sb_secret_…`). Roteiro e scripts:
+`docs/migracao-sp.md` e `scripts/migracao-sp/` (servem para uma próxima mudança de projeto).

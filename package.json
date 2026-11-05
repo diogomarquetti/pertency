@@ -9,7 +9,10 @@
     "lint": "eslint",
     "bootstrap:dev": "tsx scripts/bootstrap-dev.ts",
     "bootstrap:operador": "tsx scripts/bootstrap-operador.ts",
-    "seed:pendencias": "tsx scripts/seed-pendencias-dev.ts"
+    "seed:pendencias": "tsx scripts/seed-pendencias-dev.ts",
+    "migracao:storage": "tsx scripts/migracao-sp/copiar-storage.ts",
+    "migracao:conferir": "tsx scripts/migracao-sp/conferir.ts",
+    "migracao:auth": "tsx scripts/migracao-sp/comparar-auth.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
