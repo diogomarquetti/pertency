@@ -465,12 +465,16 @@ async function garantirIngresso(
         data_termino: dataDiasAtras(0),
         parecer_equipe: "Equipe recomenda o ingresso com apoio intermitente.",
         recomendacao_elegibilidade: caso.avaliacao.recomendacao,
+        encaminhamento_recomendado: caso.avaliacao.recomendacao === "elegivel" ? "efetivar_matricula" : null,
         justificativa_elegibilidade: "Perfil compatível com o atendimento da escola especializada.",
       });
       if (erroAvaliacao) throw erroAvaliacao;
-      if (caso.avaliacao.recomendacao === "nao_elegivel") {
-        await supabase.from("estudantes").update({ situacao: "nao_elegivel" }).eq("id", estudante.id);
-      }
+      // Mesma regra do app: não elegível → "Não elegível"; elegível com
+      // encaminhamento "Efetivar matrícula" → "A matricular".
+      await supabase
+        .from("estudantes")
+        .update({ situacao: caso.avaliacao.recomendacao === "nao_elegivel" ? "nao_elegivel" : "a_matricular" })
+        .eq("id", estudante.id);
     }
 
     console.log(`  ✓ ${caso.nome} — ${caso.pendencia}`);

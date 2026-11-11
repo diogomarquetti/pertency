@@ -72,7 +72,7 @@ export async function getFilaIngresso(hoje = hojeISO()): Promise<FilaIngresso> {
   for (const estudante of estudantes) {
     const { vigente, emEdicao } = estudante;
 
-    if (vigente?.recomendacaoElegibilidade === "elegivel" && vigente.concluidaEm) {
+    if (estudante.situacao === "a_matricular" && vigente?.concluidaEm) {
       const dias = diasEntre(dataLocalISO(vigente.concluidaEm), hoje);
       matricula.push({
         id: estudante.id,

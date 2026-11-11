@@ -36,9 +36,6 @@ export const DADOS_ESCOLARES_FORM_ID = "dados-escolares-form";
 type CamposVinculo = Pick<
   DadosEscolaresValues,
   | "anoLetivoId"
-  | "ofertaAtualId"
-  | "ofertaAtualSlug"
-  | "organizacaoAtualId"
   | "turnoId"
   | "turmaId"
   | "matriculaInterna"
@@ -48,9 +45,6 @@ type CamposVinculo = Pick<
 
 const CAMPOS_VINCULO_VAZIOS: CamposVinculo = {
   anoLetivoId: "",
-  ofertaAtualId: "",
-  ofertaAtualSlug: "",
-  organizacaoAtualId: "",
   turnoId: "",
   turmaId: "",
   matriculaInterna: "",
@@ -68,9 +62,6 @@ function vinculoInicial(
   if (maisRecente) {
     return {
       anoLetivoId: maisRecente.anoLetivoId,
-      ofertaAtualId: maisRecente.ofertaAtualId,
-      ofertaAtualSlug: maisRecente.ofertaAtualSlug,
-      organizacaoAtualId: maisRecente.organizacaoAtualId,
       turnoId: maisRecente.turnoId,
       turmaId: maisRecente.turmaId,
       matriculaInterna: maisRecente.matriculaInterna,
@@ -127,8 +118,13 @@ export function DadosEscolaresTab({
 
   // Numeração dos blocos acompanha o que está visível: Encerramento só
   // existe pra Transferido/Desligado/Inativo e empurra Observações pra 4.
+  // A situação é única, na Aba 1: aqui só é lida (valor oculto do form).
   const situacao = useWatch({ control: form.control, name: "situacao" });
   const mostrarEncerramento = situacaoTemEncerramento(situacao);
+  useEffect(() => {
+    form.setValue("situacao", situacaoAtual);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [situacaoAtual]);
 
   // Campos obrigatórios ficam espalhados pelos blocos, longe do botão —
   // o toast avisa mesmo com o campo fora da tela.
@@ -148,7 +144,12 @@ export function DadosEscolaresTab({
         toast.error("Não foi possível salvar", result.error);
         return;
       }
-      toast.success("Dados escolares salvos com sucesso.");
+      toast.success(
+        "Dados escolares salvos com sucesso.",
+        result && "ativado" in result && result.ativado
+          ? "Matrícula completa: o estudante agora está Ativo."
+          : undefined,
+      );
       refreshAndBlur(router);
     });
   }

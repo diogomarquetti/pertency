@@ -22,6 +22,7 @@ const SITUACAO_LABEL: Record<string, string> = Object.fromEntries(
 );
 const SITUACAO_BADGE: Record<string, "success" | "warning" | "danger" | "neutral"> = {
   em_analise_de_ingresso: "warning",
+  a_matricular: "warning",
   ativo: "success",
   nao_elegivel: "danger",
   transferido: "neutral",

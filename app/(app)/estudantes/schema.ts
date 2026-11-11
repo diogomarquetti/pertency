@@ -4,12 +4,19 @@ import { CPF_REGEX, isValidCPF } from "@/lib/utils";
 
 export const SITUACAO_OPTIONS = [
   { value: "em_analise_de_ingresso", label: "Em análise de ingresso" },
+  { value: "a_matricular", label: "A matricular" },
   { value: "ativo", label: "Ativo" },
   { value: "nao_elegivel", label: "Não elegível" },
   { value: "transferido", label: "Transferido" },
   { value: "desligado", label: "Desligado" },
   { value: "inativo", label: "Inativo" },
 ] as const;
+
+// A situação é única, no card Identificação da Aba 1. As transições do
+// processo de ingresso são do sistema (conclusão da avaliação → "A matricular";
+// Dados escolares completos → "Ativo"); manualmente só se encerra o vínculo,
+// ou se reativa quem já tem a matrícula completa. PROVISÓRIO: validar com P.O.
+export const SITUACOES_MANUAIS = ["ativo", "inativo", "transferido", "desligado"] as const;
 
 const SITUACAO_VALUES = SITUACAO_OPTIONS.map((option) => option.value) as [string, ...string[]];
 
@@ -21,6 +28,7 @@ export const SITUACAO_LABEL: Record<string, string> = Object.fromEntries(
 // por situação, mesmo critério nos dois lugares.
 export const SITUACAO_BADGE: Record<string, "success" | "warning" | "danger" | "neutral"> = {
   em_analise_de_ingresso: "warning",
+  a_matricular: "warning",
   ativo: "success",
   nao_elegivel: "danger",
   transferido: "neutral",

@@ -239,7 +239,6 @@ export type AvaliacaoIngresso = {
   justificativaElegibilidade: string;
   encaminhamentoRecomendado: string;
   orientacoesPai: string;
-  assinaturas: string;
 };
 
 function nomeUsuario(valor: unknown) {
@@ -268,7 +267,7 @@ export async function getVersoesAvaliacaoIngresso(estudanteId: string): Promise<
        contexto_comunitario, fatores_facilitadores, barreiras_identificadas,
        necessidades_especificas, nivel_apoio, areas_apoio, parecer_equipe,
        recomendacao_elegibilidade, justificativa_elegibilidade, encaminhamento_recomendado,
-       orientacoes_pai, assinaturas`,
+       orientacoes_pai`,
     )
     .eq("estudante_id", estudanteId)
     .order("versao", { ascending: false })
@@ -313,7 +312,6 @@ export async function getVersoesAvaliacaoIngresso(estudanteId: string): Promise<
     justificativaElegibilidade: row.justificativa_elegibilidade ?? "",
     encaminhamentoRecomendado: row.encaminhamento_recomendado ?? "",
     orientacoesPai: row.orientacoes_pai ?? "",
-    assinaturas: row.assinaturas ?? "",
   }));
 }
 
