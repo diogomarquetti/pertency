@@ -1,6 +1,6 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { createClient } from "@/lib/supabase/server";
-import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getViewerPodeGerirEscola } from "@/lib/supabase/get-viewer-role";
 import { getOfertaSere, ofertaSereLabel } from "@/lib/ofertas-config";
 import { getTurmasAtivas } from "@/lib/pendencias/fontes/turmas";
 
@@ -21,7 +21,7 @@ export default async function TurmasPage({
       )
       .order("nome"),
     supabase.from("anos_letivos").select("ano"),
-    getViewerIsAdmin(),
+    getViewerPodeGerirEscola(),
   ]);
 
   const items: TurmaListItem[] = (turmas ?? []).map((turma) => {

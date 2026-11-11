@@ -39,9 +39,37 @@ function isEmailInUseError(message: string | undefined) {
   return normalized.includes("already been registered") || normalized.includes("already exists");
 }
 
+/**
+ * Função de quem chama em `usuarios`; `null` quando não há linha (operador da
+ * plataforma, que não é usuário de escola).
+ */
+async function funcaoDeQuemChama(supabase: SupabaseServerClient): Promise<string | null> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return null;
+  const { data } = await supabase.from("usuarios").select("funcao").eq("id", auth.user.id).maybeSingle();
+  return data?.funcao ?? null;
+}
+
+const MSG_SO_ADMIN = "Só o administrador pode criar ou alterar contas de Administrador.";
+
+/**
+ * A secretaria gerencia usuários, mas não contas de Administrador (nem
+ * promove ninguém a Administrador). As escritas em `usuarios` já são barradas
+ * pela RLS; isto cobre o que roda com service role (login e link de acesso) e
+ * dá uma mensagem clara.
+ */
+async function secretariaTentandoMexerEmAdmin(
+  supabase: SupabaseServerClient,
+  { funcaoAtual, funcaoNova }: { funcaoAtual?: string | null; funcaoNova?: string },
+) {
+  if ((await funcaoDeQuemChama(supabase)) !== "secretaria") return false;
+  return funcaoAtual === "administrador" || funcaoNova === "administrador";
+}
+
+/** Usuário que quem chama enxerga (RLS) e, se couber, a função atual dele. */
 async function usuarioVisivel(supabase: SupabaseServerClient, id: string) {
-  const { data } = await supabase.from("usuarios").select("id").eq("id", id).maybeSingle();
-  return !!data;
+  const { data } = await supabase.from("usuarios").select("id, funcao").eq("id", id).maybeSingle();
+  return data;
 }
 
 /** Checagem ao sair do campo Telefone. Na edição, telefone igual ao já gravado não é checado. */
@@ -68,6 +96,10 @@ export async function provisionarUsuario({
   criadoPor: string | null;
   data: CreateUsuarioValues;
 }): Promise<{ id: string } | ErroUsuario> {
+  if (await secretariaTentandoMexerEmAdmin(supabase, { funcaoNova: data.funcao })) {
+    return { error: MSG_SO_ADMIN };
+  }
+
   // Antes de criar o acesso, pra não deixar login órfão.
   const duplicado = await usuarioComTelefone(supabase, data.telefone, null, escolaId);
   if (duplicado) return erroTelefoneDuplicado(duplicado.nome);
@@ -127,7 +159,11 @@ export async function atualizarUsuario({
 }): Promise<{ success: true } | ErroUsuario> {
   // A troca do login usa a service role — antes, confere pela RLS que quem
   // chama enxerga este usuário (senão daria pra mexer em conta de outra escola).
-  if (!(await usuarioVisivel(supabase, id))) return { error: "Usuário não encontrado." };
+  const atual = await usuarioVisivel(supabase, id);
+  if (!atual) return { error: "Usuário não encontrado." };
+  if (await secretariaTentandoMexerEmAdmin(supabase, { funcaoAtual: atual.funcao, funcaoNova: data.funcao })) {
+    return { error: MSG_SO_ADMIN };
+  }
 
   if (await telefoneMudou(supabase, id, data.telefone)) {
     const duplicado = await usuarioComTelefone(supabase, data.telefone, id, escolaId);
@@ -238,6 +274,10 @@ export async function gerarLinkDeAcesso(
 ): Promise<{ link: string } | { error: string }> {
   // Mesmo cuidado de atualizarUsuario: só gera link de quem a RLS deixa ver —
   // nunca de conta de outra escola nem de operador da plataforma.
-  if (!(await usuarioVisivel(supabase, usuarioId))) return { error: "Usuário não encontrado." };
+  const alvo = await usuarioVisivel(supabase, usuarioId);
+  if (!alvo) return { error: "Usuário não encontrado." };
+  if (await secretariaTentandoMexerEmAdmin(supabase, { funcaoAtual: alvo.funcao })) {
+    return { error: MSG_SO_ADMIN };
+  }
   return linkDeRecuperacao(usuarioId, await origemAppEscolas());
 }

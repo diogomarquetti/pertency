@@ -1,11 +1,11 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { TurmaForm } from "@/components/turmas/turma-form";
-import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getViewerPodeGerirEscola } from "@/lib/supabase/get-viewer-role";
 
 import { getReferenciaTurmaForm } from "../queries";
 
 export default async function NovaTurmaPage() {
-  const [referencia, canEdit] = await Promise.all([getReferenciaTurmaForm(), getViewerIsAdmin()]);
+  const [referencia, canEdit] = await Promise.all([getReferenciaTurmaForm(), getViewerPodeGerirEscola()]);
 
   return (
     <div>

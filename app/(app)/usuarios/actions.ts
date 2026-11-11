@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { requireAdminProfile } from "@/lib/supabase/require-admin-profile";
+import { requireGestaoEscolarProfile } from "@/lib/supabase/require-admin-profile";
 import { apenasDigitos } from "@/lib/telefone";
 import {
   atualizarUsuario,
@@ -24,7 +24,7 @@ import {
  * igual ao já gravado não é checado (ver telefoneMudou).
  */
 export async function verificarTelefoneUsuario(telefone: string, usuarioId: string | null) {
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context || ![10, 11].includes(apenasDigitos(telefone).length)) {
     return { duplicadoCom: null };
   }
@@ -37,7 +37,7 @@ export async function createUsuario(values: CreateUsuarioValues) {
     return { error: "Dados inválidos. Confira os campos e tente novamente." };
   }
 
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
@@ -45,7 +45,7 @@ export async function createUsuario(values: CreateUsuarioValues) {
   const result = await provisionarUsuario({
     supabase: context.supabase,
     escolaId: context.escolaId,
-    criadoPor: context.adminId,
+    criadoPor: context.userId,
     data: parsed.data,
   });
   if ("error" in result) return result;
@@ -62,7 +62,7 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
     return { error: "Dados inválidos. Confira os campos e tente novamente." };
   }
 
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
@@ -81,7 +81,7 @@ export async function updateUsuario(id: string, values: UpdateUsuarioValues) {
 
 /** Bloco Acesso da tela de edição — só devolve o link pro admin copiar/enviar. */
 export async function gerarLinkAcesso(usuarioId: string): Promise<{ link: string } | { error: string }> {
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
