@@ -4,7 +4,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { UserForm } from "@/components/usuarios/user-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { getViewerIsAdmin, getViewerPodeAbrirCadastroUsuario } from "@/lib/supabase/get-viewer-role";
+import { getViewerPodeAbrirCadastroUsuario, getViewerIsAdmin, getViewerPodeEditarUsuario } from "@/lib/supabase/get-viewer-role";
 
 import { getAuditoriaUsuario, getEscolaIdAtual, getReferenciaTurmas, getVinculosUsuario } from "../../queries";
 import type { VinculoLocal } from "@/components/usuarios/vinculo-types";
@@ -37,11 +37,12 @@ export default async function EditarUsuarioPage({
   const admin = createAdminClient();
   const { data: authUser } = await admin.auth.admin.getUserById(id);
 
-  const [referencia, vinculosExistentes, escolaId, auditoria, canEdit] = await Promise.all([
+  const [referencia, vinculosExistentes, escolaId, auditoria, canEdit, viewerEhAdmin] = await Promise.all([
     getReferenciaTurmas(),
     getVinculosUsuario(id),
     getEscolaIdAtual(),
     getAuditoriaUsuario(id),
+    getViewerPodeEditarUsuario(usuario.funcao),
     getViewerIsAdmin(),
   ]);
 
@@ -78,6 +79,7 @@ export default async function EditarUsuarioPage({
         fotoUrlInicial={usuario.foto_url}
         auditoria={auditoria}
         canEdit={canEdit}
+        podeAtribuirAdministrador={viewerEhAdmin}
         defaultValues={{
           nomeCompleto: usuario.nome_completo,
           email: usuario.email,

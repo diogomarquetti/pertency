@@ -1,6 +1,6 @@
 import { PageTitle } from "@/components/layout/page-title";
 import { createClient } from "@/lib/supabase/server";
-import { getViewerIsAdmin, getViewerPodeAbrirCadastroUsuario } from "@/lib/supabase/get-viewer-role";
+import { getViewerPodeGerirEscola, getViewerPodeAbrirCadastroUsuario } from "@/lib/supabase/get-viewer-role";
 
 import { UsuariosLista } from "./usuarios-lista";
 
@@ -11,7 +11,7 @@ export default async function UsuariosPage() {
       .from("usuarios")
       .select("id, nome_completo, email, funcao, status, foto_url")
       .order("nome_completo"),
-    getViewerIsAdmin(),
+    getViewerPodeGerirEscola(),
     getViewerPodeAbrirCadastroUsuario(),
   ]);
 

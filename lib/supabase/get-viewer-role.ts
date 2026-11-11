@@ -9,7 +9,7 @@ import { isFuncaoProfessor } from "@/app/(app)/usuarios/schema";
  * (ex: edição do estudante) chama vários getViewer*() ao mesmo tempo, e
  * cada um fazia a própria consulta.
  */
-const getFuncaoDoViewer = cache(async (): Promise<string | null> => {
+export const getFuncaoDoViewer = cache(async (): Promise<string | null> => {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -31,6 +31,25 @@ const getFuncaoDoViewer = cache(async (): Promise<string | null> => {
 export async function getViewerIsAdmin(): Promise<boolean> {
   const funcao = await getFuncaoDoViewer();
   return funcao === "administrador";
+}
+
+/**
+ * Quem gerencia Usuários e Turmas: administrador e secretaria. Só pra UI —
+ * o guard de escrita é `requireGestaoEscolarProfile()` + RLS.
+ */
+export async function getViewerPodeGerirEscola(): Promise<boolean> {
+  const funcao = await getFuncaoDoViewer();
+  return funcao === "administrador" || funcao === "secretaria";
+}
+
+/**
+ * Pode editar este usuário: a secretaria gerencia todos, exceto contas de
+ * Administrador (que ficam só pra leitura pra ela).
+ */
+export async function getViewerPodeEditarUsuario(funcaoDoUsuario: string): Promise<boolean> {
+  const funcao = await getFuncaoDoViewer();
+  if (funcao === "administrador") return true;
+  return funcao === "secretaria" && funcaoDoUsuario !== "administrador";
 }
 
 /**

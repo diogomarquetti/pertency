@@ -4,7 +4,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { TurmaForm } from "@/components/turmas/turma-form";
 import type { ScopePool } from "@/components/turmas/professor-vinculo-drawer";
 import { createClient } from "@/lib/supabase/server";
-import { getViewerIsAdmin } from "@/lib/supabase/get-viewer-role";
+import { getViewerPodeGerirEscola } from "@/lib/supabase/get-viewer-role";
 
 import {
   getAuditoriaTurma,
@@ -56,7 +56,7 @@ export default async function EditarTurmaPage({
     getProfessoresVinculados(id),
     getProfessoresElegiveis(),
     getEstudantesVinculados(id),
-    getViewerIsAdmin(),
+    getViewerPodeGerirEscola(),
   ]);
 
   // Turma encerrada não é editada, só visualizada (inclusive pelo administrador).

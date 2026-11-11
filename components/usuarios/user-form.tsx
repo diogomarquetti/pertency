@@ -31,6 +31,8 @@ const FORM_ID = "user-edit-form";
 type UserFormProps = {
   referencia: ReferenciaTurmas;
   canEdit: boolean;
+  /** Só o administrador cria/promove Administrador; a secretaria não vê essa opção. */
+  podeAtribuirAdministrador: boolean;
 } & (
   | { mode: "create" }
   | {
@@ -219,7 +221,11 @@ export function UserForm(props: UserFormProps) {
           </Card>
 
           <fieldset disabled={!props.canEdit} className="contents">
-            <DadosGeraisCard control={form.control} onTelefoneBlur={checarTelefone} />
+            <DadosGeraisCard
+              control={form.control}
+              onTelefoneBlur={checarTelefone}
+              podeAtribuirAdministrador={props.podeAtribuirAdministrador}
+            />
 
             {/* Só consulta — o vínculo é feito no Cadastro de Turma. */}
             {isProfessor && (

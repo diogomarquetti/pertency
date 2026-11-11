@@ -30,8 +30,11 @@ import type { UpdateUsuarioValues } from "@/app/(app)/usuarios/schema";
 export function DadosGeraisCard({
   control,
   onTelefoneBlur,
+  podeAtribuirAdministrador = true,
 }: {
   control: Control<UpdateUsuarioValues>;
+  /** Falso pra secretaria: a lista de funções não traz Administrador. */
+  podeAtribuirAdministrador?: boolean;
   /** Checa telefone duplicado ao sair do campo. */
   onTelefoneBlur?: () => void;
 }) {
@@ -129,7 +132,7 @@ export function DadosGeraisCard({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {FUNCAO_OPTIONS.map((option) => (
+                  {FUNCAO_OPTIONS.filter((option) => podeAtribuirAdministrador || option.value !== "administrador").map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

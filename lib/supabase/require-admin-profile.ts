@@ -34,6 +34,38 @@ export async function requireAdminProfile(): Promise<
   return { supabase, adminId: user.id, escolaId: perfil.escola_id as string } as const;
 }
 
+const GESTAO_ESCOLAR_FUNCOES = new Set(["administrador", "secretaria"]);
+
+/**
+ * Usuários e Turmas: administrador e secretaria têm acesso completo (matriz
+ * de permissões, demo de 2026-11-11). Devolve a `funcao` de quem chama porque
+ * a secretaria não mexe em conta de Administrador — quem usa confere isso
+ * (ver `usuarios/actions.ts` e `lib/usuarios/acesso.ts`); a RLS e o trigger
+ * `prevent_self_privilege_escalation` barram por baixo.
+ */
+export async function requireGestaoEscolarProfile(): Promise<
+  { error: string } | { supabase: SupabaseServerClient; userId: string; escolaId: string; funcao: string }
+> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: "Sessão expirada. Faça login novamente." } as const;
+  }
+
+  const { data: perfil } = await supabase
+    .from("usuarios")
+    .select("escola_id, funcao")
+    .eq("id", user.id)
+    .single();
+
+  if (!perfil || !GESTAO_ESCOLAR_FUNCOES.has(perfil.funcao)) {
+    return { error: "Você não tem permissão para realizar esta ação." } as const;
+  }
+
+  return { supabase, userId: user.id, escolaId: perfil.escola_id as string, funcao: perfil.funcao } as const;
+}
+
 const ESTUDANTE_WRITE_FUNCOES = new Set(["administrador", "secretaria", "coordenacao_pedagogica"]);
 
 /**

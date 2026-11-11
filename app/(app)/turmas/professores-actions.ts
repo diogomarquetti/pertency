@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
+import { requireGestaoEscolarProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
 import { componentesPermitidos } from "./professor-componentes";
 import { turmaEncerrada } from "./turma-encerrada";
@@ -82,11 +82,11 @@ export async function vincularProfessor(
   usuarioId: string,
   escopo: EscopoProfessorInput,
 ) {
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
-  const { supabase, adminId } = context;
+  const { supabase, userId } = context;
   if (await turmaEncerrada(supabase, turmaId)) return ERRO_ENCERRADA;
 
   const componentes = await ajustarComponentes(supabase, turmaId, usuarioId, escopo.componenteIds);
@@ -97,7 +97,7 @@ export async function vincularProfessor(
     .insert({
       usuario_id: usuarioId,
       turma_id: turmaId,
-      created_by: adminId,
+      created_by: userId,
       escopo_eja: escopo.escopoEja.length > 0 ? escopo.escopoEja : null,
     })
     .select("id")
@@ -125,7 +125,7 @@ export async function atualizarVinculoProfessor(
   escopo: EscopoProfessorInput,
   status: "ativo" | "inativo",
 ) {
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
@@ -160,7 +160,7 @@ export async function atualizarVinculoProfessor(
 }
 
 export async function removerVinculoProfessor(turmaId: string, vinculoId: string) {
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }

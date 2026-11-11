@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { getOfertaSere, organizacaoPermitida } from "@/lib/ofertas-config";
-import { requireAdminProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
+import { requireGestaoEscolarProfile, type SupabaseServerClient } from "@/lib/supabase/require-admin-profile";
 
 import { turmaEncerrada } from "./turma-encerrada";
 import {
@@ -146,7 +146,7 @@ export async function createTurma(values: CreateTurmaValues) {
   }
   const data = parsed.data;
 
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
@@ -181,7 +181,7 @@ export async function updateTurma(id: string, values: UpdateTurmaValues) {
   }
   const data = parsed.data;
 
-  const context = await requireAdminProfile();
+  const context = await requireGestaoEscolarProfile();
   if ("error" in context) {
     return context;
   }
