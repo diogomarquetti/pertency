@@ -1,5 +1,4 @@
-import { useWatch, type Control } from "react-hook-form";
-import { Lock } from "lucide-react";
+import type { Control } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -11,7 +10,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -26,7 +24,6 @@ import {
   ENCAMINHAMENTO_OPTIONS,
   NIVEL_APOIO_OPTIONS,
   RECOMENDACAO_OPTIONS,
-  decisaoFinalLiberada,
   type AvaliacaoValues,
 } from "@/app/(app)/estudantes/avaliacao-schema";
 
@@ -35,12 +32,6 @@ function toggleValue(current: string[], value: string) {
 }
 
 export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoValues> }) {
-  // A decisão final (elegibilidade, justificativa, encaminhamento) só abre
-  // com o status "Concluída" — reage ao select do bloco 1, não ao valor
-  // salvo, pra dar pra concluir e decidir no mesmo salvamento.
-  const statusAvaliacao = useWatch({ control, name: "statusAvaliacao" });
-  const decisaoBloqueada = !decisaoFinalLiberada(statusAvaliacao);
-
   // id="parecer": âncora do link "Escrever parecer" da homepage.
   return (
     <Card id="parecer" className="scroll-mt-2 gap-4 p-[24px]">
@@ -139,13 +130,7 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
         render={({ field }) => (
           <FormItem className="rounded-md border border-line bg-bg p-[16px]">
             <FormLabel>Recomendação de elegibilidade</FormLabel>
-            {decisaoBloqueada && (
-              <p className="flex items-center gap-[6px] text-[12.5px] text-muted">
-                <Lock size={12} strokeWidth={2} aria-hidden="true" />
-                Disponível quando o status da avaliação for &ldquo;Concluída&rdquo;.
-              </p>
-            )}
-            <Select value={field.value} onValueChange={field.onChange} disabled={decisaoBloqueada}>
+            <Select value={field.value} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger className="sm:w-[240px]">
                   <SelectValue placeholder="Selecione…" />
@@ -160,8 +145,9 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
               </SelectContent>
             </Select>
             <p className="text-[12.5px] text-muted">
-              &ldquo;Não elegível&rdquo; atualiza automaticamente a situação do estudante na Aba
-              1. &ldquo;Elegível&rdquo; libera Documentos e Dados escolares.
+              Ao concluir: &ldquo;Elegível&rdquo; com encaminhamento &ldquo;Efetivar matrícula&rdquo;
+              passa o estudante para &ldquo;A matricular&rdquo; e libera Documentos e Dados escolares;
+              &ldquo;Não elegível&rdquo; atualiza a situação para &ldquo;Não elegível&rdquo;.
             </p>
             <FormMessage />
           </FormItem>
@@ -178,7 +164,6 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
               <Textarea
                 placeholder="Baseada no conjunto de evidências reunidas na avaliação…"
                 {...field}
-                disabled={decisaoBloqueada}
               />
             </FormControl>
             <FormMessage />
@@ -192,9 +177,9 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
         render={({ field }) => (
           <FormItem className="sm:w-[280px]">
             <FormLabel>
-              Encaminhamento recomendado <span className="font-normal text-muted">(opcional)</span>
+              Encaminhamento recomendado
             </FormLabel>
-            <Select value={field.value} onValueChange={field.onChange} disabled={decisaoBloqueada}>
+            <Select value={field.value} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione…" />
@@ -218,28 +203,14 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
         name="orientacoesPai"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Orientações iniciais para o PAI</FormLabel>
+            <FormLabel>
+              Orientações iniciais para o PAI <span className="font-normal text-muted">(opcional)</span>
+            </FormLabel>
             <FormControl>
               <Textarea
                 placeholder="Estratégias de comunicação, mediação, adaptações, recursos, prioridades de aprendizagem…"
                 {...field}
               />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="assinaturas"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>
-              Assinaturas <span className="font-normal text-muted">(opcional)</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="Responsáveis pela avaliação" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

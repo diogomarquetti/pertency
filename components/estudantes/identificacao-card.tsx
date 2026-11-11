@@ -24,12 +24,20 @@ import {
   COR_RACA_OPTIONS,
   SEXO_OPTIONS,
   SITUACAO_OPTIONS,
+  SITUACOES_MANUAIS,
   TIPO_DOCUMENTO_OPTIONS,
   calcularIdade,
   type UpdateEstudanteValues,
 } from "@/app/(app)/estudantes/schema";
 
-export function IdentificacaoCard({ form }: { form: UseFormReturn<UpdateEstudanteValues> }) {
+/** `editavel`: false no cadastro novo — o estudante nasce "Em análise de ingresso". */
+export function IdentificacaoCard({
+  form,
+  editavel = true,
+}: {
+  form: UseFormReturn<UpdateEstudanteValues>;
+  editavel?: boolean;
+}) {
   const dataNascimento = form.watch("dataNascimento");
   const idade = calcularIdade(dataNascimento);
   const tipoDocumento = form.watch("tipoDocumentoIdentificacao");
@@ -43,24 +51,38 @@ export function IdentificacaoCard({ form }: { form: UseFormReturn<UpdateEstudant
         <FormField
           control={form.control}
           name="situacao"
-          render={({ field }) => (
-            <FormItem className="w-full space-y-0 sm:w-auto">
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger className="w-full sm:w-[220px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {SITUACAO_OPTIONS.map((situacao) => (
-                    <SelectItem key={situacao.value} value={situacao.value}>
-                      {situacao.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // Situação única do estudante. As etapas do ingresso são do
+            // sistema (avaliação concluída → A matricular; matrícula completa
+            // → Ativo); aqui só se encerra o vínculo ou se reativa. A opção
+            // atual sempre aparece, mesmo que não seja uma escolha manual.
+            const situacaoAtual = form.formState.defaultValues?.situacao ?? field.value;
+            const opcoes = SITUACAO_OPTIONS.filter(
+              (opcao) =>
+                opcao.value === situacaoAtual ||
+                opcao.value === field.value ||
+                (SITUACOES_MANUAIS as readonly string[]).includes(opcao.value),
+            );
+            return (
+              <FormItem className="w-full space-y-0 sm:w-auto">
+                <Select value={field.value} onValueChange={field.onChange} disabled={!editavel}>
+                  <FormControl>
+                    <SelectTrigger className="w-full sm:w-[220px]" aria-label="Situação do estudante">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {opcoes.map((situacao) => (
+                      <SelectItem key={situacao.value} value={situacao.value}>
+                        {situacao.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       </div>
 

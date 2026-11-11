@@ -5,13 +5,15 @@ import { revalidatePath } from "next/cache";
 import { requireEstudanteWriteProfile } from "@/lib/supabase/require-admin-profile";
 
 import {
+  camposMatriculaFaltantes,
   dadosEscolaresSchema,
   formaOrigemTemDetalhes,
   type DadosEscolaresValues,
 } from "./dados-escolares-schema";
 
-// `situacao` não vira coluna aqui: continua vivendo em `estudantes`
-// (regravada à parte, abaixo). Só os fatos "de uma vez" da trajetória —
+// `situacao` não vira coluna aqui nem é editada nesta aba: é única, na Aba 1
+// (aqui só é lida, e vira "Ativo" sozinha quando a matrícula fica completa).
+// Só os fatos "de uma vez" da trajetória —
 // nada que dependa do ano letivo. Detalhes da origem (rede, escola,
 // informações) são limpos quando não houve escola anterior — trocar pra
 // "Primeira matrícula" não deixa dado órfão escondido na tela.
@@ -32,21 +34,21 @@ function toDadosEscolaresRow(escolaId: string, estudanteId: string, data: DadosE
   };
 }
 
-// `ofertaAtualSlug` não vira coluna — só existe pra acionar a validação
-// condicional no client/server (mesmo padrão de `ofertaSlug` em
-// turmas/actions.ts).
+// Oferta e organização atuais do vínculo não são mais digitadas: vêm da
+// turma escolhida (a pretendida fica na Avaliação de Ingresso). Sem turma,
+// os valores já gravados não são tocados.
 function toVinculoAnualRow(
   escolaId: string,
   estudanteId: string,
   anoLetivoId: string,
   data: DadosEscolaresValues,
+  turma: { oferta_id: string; etapa_ciclo_id: string | null } | null,
 ) {
   return {
     estudante_id: estudanteId,
     ano_letivo_id: anoLetivoId,
     escola_id: escolaId,
-    oferta_atual_id: data.ofertaAtualId || null,
-    organizacao_atual_id: data.organizacaoAtualId || null,
+    ...(turma ? { oferta_atual_id: turma.oferta_id, organizacao_atual_id: turma.etapa_ciclo_id } : {}),
     turno_id: data.turnoId || null,
     turma_id: data.turmaId || null,
     matricula_interna: data.matriculaInterna || null,
@@ -60,23 +62,33 @@ function toVinculoAnualRow(
  * 18.1): fatos de trajetória em `dados_escolares` (1:1, select+insert/update
  * defensivo, mesmo padrão de documentos-actions.ts) e o vínculo do ano
  * letivo selecionado em `vinculos_escolares_anuais` (1:N por ano — nunca
- * sobrescreve o vínculo de um ano diferente). Também regrava
- * `estudantes.situacao`: é aqui que o estudante normalmente vira "Ativo"; o
- * trigger de auditoria de estudantes já existente registra a mudança
- * sozinho.
+ * sobrescreve o vínculo de um ano diferente). Não edita a situação, mas é
+ * aqui que "A matricular" vira "Ativo": quando turma, turno, matrícula, data
+ * e forma de origem estão preenchidos, a ativação é automática (o trigger de
+ * auditoria de estudantes registra a mudança). PROVISÓRIO: validar com P.O.
  */
 export async function salvarDadosEscolares(estudanteId: string, values: DadosEscolaresValues) {
-  const parsed = dadosEscolaresSchema.safeParse(values);
-  if (!parsed.success) {
-    return { error: "Dados inválidos. Confira os campos e tente novamente." };
-  }
-  const data = parsed.data;
-
   const context = await requireEstudanteWriteProfile();
   if ("error" in context) {
     return context;
   }
   const { supabase, userId, escolaId } = context;
+
+  // A situação vem do banco, não do formulário (que só a carrega oculta).
+  const { data: estudante } = await supabase
+    .from("estudantes")
+    .select("situacao")
+    .eq("id", estudanteId)
+    .maybeSingle();
+  if (!estudante) {
+    return { error: "Estudante não encontrado." };
+  }
+
+  const parsed = dadosEscolaresSchema.safeParse({ ...values, situacao: estudante.situacao });
+  if (!parsed.success) {
+    return { error: "Dados inválidos. Confira os campos e tente novamente." };
+  }
+  const data = parsed.data;
 
   const { data: existente } = await supabase
     .from("dados_escolares")
@@ -104,7 +116,10 @@ export async function salvarDadosEscolares(estudanteId: string, values: DadosEsc
       .eq("ano_letivo_id", data.anoLetivoId)
       .maybeSingle();
 
-    const vinculoRow = toVinculoAnualRow(escolaId, estudanteId, data.anoLetivoId, data);
+    const { data: turma } = data.turmaId
+      ? await supabase.from("turmas").select("oferta_id, etapa_ciclo_id").eq("id", data.turmaId).maybeSingle()
+      : { data: null };
+    const vinculoRow = toVinculoAnualRow(escolaId, estudanteId, data.anoLetivoId, data, turma);
 
     const { error: vinculoError } = vinculoExistente
       ? await supabase.from("vinculos_escolares_anuais").update(vinculoRow).eq("id", vinculoExistente.id)
@@ -117,8 +132,18 @@ export async function salvarDadosEscolares(estudanteId: string, values: DadosEsc
     }
   }
 
-  await supabase.from("estudantes").update({ situacao: data.situacao }).eq("id", estudanteId);
+  let ativado = false;
+  if (data.situacao === "a_matricular" && camposMatriculaFaltantes(data).length === 0) {
+    const { data: atualizado } = await supabase
+      .from("estudantes")
+      .update({ situacao: "ativo" })
+      .eq("id", estudanteId)
+      .eq("situacao", "a_matricular")
+      .select("id")
+      .maybeSingle();
+    ativado = !!atualizado;
+  }
 
   revalidatePath(`/estudantes/${estudanteId}/editar`);
-  return { success: true } as const;
+  return { success: true, ativado } as const;
 }

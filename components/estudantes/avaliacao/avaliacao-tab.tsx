@@ -204,15 +204,11 @@ function AvaliacaoVersaoForm({
     defaultValues: (avaliacao as AvaliacaoValues | null) ?? AVALIACAO_EMPTY_VALUES,
   });
 
-  // Os erros de "concluir exige elegibilidade" ficam no bloco 5, longe do
-  // botão — o toast avisa mesmo com o campo fora da tela.
   function onInvalid(errors: FieldErrors<AvaliacaoValues>) {
     const firstMessage = Object.values(errors).find(
       (error) => typeof error?.message === "string",
     )?.message as string | undefined;
-    if (firstMessage) {
-      toast.error(firstMessage);
-    }
+    toast.error(firstMessage ?? "Confira os campos e tente novamente.");
   }
 
   function onSubmit(values: AvaliacaoValues) {
@@ -223,9 +219,23 @@ function AvaliacaoVersaoForm({
         toast.error("Não foi possível salvar", result.error);
         return;
       }
-      toast.success(
-        values.statusAvaliacao === "concluida" ? "Avaliação concluída." : "Avaliação salva com sucesso.",
-      );
+      if (result?.status === "concluida") {
+        toast.success(
+          "Avaliação concluída.",
+          result.situacao === "a_matricular"
+            ? "O estudante passou para \"A matricular\": a Secretaria completa os Dados escolares."
+            : result.situacao === "nao_elegivel"
+              ? "Situação do estudante atualizada para \"Não elegível\"."
+              : undefined,
+        );
+      } else if (result && result.faltantes.length === 0) {
+        toast.success(
+          "Avaliação salva.",
+          "Campos mínimos preenchidos: um(a) Pedagogo(a) ou Administrador conclui ao salvar.",
+        );
+      } else {
+        toast.success("Rascunho salvo.", `Para concluir, falta: ${result?.faltantes.join(", ")}.`);
+      }
       refreshAndBlur(router);
     });
   }
@@ -241,6 +251,7 @@ function AvaliacaoVersaoForm({
               referenciaOfertas={referenciaOfertas}
               podeConcluir={podeConcluir}
               canEdit={canEdit}
+              statusSalvo={avaliacao?.statusAvaliacao ?? "rascunho"}
             />
             <AvaliacaoHistoricoCard control={form.control} />
             <AvaliacaoDimensoesCard control={form.control} />

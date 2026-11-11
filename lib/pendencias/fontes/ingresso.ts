@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Fonte compartilhada do processo de ingresso: estudantes "Em análise de
- * ingresso" com a versão em edição e a vigente da Avaliação de Ingresso,
+ * ingresso" ou "A matricular" com a versão em edição e a vigente da Avaliação de Ingresso,
  * equipe e contribuições. Alimenta os tipos avaliacao_nao_iniciada,
  * avaliacao_parada, contribuicao_pendente, parecer_pendente e
  * matricula_pendente (e a Fila de ingresso), com duas consultas por
@@ -35,6 +35,8 @@ export type EstudanteEmIngresso = {
   id: string;
   nome: string;
   createdAt: string;
+  /** "A matricular" = avaliação concluída como elegível, aguardando os Dados escolares da Secretaria. */
+  situacao: "em_analise_de_ingresso" | "a_matricular";
   /** Versão em Rascunho ou Em andamento. */
   emEdicao: AvaliacaoIngresso | null;
   /** Versão Concluída (vigente). */
@@ -60,12 +62,12 @@ export const getEstudantesEmIngresso = cache(async (): Promise<EstudanteEmIngres
     supabase
       .from("estudantes")
       .select(
-        `id, nome_completo, created_at,
+        `id, nome_completo, created_at, situacao,
          avaliacoes_ingresso(id, status_avaliacao, data_inicio, created_at, concluida_em,
            recomendacao_elegibilidade, parecer_equipe, equipe_responsavel_ids,
            avaliacao_contribuicoes(profissional_id, created_at))`,
       )
-      .eq("situacao", "em_analise_de_ingresso")
+      .in("situacao", ["em_analise_de_ingresso", "a_matricular"])
       .in("avaliacoes_ingresso.status_avaliacao", ["rascunho", "em_andamento", "concluida"]),
     supabase
       .from("usuarios")
@@ -112,6 +114,7 @@ export const getEstudantesEmIngresso = cache(async (): Promise<EstudanteEmIngres
       id: estudante.id as string,
       nome: estudante.nome_completo as string,
       createdAt: estudante.created_at as string,
+      situacao: estudante.situacao as EstudanteEmIngresso["situacao"],
       emEdicao: avaliacoes.find((a) => a.status === "rascunho" || a.status === "em_andamento") ?? null,
       vigente: avaliacoes.find((a) => a.status === "concluida") ?? null,
     };

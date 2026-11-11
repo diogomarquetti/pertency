@@ -41,11 +41,12 @@ export function OrigemCard({ form }: { form: UseFormReturn<DadosEscolaresValues>
         <span className="text-brand">2.</span> Origem escolar
       </h2>
 
+      <div className="grid gap-5 sm:grid-cols-2">
       <FormField
         control={form.control}
         name="formaOrigem"
         render={({ field }) => (
-          <FormItem className="sm:w-[calc(50%-10px)]">
+          <FormItem>
             <FormLabel>Forma de origem</FormLabel>
             <Select value={field.value} onValueChange={field.onChange}>
               <FormControl>
@@ -65,6 +66,7 @@ export function OrigemCard({ form }: { form: UseFormReturn<DadosEscolaresValues>
           </FormItem>
         )}
       />
+      </div>
 
       {mostrarDetalhes && (
         <>

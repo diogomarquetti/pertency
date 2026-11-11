@@ -11,8 +11,6 @@ export const STATUS_AVALIACAO_OPTIONS = [
   { value: "cancelada", label: "Cancelada" },
 ] as const;
 
-export const STATUS_AVALIACAO_EDITAVEIS = ["rascunho", "em_andamento", "concluida"] as const;
-
 /** Inclui os status antigos, que ainda aparecem no histórico de alterações. */
 export const STATUS_AVALIACAO_LABEL: Record<string, string> = {
   ...Object.fromEntries(STATUS_AVALIACAO_OPTIONS.map((option) => [option.value, option.label])),
@@ -60,17 +58,17 @@ export const ENCAMINHAMENTO_OPTIONS = [
 ] as const;
 
 // A Avaliação de Ingresso é um formulário longo, preenchido aos poucos pela
-// equipe pedagógica ao longo de várias sessões — diferente da Aba 1 (Dados
-// pessoais), quase nada é obrigatório no schema. A exceção é a decisão final:
-// Elegibilidade e Justificativa só são editáveis com o status "Concluída" e,
-// nesse status, passam a ser obrigatórias (ver superRefine abaixo).
+// equipe pedagógica ao longo de várias sessões: o schema não exige nada, dá
+// pra salvar rascunho parcial a qualquer momento. O status NÃO é escolhido
+// pelo usuário (decisão do P.O, 2026-11-10): é calculado ao salvar por
+// `statusAutomatico` — "Concluída" quando todos os campos mínimos estão
+// preenchidos (e quem salva pode concluir), senão Em andamento/Rascunho.
 const avaliacaoFields = z.object({
   equipeResponsavelIds: z.array(z.string()),
   ofertaPretendidaId: z.string().optional().or(z.literal("")),
   organizacaoPretendidaId: z.string().optional().or(z.literal("")),
   dataInicio: z.string().optional().or(z.literal("")),
   dataTermino: z.string().optional().or(z.literal("")),
-  statusAvaliacao: z.enum(STATUS_AVALIACAO_EDITAVEIS),
 
   historicoEscolar: z.string().optional().or(z.literal("")),
   informacoesFamilia: z.string().optional().or(z.literal("")),
@@ -95,30 +93,53 @@ const avaliacaoFields = z.object({
   justificativaElegibilidade: z.string().optional().or(z.literal("")),
   encaminhamentoRecomendado: z.string().optional().or(z.literal("")),
   orientacoesPai: z.string().optional().or(z.literal("")),
-  assinaturas: z.string().optional().or(z.literal("")),
 });
 
-export const avaliacaoSchema = avaliacaoFields.superRefine((data, ctx) => {
-  if (data.statusAvaliacao !== "concluida") return;
-  if (!data.recomendacaoElegibilidade) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["recomendacaoElegibilidade"],
-      message: "Informe a recomendação de elegibilidade para concluir a avaliação",
-    });
-  }
-  if (!data.justificativaElegibilidade?.trim()) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["justificativaElegibilidade"],
-      message: "Informe a justificativa para concluir a avaliação",
-    });
-  }
-});
+export const avaliacaoSchema = avaliacaoFields;
 
-/** Elegibilidade/Justificativa/Encaminhamento só são editáveis com a avaliação concluída. */
-export function decisaoFinalLiberada(statusAvaliacao: string) {
-  return statusAvaliacao === "concluida";
+// Campos mínimos para a avaliação passar sozinha para "Concluída".
+// PROVISÓRIO: validar com P.O — equipe, oferta/organização pretendidas,
+// parecer, recomendação de elegibilidade, justificativa e encaminhamento.
+// Orientações para o PAI, necessidades, nível de apoio e as dimensões
+// continuam opcionais.
+const CAMPOS_MINIMOS: { rotulo: string; preenchido: (v: AvaliacaoValues) => boolean }[] = [
+  { rotulo: "Equipe responsável", preenchido: (v) => v.equipeResponsavelIds.length > 0 },
+  { rotulo: "Oferta pretendida", preenchido: (v) => !!v.ofertaPretendidaId },
+  { rotulo: "Organização pretendida", preenchido: (v) => !!v.organizacaoPretendidaId },
+  { rotulo: "Parecer da equipe", preenchido: (v) => !!v.parecerEquipe?.trim() },
+  { rotulo: "Recomendação de elegibilidade", preenchido: (v) => !!v.recomendacaoElegibilidade },
+  { rotulo: "Justificativa", preenchido: (v) => !!v.justificativaElegibilidade?.trim() },
+  { rotulo: "Encaminhamento recomendado", preenchido: (v) => !!v.encaminhamentoRecomendado },
+];
+
+/** Rótulos dos campos mínimos que ainda faltam (vazio = pronta para concluir). */
+export function camposFaltantesConclusao(values: AvaliacaoValues) {
+  return CAMPOS_MINIMOS.filter((campo) => !campo.preenchido(values)).map((campo) => campo.rotulo);
+}
+
+const CAMPOS_DE_CONTEUDO = [
+  "historicoEscolar", "informacoesFamilia", "contextoSociocultural",
+  "habilidadesConceituais", "habilidadesSociais", "habilidadesPraticas", "dimensaoParticipacao",
+  "contextoEscolar", "contextoFamiliar", "contextoComunitario", "fatoresFacilitadores",
+  "barreirasIdentificadas", "necessidadesEspecificas", "nivelApoio", "parecerEquipe",
+  "recomendacaoElegibilidade", "justificativaElegibilidade", "encaminhamentoRecomendado", "orientacoesPai",
+] as const;
+
+/**
+ * Status calculado ao salvar. Concluída só se todos os mínimos estão
+ * preenchidos E quem salva pode concluir (Pedagogo(a)/Administrador — regra
+ * do banco); sem permissão, a avaliação completa fica Em andamento aguardando
+ * conclusão. Nunca volta de Em andamento para Rascunho.
+ */
+export function statusAutomatico(
+  values: AvaliacaoValues,
+  statusAtual: string | null,
+  podeConcluir: boolean,
+): "rascunho" | "em_andamento" | "concluida" {
+  if (podeConcluir && camposFaltantesConclusao(values).length === 0) return "concluida";
+  const temConteudo =
+    CAMPOS_DE_CONTEUDO.some((campo) => !!values[campo]?.trim()) || values.areasApoio.length > 0;
+  return temConteudo || statusAtual === "em_andamento" ? "em_andamento" : "rascunho";
 }
 
 export type AvaliacaoValues = z.infer<typeof avaliacaoSchema>;
@@ -129,7 +150,6 @@ export const AVALIACAO_EMPTY_VALUES: AvaliacaoValues = {
   organizacaoPretendidaId: "",
   dataInicio: "",
   dataTermino: "",
-  statusAvaliacao: "rascunho",
   historicoEscolar: "",
   informacoesFamilia: "",
   contextoSociocultural: "",
@@ -150,5 +170,4 @@ export const AVALIACAO_EMPTY_VALUES: AvaliacaoValues = {
   justificativaElegibilidade: "",
   encaminhamentoRecomendado: "",
   orientacoesPai: "",
-  assinaturas: "",
 };

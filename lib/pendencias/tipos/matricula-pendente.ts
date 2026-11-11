@@ -8,9 +8,10 @@ const formatoData = new Intl.DateTimeFormat("pt-BR", {
   month: "2-digit",
 });
 
-// Estudante elegível continua "Em análise de ingresso" até a Secretaria
-// salvar os Dados escolares como Ativo — e "Ativo" já exige oferta,
-// organização, turno, turma, matrícula, data e forma de origem.
+// Concluir a avaliação como elegível, com encaminhamento "Efetivar
+// matrícula", passa o estudante para "A matricular". Ele vira "Ativo"
+// sozinho quando a Secretaria completa os Dados escolares (turno, turma,
+// matrícula, data e forma de origem).
 export const matriculaPendente: TipoPendencia = {
   tipo: "matricula_pendente",
   origem: "estudante",
@@ -18,21 +19,21 @@ export const matriculaPendente: TipoPendencia = {
   acao: "Concluir dados escolares",
   resolve: ["secretaria"],
   acompanha: ["pedagogo", "direcao"],
-  regra: `Avaliação de Ingresso concluída como elegível e estudante ainda não Ativo nos Dados escolares. Vira "Atrasada" após ${PRAZOS.matricula_pendente.dias} dias da conclusão.`,
+  regra: `Avaliação de Ingresso concluída como elegível com encaminhamento "Efetivar matrícula": estudante "A matricular" até os Dados escolares ficarem completos. Vira "Atrasada" após ${PRAZOS.matricula_pendente.dias} dias da conclusão.`,
   prazo: PRAZOS.matricula_pendente,
   async carregar() {
     const estudantes = await getEstudantesEmIngresso();
 
     return estudantes.flatMap((estudante) => {
       const vigente = estudante.vigente;
-      if (vigente?.recomendacaoElegibilidade !== "elegivel" || !vigente.concluidaEm) return [];
+      if (estudante.situacao !== "a_matricular" || !vigente?.concluidaEm) return [];
 
       return [
         {
           entidadeId: estudante.id,
           sujeito: estudante.nome,
-          descricao: `Parecer elegível em ${formatoData.format(new Date(vigente.concluidaEm))}. Faltam os dados escolares (turma, matrícula e data de matrícula efetiva) para ativar o estudante.`,
-          estado: "Elegível",
+          descricao: `Parecer elegível em ${formatoData.format(new Date(vigente.concluidaEm))}. Faltam os dados escolares (turno, turma, matrícula, data de matrícula efetiva e forma de origem) para ativar o estudante.`,
+          estado: "A matricular",
           desde: vigente.concluidaEm,
           destino: `/estudantes/${estudante.id}/editar?aba=dados-escolares`,
         },

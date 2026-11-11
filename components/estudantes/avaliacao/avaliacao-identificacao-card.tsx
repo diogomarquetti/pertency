@@ -3,6 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -25,11 +26,14 @@ import {
 import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
 import { useSelecaoUnica } from "@/lib/use-selecao-unica";
 import {
-  STATUS_AVALIACAO_OPTIONS,
+  STATUS_AVALIACAO_LABEL,
+  camposFaltantesConclusao,
   podeComporEquipe,
   type AvaliacaoValues,
 } from "@/app/(app)/estudantes/avaliacao-schema";
 import type { ReferenciaOfertas, UsuarioElegivel } from "@/app/(app)/estudantes/queries";
+
+import { STATUS_AVALIACAO_BADGE } from "./versao-avaliacao-card";
 
 function toggleValue(current: string[], value: string) {
   return current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
@@ -41,6 +45,7 @@ export function AvaliacaoIdentificacaoCard({
   referenciaOfertas,
   podeConcluir,
   canEdit,
+  statusSalvo,
 }: {
   form: UseFormReturn<AvaliacaoValues>;
   equipeElegivel: UsuarioElegivel[];
@@ -48,6 +53,8 @@ export function AvaliacaoIdentificacaoCard({
   /** Concluir: Pedagogo(a) e Administrador — ver pode_concluir_avaliacao(). */
   podeConcluir: boolean;
   canEdit: boolean;
+  /** Status gravado da versão (Rascunho na primeira). Quem calcula é o servidor ao salvar. */
+  statusSalvo: string;
 }) {
   // Secretaria não é selecionável; só continua visível (em leitura) onde já
   // estava na equipe de uma avaliação antiga.
@@ -55,6 +62,7 @@ export function AvaliacaoIdentificacaoCard({
   const equipeVisivel = equipeElegivel.filter(
     (usuario) => podeComporEquipe(usuario.perfil) || (!canEdit && equipeSelecionada.includes(usuario.id)),
   );
+  const faltantes = camposFaltantesConclusao(form.watch());
   const ofertaPretendidaId = form.watch("ofertaPretendidaId");
   const organizacaoPretendidaId = form.watch("organizacaoPretendidaId");
   const organizacoesFiltradas = organizacoesSelecionaveis(
@@ -202,36 +210,23 @@ export function AvaliacaoIdentificacaoCard({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="statusAvaliacao"
-          render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Status da avaliação</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger className="sm:w-[240px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {STATUS_AVALIACAO_OPTIONS.filter(
-                    (status) =>
-                      status.value === field.value ||
-                      status.value === "rascunho" ||
-                      status.value === "em_andamento" ||
-                      (status.value === "concluida" && podeConcluir),
-                  ).map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-[6px] sm:col-span-2">
+          <Label>Status da avaliação</Label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={STATUS_AVALIACAO_BADGE[statusSalvo] ?? "neutral"}>
+              {STATUS_AVALIACAO_LABEL[statusSalvo] ?? statusSalvo}
+            </Badge>
+            <p className="text-[12.5px] text-muted">
+              {statusSalvo === "concluida"
+                ? "Concluída."
+                : faltantes.length === 0
+                  ? podeConcluir
+                    ? "Campos mínimos preenchidos: a avaliação será concluída ao salvar."
+                    : "Campos mínimos preenchidos. Falta um(a) Pedagogo(a) ou Administrador salvar para concluir."
+                  : `Passa para Concluída sozinha ao salvar com os campos mínimos preenchidos. Faltam: ${faltantes.join(", ")}.`}
+            </p>
+          </div>
+        </div>
       </div>
     </Card>
   );

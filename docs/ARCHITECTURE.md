@@ -508,3 +508,27 @@ completo — dados, logins com as senhas, arquivos do Storage, policies de stora
 auth e histórico de migrations. As funções da Vercel foram junto para `gru1`. O app usa as
 chaves no formato novo (`sb_publishable_…` / `sb_secret_…`). Roteiro e scripts:
 `docs/migracao-sp.md` e `scripts/migracao-sp/` (servem para uma próxima mudança de projeto).
+
+## Cadastro de estudante — status automático e situação única (registrado em 2026-11-10)
+
+Ajustes da reunião com o P.O (regras marcadas `PROVISÓRIO: validar com P.O` no código/requisito):
+
+- **Status da avaliação é calculado, não escolhido.** `statusAutomatico()` e
+  `camposFaltantesConclusao()` (`avaliacao-schema.ts`) rodam em `salvarAvaliacao`: Concluída
+  quando os campos mínimos estão preenchidos e quem salva pode concluir (`pode_concluir_avaliacao()`,
+  Pedagogo(a)/Administrador); senão Em andamento (algum conteúdo) ou Rascunho. O formulário só
+  mostra o status e o que falta. Elegibilidade/justificativa/encaminhamento deixaram de ser travados.
+  A coluna `assinaturas` continua no banco (sem uso); a lista de participantes vem da equipe.
+- **Situação única, na Aba 1** (`estudantes.situacao`), agora com `a_matricular` (migration
+  `20261110090000_estudante_situacao_a_matricular.sql`, que também move para "A matricular" quem já
+  estava elegível aguardando a Secretaria). Concluir a avaliação como elegível + "Efetivar matrícula"
+  → `a_matricular`; não elegível → `nao_elegivel` (só a partir de quem ainda está no ingresso).
+  Salvar Dados escolares completos (`camposMatriculaFaltantes`) leva `a_matricular` → `ativo`
+  automaticamente. Opção intermediária (e não Ativo direto) porque Ativo ocupa vaga e exige turma.
+  Manualmente só se escolhe Inativo/Transferido/Desligado ou Ativo (com `matriculaCompleta()`,
+  `lib/estudantes/matricula.ts`); `updateEstudante` nunca grava a situação do formulário às cegas.
+- **Dados escolares sem oferta/organização/situação.** `oferta_atual_id`/`organizacao_atual_id` do
+  vínculo anual são gravados a partir da turma; a pretendida fica na Avaliação de Ingresso.
+- **Pendências/painéis:** a fonte `fontes/ingresso.ts` inclui `a_matricular`; "Concluir matrícula" e a
+  etapa Matrícula da Fila de ingresso agora usam `situacao = a_matricular`. Ocupação de turmas
+  continua contando só `ativo`.

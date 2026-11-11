@@ -80,11 +80,14 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Status | Regra |
 | :---- | :---- |
 | Em análise de ingresso | Fluxo inicial; não exige turma nem vínculo escolar ativo. |
-| Ativo | Matrícula efetivada; exige vínculo escolar atual compatível com a oferta. |
+| A matricular | Definido pelo sistema ao concluir a Avaliação de Ingresso como Elegível com encaminhamento "Efetivar matrícula". A Secretaria completa os Dados escolares; não ocupa vaga na turma. *(Ajuste do P.O, 2026-11-10 — PROVISÓRIO: validar com P.O.)* |
+| Ativo | Matrícula efetivada; exige vínculo escolar atual (turno, turma, número de matrícula, data de matrícula efetiva e forma de origem). Vira Ativo sozinho quando o estudante "A matricular" tem esses campos salvos nos Dados escolares. A oferta atual vem da turma. |
 | Não elegível | Mantém avaliação, parecer, documentos e histórico; não permite turma ativa. |
 | Transferido | Preserva histórico; exige dados de encerramento/transferência. |
 | Desligado | Preserva histórico; exige data e motivo. |
 | Inativo | Preserva histórico; não participa de novos lançamentos até reativação autorizada. |
+
+A situação é um campo único, no card Identificação da Aba 1 (não existe mais nos Dados escolares). As transições do ingresso (Em análise → A matricular → Ativo, e Não elegível) são do sistema; manualmente só se encerra o vínculo (Inativo, Transferido, Desligado) ou se reativa (Ativo, só com a matrícula completa).
 
 # **9\. Regras de liberação das abas**
 
@@ -109,7 +112,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
 | Nome completo | Texto | Sim | Sim | Usuário | Não permitir vazio; limitar tamanho; remover espaços excedentes. | Avaliação, Documentos, Dados escolares, relatórios, turmas. |
 | Nome social | Texto | Não | Sim | Usuário | Exibir quando informado; não substituir o nome civil em documentos que exijam nome legal. | Listagens e identificação conforme regra institucional. |
-| Situação do estudante | Lista | Sim | Condicional | Sistema/usuário autorizado | Novo cadastro inicia como Em análise de ingresso; mudanças posteriores seguem permissão e histórico. | Controle de fluxo e permissões. |
+| Situação do estudante | Lista | Sim | Condicional | Sistema/usuário autorizado | Novo cadastro inicia como Em análise de ingresso (campo bloqueado); campo único do estudante: Em análise de ingresso, A matricular, Ativo, Inativo, Transferido, Desligado (e Não elegível, definido pelo sistema). Mudanças posteriores seguem permissão e histórico. | Controle de fluxo e permissões. |
 | Data de nascimento | Data | Sim | Sim | Usuário | Não aceitar data futura. | Cálculo da idade, validações de oferta, relatórios. |
 | Idade | Calculado | Automático | Não | Sistema | Calcular a partir da data de nascimento e data corrente; recalcular automaticamente. | Avaliação, telas e relatórios. |
 | Sexo | Lista | Sim | Sim | Configuração institucional | Lista padronizada pela escola. | Cadastro/relatórios. |
@@ -169,7 +172,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | 1\. Identificação | Organização pretendida | Lista filtrada | Sim | Configuração da oferta | Filtrada pela oferta. |
 | 1\. Identificação | Data de início | Data | Sim | Usuário | Não pode ser posterior ao término. |
 | 1\. Identificação | Data de término | Data | Condicional | Usuário | Obrigatória para concluir avaliação. |
-| 1\. Identificação | Status da avaliação | Lista controlada | Sim | Sistema/usuário autorizado | Não iniciada, Em andamento, Concluída, Reaberta. |
+| 1\. Identificação | Status da avaliação | Somente leitura | Sim | Sistema | Calculado ao salvar, sem seleção manual (ver 11.4): Rascunho, Em andamento ou Concluída; Retificada e Cancelada vêm dos fluxos próprios. |
 | 2\. Histórico | Breve histórico escolar | Texto longo | Sim | Equipe | Trajetória, frequência, participação, estratégias e atendimentos educacionais. |
 | 2\. Histórico | Informações relevantes da família | Texto longo | Sim | Equipe | Rotina, comunicação, autonomia, interações, expectativas e apoios. |
 | 2\. Histórico | Contexto sociocultural | Texto longo | Sim | Equipe | Aspectos ambientais, recursos, condições sociais e interações comunitárias. |
@@ -188,7 +191,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | 9\. Análise integrada | Análise integrada da equipe | Texto longo | Sim | Equipe | Síntese baseada em evidências; potencialidades, dificuldades funcionais e implicações pedagógicas. |
 | 10\. Elegibilidade | Elegibilidade | Escolha única | Sim | Equipe autorizada | Elegível ou Não elegível. |
 | 10\. Elegibilidade | Justificativa | Texto longo | Sim | Equipe autorizada | Baseada no conjunto de evidências. |
-| 10\. Elegibilidade | Encaminhamento recomendado | Lista/texto controlado | Sim | Equipe autorizada | Efetivar matrícula, rede regular com apoios, orientar família, solicitar complementação ou outro. |
+| 10\. Elegibilidade | Encaminhamento recomendado | Lista/texto controlado | Sim (para concluir) | Equipe autorizada | Efetivar matrícula, rede regular com apoios, orientar família, solicitar complementação ou outro. |
 | 11\. PAI | Orientações iniciais para o PAI | Texto longo | Não | Equipe | Estratégias de comunicação, mediação, acesso, recursos, ambiente e prioridades. |
 | 12\. Participantes | Nome do participante | Automático/seleção | Sim | Usuários participantes | Sem assinatura digital. |
 | 12\. Participantes | Função | Automático | Sim | Cadastro do usuário | Somente leitura quando usuário interno. |
@@ -223,7 +226,10 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 * Na geração, o sistema deve solicitar explicitamente Padrão ou Completo.  
 * O bloco final da Avaliação de Ingresso deve ser denominado Participantes da Avaliação, contendo nome, função e data do preenchimento. Assinatura digital avançada não faz parte do MVP.  
 * Prévia: disponível em qualquer status, gera o PDF com marca d'água "PRÉVIA", não cria versão nem entra em Documentos.  
-* Recomendação de elegibilidade, Justificativa e Encaminhamento só são editáveis com status Concluída; para concluir, Elegibilidade e Justificativa são obrigatórias. Se a avaliação for reaberta, os valores ficam guardados, mas "Não elegível" só altera a situação do estudante quando a avaliação é concluída.  
+* **Status automático (ajuste do P.O, 2026-11-10; PROVISÓRIO: validar com P.O):** o usuário não escolhe o status. A equipe preenche e salva aos poucos (rascunho parcial); Recomendação de elegibilidade, Justificativa e Encaminhamento ficam editáveis o tempo todo. Ao salvar, a avaliação passa sozinha para Concluída quando os campos mínimos estão preenchidos — Equipe responsável, Oferta e Organização pretendidas, Análise integrada, Recomendação de elegibilidade, Justificativa e Encaminhamento recomendado — e quem salva é Pedagogo(a) ou Administrador (regra existente de conclusão). Sem permissão, a avaliação completa fica Em andamento e o aviso diz quem conclui. Com algum conteúdo preenchido fica Em andamento; sem nenhum, Rascunho. Concluída continua imutável (retificação cria nova versão).  
+* **Efeito na situação do estudante ao concluir:** Elegível + encaminhamento "Efetivar matrícula" → A matricular; Não elegível → Não elegível; outros encaminhamentos mantêm Em análise de ingresso (Documentos e Dados escolares continuam liberados para Elegível). Só mexe em quem ainda está no ingresso: uma retificação nunca rebaixa estudante Ativo.  
+* **Por que "A matricular" e não Ativo direto:** Ativo exige turma, matrícula e data (que a avaliação não conhece) e ocupa vaga na turma; ativar na conclusão criaria Ativo sem turma e distorceria a ocupação e as pendências. A efetivação final fica com a Secretaria, mas é automática: ao salvar os Dados escolares completos, o sistema ativa o estudante.  
+* O campo "Assinaturas" foi removido (2026-11-10): a lista de participantes sai da Equipe responsável.  
 * Relatório padrão: sem Status da avaliação e sem Encaminhamento recomendado (não existem no formulário oficial). Relatório completo inclui o Encaminhamento; "Efetivar matrícula" é exibido com o nome oficial da escola.  
 * Função exibida (Equipe responsável e Participantes): área de atuação do usuário quando preenchida, senão o perfil de acesso.  
 * Rodapé: "Documento gerado pelo Pertency em dd/mm/aaaa." (sem menção a assinatura digital).
@@ -276,14 +282,13 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | :---- | :---- | :---- | :---- | :---- |
 | Data de ingresso | Data | Sim | Usuário | Data de entrada no processo/escola; não pode ser futura sem regra. |
 | Data de matrícula efetiva | Data | Condicional | Usuário | Obrigatória ao ativar matrícula; não pode ser anterior à data de ingresso. |
-| Situação do estudante | Lista | Sim | Sistema/usuário autorizado | Ativo, Transferido, Desligado, Inativo; Não elegível é controlado pelo fluxo. |
+| Situação do estudante | — | — | Aba 1 | Removida desta aba (2026-11-10): é campo único na Aba 1. Aqui só é lida (Encerramento aparece para Transferido/Desligado/Inativo). |
 | Forma de ingresso | Lista | Sim | Configuração | Avaliação de Ingresso, Transferência recebida, Rematrícula/continuidade quando aplicável, Outro. |
-| Oferta atual | Lista | Sim para ativo | Ofertas ativas | Educação Infantil, Ensino Fundamental ou EJA Fase I. |
-| Organização atual | Lista filtrada | Sim para ativo | Configuração da oferta | Exibir somente organizações compatíveis. |
+| Oferta/Organização | — | — | Avaliação de Ingresso / Turma | Removidas desta aba (2026-11-10): a pretendida está na Avaliação de Ingresso e a oferta/organização do vínculo anual é gravada a partir da turma escolhida. |
 | Turno | Lista | Sim para ativo | Turnos ativos | Filtrar turmas por turno. Trocar organização ou turno limpa a turma se ela deixar de ser compatível. |
-| Turma | Lista filtrada | Sim para ativo | Cadastro de Turmas | Compatível com ano letivo, oferta, organização e turno. |
+| Turma | Lista filtrada | Sim para ativo | Cadastro de Turmas | Compatível com ano letivo e turno. |
 | Número de matrícula | Texto | Condicional | Usuário | Permitir número utilizado no SERE ou outro número oficial; unicidade conforme regra da escola. |
-| Utiliza transporte escolar? | Sim/Não | Sim para ativo | Usuário | Utilizado em listagens e organização interna; não abre módulo de rota no MVP. |
+| Utiliza transporte escolar? | Sim/Não | Não | Usuário | Utilizado em listagens e organização interna; não abre módulo de rota no MVP. |
 | Forma de origem | Lista | Sim para ativo | Usuário | Primeira matrícula escolar; Transferência de escola da rede municipal / estadual / particular; Transferência de outra escola especializada; Outro. "Primeira matrícula" dispensa os três campos abaixo. |
 | Rede de origem | Texto | Não | Usuário | Exibido só quando a Forma de origem não é "Primeira matrícula". |
 | Escola de origem | Texto | Não | Usuário | Exibido só quando a Forma de origem não é "Primeira matrícula". |
@@ -353,8 +358,7 @@ O módulo cobre o cadastro inicial e a manutenção do estudante nas cinco abas 
 | Avaliação \= Concluída \+ Elegível | Permitir continuidade para vínculo escolar ativo. | Não criar turma ativa antes disso. |
 | Avaliação \= Não elegível | Bloquear ativação e vínculo de turma. | Manter avaliação e histórico. |
 | Documento de vida escolar anterior | Mostrar apenas alternativas aplicáveis. | Não gerar pendências duplicadas. |
-| Oferta atual selecionada | Filtrar Organização atual. | Respeitar configuração da oferta. |
-| Oferta \+ organização \+ turno \+ ano letivo | Filtrar Turma. | Somente turmas compatíveis e ativas. |
+| Turno \+ ano letivo | Filtrar Turma. | Somente turmas compatíveis e ativas. |
 | Situação \= Transferido/Desligado | Exigir data e motivo de encerramento. | Preservar vínculo anterior. |
 | Transporte \= Não | Não exigir dados adicionais de transporte. | Módulo completo fora do MVP. |
 | Apoio em AVD \= Sim | Exibir checklist de atividades. | Se Não, ocultar checklist. |
@@ -485,8 +489,8 @@ Para cada alteração auditável registrar: usuário, data, hora, valor anterior
 | CA18 | Documentos | Dado que Documento de vida escolar anterior é aplicável | quando o usuário registrar Histórico, Declaração ou Guia | então as alternativas restantes não devem aparecer como pendências separadas. |
 | CA19 | Documentos | Dado que a Avaliação de Ingresso gera PDF | quando a geração for concluída | então o documento deve ser vinculado ao checklist do estudante. |
 | CA20 | Documentos | Dado que um documento é substituído | quando novo arquivo for enviado | então o sistema deve preservar a versão anterior no histórico. |
-| CA21 | Dados escolares | Dado que o estudante é Elegível | quando a Secretaria preencher o vínculo escolar | então Oferta atual, Organização atual, Turno e Turma devem ser exigidos para ativação. |
-| CA22 | Dados escolares | Dado que o usuário seleciona Oferta atual | quando abrir Organização atual | então o sistema deve exibir somente organizações compatíveis. |
+| CA21 | Dados escolares | Dado que o estudante está A matricular | quando a Secretaria salvar o vínculo escolar com Turno, Turma, Matrícula, Data de matrícula efetiva e Forma de origem | então o estudante passa a Ativo automaticamente. |
+| CA22 | Dados escolares | Dado que o usuário seleciona Ano letivo e Turno | quando abrir Turma | então o sistema deve exibir somente turmas compatíveis. (Oferta/Organização atuais saíram da aba em 2026-11-10.) |
 | CA23 | Dados escolares | Dado que Oferta, Organização e Turno foram selecionados | quando abrir Turma | então devem ser exibidas apenas turmas compatíveis do ano letivo. |
 | CA24 | Dados escolares | Dado que o usuário informa Número de matrícula | quando salvar | então o sistema deve aceitar o número utilizado no SERE ou outro número oficial permitido. |
 | CA25 | Histórico anual | Dado que inicia novo ano letivo | quando a escola renovar o vínculo | então deve ser criado novo registro anual sem sobrescrever oferta, organização, turno e turma anteriores. |

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import { matriculaCompleta } from "@/lib/estudantes/matricula";
 import {
   requireEstudanteWriteProfile,
   type SupabaseServerClient,
@@ -14,14 +15,18 @@ import {
   type AutorizadoRetiradaValues,
   type CreateEstudanteValues,
   type UpdateEstudanteValues,
+  SITUACOES_MANUAIS,
 } from "./schema";
 
+// A situação não entra aqui: no cadastro novo é sempre "Em análise de
+// ingresso" (default do banco) e na edição tem regras próprias (ver
+// updateEstudante) — o valor do formulário nunca é gravado às cegas, senão uma
+// aba aberta há tempo desfaria a transição automática do ingresso.
 function toEstudanteRow(escolaId: string, data: CreateEstudanteValues | UpdateEstudanteValues) {
   return {
     escola_id: escolaId,
     nome_completo: data.nomeCompleto,
     nome_social: data.nomeSocial || null,
-    situacao: data.situacao,
     data_nascimento: data.dataNascimento,
     sexo: data.sexo,
     cor_raca: data.corRaca,
@@ -184,11 +189,33 @@ export async function updateEstudante(id: string, values: UpdateEstudanteValues)
     .from("estudantes")
     .update(toEstudanteRow(escolaId, data))
     .eq("id", id)
-    .select("id")
+    .select("id, situacao")
     .maybeSingle();
 
   if (error || !updated) {
     return { error: "Não foi possível salvar as alterações." };
+  }
+
+  // Situação: só muda se a pessoa escolheu uma opção manual diferente da
+  // atual (encerrar o vínculo ou reativar). Valor não manual = formulário
+  // desatualizado em relação a uma transição do sistema: mantém o do banco.
+  if (
+    data.situacao !== updated.situacao &&
+    (SITUACOES_MANUAIS as readonly string[]).includes(data.situacao)
+  ) {
+    if (data.situacao === "ativo" && !(await matriculaCompleta(supabase, id))) {
+      return {
+        error:
+          "Dados pessoais salvos, mas o estudante só fica Ativo com a matrícula completa (turma, matrícula, data e forma de origem nos Dados escolares).",
+      };
+    }
+    const { error: situacaoError } = await supabase
+      .from("estudantes")
+      .update({ situacao: data.situacao })
+      .eq("id", id);
+    if (situacaoError) {
+      return { error: "Dados pessoais salvos, mas não foi possível alterar a situação." };
+    }
   }
 
   if (!(await syncAutorizadosRetirada(supabase, escolaId, id, data.autorizadosRetirada))) {

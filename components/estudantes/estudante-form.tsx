@@ -340,7 +340,7 @@ export function EstudanteForm(props: EstudanteFormProps) {
           <form id={FORM_ID} onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
             <fieldset disabled={!props.canEdit} className="contents">
               <div className="flex min-w-0 flex-col gap-[24px]">
-                <IdentificacaoCard form={form} />
+                <IdentificacaoCard form={form} editavel={props.mode === "edit"} />
                 <EnderecoCard control={form.control} />
                 <ResponsaveisCard form={form} />
               </div>

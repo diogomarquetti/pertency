@@ -5,11 +5,23 @@ import { revalidatePath } from "next/cache";
 import {
   requireEstudanteWriteProfile,
   requireRelatorioGeracaoProfile,
+  type SupabaseServerClient,
 } from "@/lib/supabase/require-admin-profile";
 
-import { avaliacaoSchema, podeComporEquipe, type AvaliacaoValues } from "./avaliacao-schema";
+import {
+  avaliacaoSchema,
+  camposFaltantesConclusao,
+  podeComporEquipe,
+  statusAutomatico,
+  type AvaliacaoValues,
+} from "./avaliacao-schema";
 
-function toAvaliacaoRow(escolaId: string, estudanteId: string, data: AvaliacaoValues) {
+function toAvaliacaoRow(
+  escolaId: string,
+  estudanteId: string,
+  data: AvaliacaoValues,
+  statusAvaliacao: "rascunho" | "em_andamento" | "concluida",
+) {
   return {
     estudante_id: estudanteId,
     escola_id: escolaId,
@@ -18,7 +30,7 @@ function toAvaliacaoRow(escolaId: string, estudanteId: string, data: AvaliacaoVa
     organizacao_pretendida_id: data.organizacaoPretendidaId || null,
     data_inicio: data.dataInicio || null,
     data_termino: data.dataTermino || null,
-    status_avaliacao: data.statusAvaliacao,
+    status_avaliacao: statusAvaliacao,
     historico_escolar: data.historicoEscolar || null,
     informacoes_familia: data.informacoesFamilia || null,
     contexto_sociocultural: data.contextoSociocultural || null,
@@ -39,7 +51,6 @@ function toAvaliacaoRow(escolaId: string, estudanteId: string, data: AvaliacaoVa
     justificativa_elegibilidade: data.justificativaElegibilidade || null,
     encaminhamento_recomendado: data.encaminhamentoRecomendado || null,
     orientacoes_pai: data.orientacoesPai || null,
-    assinaturas: data.assinaturas || null,
   };
 }
 
@@ -61,9 +72,16 @@ function mensagemErroAvaliacao(error: { code?: string; message?: string }) {
  * cria a primeira versão (ou uma nova, depois de uma cancelada). Concluída,
  * Retificada e Cancelada são imutáveis: o banco recusa o UPDATE.
  *
- * Quando a avaliação é concluída com recomendação "não elegível", já
- * atualiza `estudantes.situacao` junto — o trigger de auditoria de
- * estudantes registra essa mudança sozinho.
+ * O status é calculado aqui (`statusAutomatico`), não escolhido: Concluída
+ * quando os campos mínimos estão preenchidos e quem salva pode concluir.
+ *
+ * Ao concluir, `estudantes.situacao` acompanha (o trigger de auditoria de
+ * estudantes registra a mudança sozinho):
+ * - elegível + encaminhamento "Efetivar matrícula" → "A matricular" (a
+ *   Secretaria completa os Dados escolares e o estudante vira "Ativo");
+ * - não elegível → "Não elegível".
+ * Só mexe em quem ainda está no processo de ingresso — retificação nunca
+ * rebaixa um estudante já Ativo (PROVISÓRIO: validar com P.O).
  */
 export async function salvarAvaliacao(estudanteId: string, avaliacaoId: string | null, values: AvaliacaoValues) {
   const parsed = avaliacaoSchema.safeParse(values);
@@ -89,7 +107,20 @@ export async function salvarAvaliacao(estudanteId: string, avaliacaoId: string |
     data.equipeResponsavelIds = data.equipeResponsavelIds.filter((id) => !fora.has(id));
   }
 
-  const row = toAvaliacaoRow(escolaId, estudanteId, data);
+  const { data: podeConcluirRpc } = await supabase.rpc("pode_concluir_avaliacao");
+  let statusAtual: string | null = null;
+  if (avaliacaoId) {
+    const { data: atual } = await supabase
+      .from("avaliacoes_ingresso")
+      .select("status_avaliacao")
+      .eq("id", avaliacaoId)
+      .maybeSingle();
+    statusAtual = atual?.status_avaliacao ?? null;
+  }
+  const faltantes = camposFaltantesConclusao(data);
+  const status = statusAutomatico(data, statusAtual, !!podeConcluirRpc);
+
+  const row = toAvaliacaoRow(escolaId, estudanteId, data, status);
 
   if (avaliacaoId) {
     const { data: updated, error } = await supabase
@@ -125,12 +156,41 @@ export async function salvarAvaliacao(estudanteId: string, avaliacaoId: string |
     }
   }
 
-  if (data.statusAvaliacao === "concluida" && data.recomendacaoElegibilidade === "nao_elegivel") {
-    await supabase.from("estudantes").update({ situacao: "nao_elegivel" }).eq("id", estudanteId);
+  let situacao: string | null = null;
+  if (status === "concluida") {
+    situacao = await atualizarSituacaoPelaConclusao(supabase, estudanteId, data);
   }
 
   revalidatePath(`/estudantes/${estudanteId}/editar`);
-  return { success: true } as const;
+  return { success: true, status, faltantes, situacao } as const;
+}
+
+/** Devolve a nova situação do estudante, ou null se não mudou. */
+async function atualizarSituacaoPelaConclusao(
+  supabase: SupabaseServerClient,
+  estudanteId: string,
+  data: AvaliacaoValues,
+) {
+  const alvo =
+    data.recomendacaoElegibilidade === "nao_elegivel"
+      ? "nao_elegivel"
+      : data.recomendacaoElegibilidade === "elegivel" && data.encaminhamentoRecomendado === "efetivar_matricula"
+        ? "a_matricular"
+        : null;
+  if (!alvo) return null;
+
+  const origens =
+    alvo === "a_matricular"
+      ? ["em_analise_de_ingresso", "nao_elegivel"]
+      : ["em_analise_de_ingresso", "a_matricular"];
+  const { data: atualizado } = await supabase
+    .from("estudantes")
+    .update({ situacao: alvo })
+    .eq("id", estudanteId)
+    .in("situacao", origens)
+    .select("id")
+    .maybeSingle();
+  return atualizado ? alvo : null;
 }
 
 /**

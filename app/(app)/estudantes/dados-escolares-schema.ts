@@ -4,6 +4,7 @@ import { OFERTA_OPTIONS } from "@/app/(app)/turmas/schema";
 
 export { OFERTA_OPTIONS };
 
+
 // HU-EST-001 v2.0, seção 13.1 — "Tipo de matrícula" saiu do documento e foi
 // absorvido aqui: Rematrícula/continuidade cobre o mesmo caso de uso.
 export const FORMA_INGRESSO_OPTIONS = [
@@ -60,9 +61,6 @@ const dadosEscolaresFields = {
 
   anoLetivoId: z.string().optional().or(z.literal("")),
   dataMatriculaEfetiva: z.string().optional().or(z.literal("")),
-  ofertaAtualSlug: z.string().optional().or(z.literal("")),
-  ofertaAtualId: z.string().optional().or(z.literal("")),
-  organizacaoAtualId: z.string().optional().or(z.literal("")),
   turnoId: z.string().optional().or(z.literal("")),
   turmaId: z.string().optional().or(z.literal("")),
   matriculaInterna: z.string().optional().or(z.literal("")),
@@ -76,27 +74,32 @@ const dadosEscolaresFields = {
   observacoes: z.string().optional().or(z.literal("")),
 };
 
-// Regra 3 da história: estudante Ativo precisa de oferta atual, organização
-// atual, turno, turma, número de matrícula (coluna `matricula_interna`) e
-// data de matrícula efetiva, forma de origem. (A etapa do ciclo deixou de
-// ser pedida aqui — retorno do P.O de 2026-10-27; as etapas são da turma.) Bloco "Encerramento": obrigatório quando a
-// situação é transferido/desligado/inativo.
+// Campos que a matrícula efetiva exige. Oferta e organização não são mais
+// preenchidas aqui (ajuste do P.O, 2026-11-10): a pretendida vive na
+// Avaliação de Ingresso e a "atual" vem da turma escolhida.
+const CAMPOS_MATRICULA: [keyof typeof dadosEscolaresFields, string][] = [
+  ["anoLetivoId", "Selecione o ano letivo"],
+  ["turnoId", "Selecione o turno"],
+  ["turmaId", "Selecione a turma"],
+  ["matriculaInterna", "Informe o número de matrícula"],
+  ["dataMatriculaEfetiva", "Informe a data de matrícula efetiva"],
+  ["formaOrigem", "Selecione a forma de origem"],
+];
+
+/** Campos da matrícula que ainda faltam: com tudo preenchido, "A matricular" vira "Ativo" sozinho ao salvar. */
+export function camposMatriculaFaltantes(data: Pick<DadosEscolaresValues, (typeof CAMPOS_MATRICULA)[number][0]>) {
+  return CAMPOS_MATRICULA.filter(([campo]) => !data[campo]);
+}
+
+// Regra 3 da história: estudante Ativo precisa de turno, turma, número de
+// matrícula (coluna `matricula_interna`), data de matrícula efetiva e forma
+// de origem. A situação não é editada aqui (é única, na Aba 1): chega como
+// valor oculto, lido do banco pela Server Action. Bloco "Encerramento":
+// obrigatório quando a situação é transferido/desligado/inativo.
 export const dadosEscolaresSchema = z.object({ ...dadosEscolaresFields }).superRefine((data, ctx) => {
   if (data.situacao === "ativo") {
-    const camposObrigatorios: [keyof typeof dadosEscolaresFields, string][] = [
-      ["anoLetivoId", "Selecione o ano letivo"],
-      ["ofertaAtualId", "Selecione a oferta atual"],
-      ["organizacaoAtualId", "Selecione a organização atual"],
-      ["turnoId", "Selecione o turno"],
-      ["turmaId", "Selecione a turma"],
-      ["matriculaInterna", "Informe o número de matrícula"],
-      ["dataMatriculaEfetiva", "Informe a data de matrícula efetiva"],
-      ["formaOrigem", "Selecione a forma de origem"],
-    ];
-    for (const [campo, mensagem] of camposObrigatorios) {
-      if (!data[campo]) {
-        ctx.addIssue({ code: "custom", path: [campo], message: mensagem });
-      }
+    for (const [campo, mensagem] of camposMatriculaFaltantes(data)) {
+      ctx.addIssue({ code: "custom", path: [campo], message: mensagem });
     }
   }
 
@@ -128,9 +131,6 @@ export const DADOS_ESCOLARES_EMPTY_VALUES: DadosEscolaresValues = {
   formaIngresso: "",
   anoLetivoId: "",
   dataMatriculaEfetiva: "",
-  ofertaAtualSlug: "",
-  ofertaAtualId: "",
-  organizacaoAtualId: "",
   turnoId: "",
   turmaId: "",
   matriculaInterna: "",

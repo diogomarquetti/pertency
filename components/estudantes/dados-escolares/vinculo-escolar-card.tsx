@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-import { SITUACAO_OPTIONS } from "@/app/(app)/estudantes/schema";
 import {
   FORMA_INGRESSO_OPTIONS,
   type DadosEscolaresValues,
@@ -32,19 +32,13 @@ import type {
   TurmaOption,
   VinculoEscolarAnual,
 } from "@/app/(app)/estudantes/queries";
-import { organizacaoLabel, organizacoesSelecionaveis } from "@/lib/ofertas-config";
+import { organizacaoLabel } from "@/lib/ofertas-config";
 import { useSelecaoUnica } from "@/lib/use-selecao-unica";
-import type { OfertaSlug } from "@/app/(app)/turmas/schema";
-
-function limparCamposDependentes(form: UseFormReturn<DadosEscolaresValues>) {
-  form.setValue("organizacaoAtualId", "", { shouldDirty: true });
-  form.setValue("turmaId", "");
-}
 
 // Trocar o ano letivo troca qual vínculo está sendo editado — cada ano tem o
 // seu (regra 18.1: trocar de ano não pode sobrescrever o vínculo anterior).
 // Quando o ano já tem vínculo salvo, carrega os valores dele; quando é um
-// ano novo, sugere oferta/organização/turno do vínculo mais recente (mas
+// ano novo, sugere o turno do vínculo mais recente (mas
 // deixa turma, matrícula e data em branco — exige reconfirmação, não
 // promove sozinho) e nunca salva nada até o usuário clicar em Salvar.
 function aplicarVinculoDoAno(
@@ -55,9 +49,6 @@ function aplicarVinculoDoAno(
   const vinculoDoAno = vinculosEscolaresAnuais.find((v) => v.anoLetivoId === anoLetivoId);
 
   if (vinculoDoAno) {
-    form.setValue("ofertaAtualId", vinculoDoAno.ofertaAtualId, { shouldDirty: true });
-    form.setValue("ofertaAtualSlug", vinculoDoAno.ofertaAtualSlug as OfertaSlug);
-    form.setValue("organizacaoAtualId", vinculoDoAno.organizacaoAtualId);
     form.setValue("turnoId", vinculoDoAno.turnoId);
     form.setValue("turmaId", vinculoDoAno.turmaId);
     form.setValue("matriculaInterna", vinculoDoAno.matriculaInterna);
@@ -67,9 +58,6 @@ function aplicarVinculoDoAno(
   }
 
   const maisRecente = vinculosEscolaresAnuais[0];
-  form.setValue("ofertaAtualId", maisRecente?.ofertaAtualId ?? "", { shouldDirty: true });
-  form.setValue("ofertaAtualSlug", (maisRecente?.ofertaAtualSlug ?? "") as OfertaSlug);
-  form.setValue("organizacaoAtualId", maisRecente?.organizacaoAtualId ?? "");
   form.setValue("turnoId", maisRecente?.turnoId ?? "");
   form.setValue("turmaId", "");
   form.setValue("matriculaInterna", "");
@@ -97,71 +85,45 @@ export function VinculoEscolarCard({
   canEdit: boolean;
 }) {
   const anoLetivoId = form.watch("anoLetivoId");
-  const ofertaAtualSlug = form.watch("ofertaAtualSlug");
-  const ofertaAtualId = form.watch("ofertaAtualId");
-  const organizacaoAtualId = form.watch("organizacaoAtualId");
   const turnoId = form.watch("turnoId");
 
-  const organizacoesFiltradas = organizacoesSelecionaveis(
-    referenciaOfertas.organizacoes,
-    ofertaAtualId,
-    organizacaoAtualId,
-  );
-  // Turma precisa bater com oferta, organização, turno e ano letivo do
-  // vínculo sendo editado (CA22/CA23 da HU-EST-001 v2.0) — enquanto faltar
-  // algum deles, a lista fica vazia (e o select, desabilitado).
-  function turmaCompativel(
-    turma: TurmaOption,
-    filtro: { organizacaoId: string; turnoId: string },
-  ) {
-    return (
-      turma.ofertaId === ofertaAtualId &&
-      turma.organizacaoId === filtro.organizacaoId &&
-      turma.turnoId === filtro.turnoId &&
-      turma.anoLetivoId === anoLetivoId
-    );
-  }
-  const turmasFiltradas = turmasReferencia.filter((turma) =>
-    turmaCompativel(turma, { organizacaoId: organizacaoAtualId ?? "", turnoId: turnoId ?? "" }),
-  );
-  // Uma só opção já vem escolhida: organização da oferta e turma compatível.
-  useSelecaoUnica(
-    organizacaoAtualId,
-    ofertaAtualId ? organizacoesFiltradas : [],
-    (id) => form.setValue("organizacaoAtualId", id, { shouldDirty: true, shouldValidate: true }),
-    canEdit,
+  // Oferta e organização aparecem só para leitura: a da turma escolhida
+  // (que vira a do vínculo ao salvar) ou, sem turma, a pretendida na
+  // Avaliação de Ingresso.
+  const turmaEscolhida = turmasReferencia.find((turma) => turma.id === form.watch("turmaId"));
+  const ofertaId = turmaEscolhida?.ofertaId ?? avaliacao?.ofertaPretendidaId;
+  const organizacaoId = turmaEscolhida?.organizacaoId ?? avaliacao?.organizacaoPretendidaId;
+  const ofertaNome = referenciaOfertas.ofertas.find((oferta) => oferta.id === ofertaId)?.nome;
+  const organizacao = referenciaOfertas.organizacoes.find((item) => item.id === organizacaoId);
+
+  // Oferta e organização não são mais escolhidas aqui: a pretendida está na
+  // Avaliação de Ingresso e a atual do vínculo vem da turma (ver
+  // dados-escolares-actions.ts). A turma só precisa bater com turno e ano
+  // letivo (CA22/CA23 da HU-EST-001 v2.0).
+  const turmasFiltradas = turmasReferencia.filter(
+    (turma) => turma.turnoId === turnoId && turma.anoLetivoId === anoLetivoId,
   );
 
   const faltaFiltroTurma = !anoLetivoId
     ? "Selecione o ano letivo primeiro"
-    : !ofertaAtualId
-      ? "Selecione a oferta primeiro"
-      : !organizacaoAtualId || !turnoId
-        ? "Selecione organização e turno primeiro"
-        : null;
-  // Turma só é obrigatória (e só vem escolhida) para estudante Ativo.
+    : !turnoId
+      ? "Selecione o turno primeiro"
+      : null;
+  // Uma só opção compatível já vem escolhida.
   useSelecaoUnica(
     form.watch("turmaId"),
-    !faltaFiltroTurma && form.watch("situacao") === "ativo" ? turmasFiltradas : [],
+    !faltaFiltroTurma ? turmasFiltradas : [],
     (id) => form.setValue("turmaId", id, { shouldDirty: true, shouldValidate: true }),
     canEdit,
   );
 
-  // Trocar organização ou turno só limpa a turma se ela deixar de ser
-  // compatível com o novo filtro.
-  function limparTurmaSeIncompativel(filtro: { organizacaoId: string; turnoId: string }) {
+  // Trocar o turno só limpa a turma se ela deixar de ser compatível.
+  function limparTurmaSeIncompativel(novoTurnoId: string) {
     const turmaAtual = turmasReferencia.find((turma) => turma.id === form.getValues("turmaId"));
-    if (turmaAtual && !turmaCompativel(turmaAtual, filtro)) {
+    if (turmaAtual && turmaAtual.turnoId !== novoTurnoId) {
       form.setValue("turmaId", "", { shouldDirty: true });
     }
   }
-
-  const ofertaPretendidaNome = referenciaOfertas.ofertas.find(
-    (oferta) => oferta.id === avaliacao?.ofertaPretendidaId,
-  )?.nome;
-  const organizacaoPretendidaNome = referenciaOfertas.organizacoes.find(
-    (organizacao) => organizacao.id === avaliacao?.organizacaoPretendidaId,
-  )?.nome;
 
   return (
     <Card className="gap-4 p-[24px]">
@@ -169,40 +131,15 @@ export function VinculoEscolarCard({
         <span className="text-brand">1.</span> Vínculo escolar
       </h2>
 
-      {(ofertaPretendidaNome || organizacaoPretendidaNome) && (
-        <p className="text-[13px] text-muted">
-          Oferta/organização pretendida na Avaliação de Ingresso:{" "}
-          <span className="text-ink">
-            {[ofertaPretendidaNome, organizacaoPretendidaNome].filter(Boolean).join(" — ")}
-          </span>
-        </p>
-      )}
-
       <div className="grid gap-5 sm:grid-cols-2">
-        <FormField
-          control={form.control}
-          name="situacao"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Situação do estudante</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {SITUACAO_OPTIONS.map((situacao) => (
-                    <SelectItem key={situacao.value} value={situacao.value}>
-                      {situacao.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-[6px]">
+          <Label>Oferta</Label>
+          <Input value={ofertaNome ?? "—"} readOnly disabled />
+        </div>
+        <div className="grid gap-[6px]">
+          <Label>Organização</Label>
+          <Input value={organizacao ? organizacaoLabel(organizacao) : "—"} readOnly disabled />
+        </div>
 
         <FormField
           control={form.control}
@@ -281,75 +218,6 @@ export function VinculoEscolarCard({
 
         <FormField
           control={form.control}
-          name="ofertaAtualId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Oferta atual</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={(value) => {
-                  const oferta = referenciaOfertas.ofertas.find((o) => o.id === value);
-                  field.onChange(value);
-                  form.setValue("ofertaAtualSlug", (oferta?.slug ?? "") as OfertaSlug, {
-                    shouldDirty: true,
-                  });
-                  limparCamposDependentes(form);
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione…" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {referenciaOfertas.ofertas.map((oferta) => (
-                    <SelectItem key={oferta.id} value={oferta.id}>
-                      {oferta.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="organizacaoAtualId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Organização atual</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  limparTurmaSeIncompativel({ organizacaoId: value, turnoId: turnoId ?? "" });
-                }}
-                disabled={!ofertaAtualId}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={ofertaAtualId ? "Selecione…" : "Selecione a oferta primeiro"}
-                    />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {organizacoesFiltradas.map((organizacao) => (
-                    <SelectItem key={organizacao.id} value={organizacao.id}>
-                      {organizacaoLabel(organizacao)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="turnoId"
           render={({ field }) => (
             <FormItem>
@@ -358,10 +226,7 @@ export function VinculoEscolarCard({
                 value={field.value}
                 onValueChange={(value) => {
                   field.onChange(value);
-                  limparTurmaSeIncompativel({
-                    organizacaoId: organizacaoAtualId ?? "",
-                    turnoId: value,
-                  });
+                  limparTurmaSeIncompativel(value);
                 }}
               >
                 <FormControl>
