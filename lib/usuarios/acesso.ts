@@ -204,6 +204,10 @@ export async function atualizarUsuario({
     .select("id")
     .maybeSingle();
 
+  if (updateError?.hint === "ultimo_administrador") {
+    return { error: "A escola precisa ter ao menos um administrador ativo. Cadastre outro antes de alterar este." };
+  }
+
   if (updateError || !updated) {
     return { error: "Não foi possível salvar as alterações." };
   }
