@@ -35,6 +35,14 @@ export const NIVEL_APOIO_OPTIONS = [
   { value: "pervasivo", label: "Pervasivo" },
 ] as const;
 
+/** Uma área marcada: nível de apoio próprio e justificativa (ajuste do P.O, 2026-11-16). */
+export const apoioPorAreaSchema = z.object({
+  area: z.string(),
+  nivel: z.string(),
+  justificativa: z.string(),
+});
+export type ApoioPorArea = z.infer<typeof apoioPorAreaSchema>;
+
 export const RECOMENDACAO_OPTIONS = [
   { value: "elegivel", label: "Elegível" },
   { value: "nao_elegivel", label: "Não elegível" },
@@ -86,8 +94,7 @@ const avaliacaoFields = z.object({
   barreirasIdentificadas: z.string().optional().or(z.literal("")),
 
   necessidadesEspecificas: z.string().optional().or(z.literal("")),
-  nivelApoio: z.string().optional().or(z.literal("")),
-  areasApoio: z.array(z.string()),
+  apoiosPorArea: z.array(apoioPorAreaSchema),
   parecerEquipe: z.string().optional().or(z.literal("")),
   recomendacaoElegibilidade: z.string().optional().or(z.literal("")),
   justificativaElegibilidade: z.string().optional().or(z.literal("")),
@@ -106,6 +113,10 @@ const CAMPOS_MINIMOS: { rotulo: string; preenchido: (v: AvaliacaoValues) => bool
   { rotulo: "Equipe responsável", preenchido: (v) => v.equipeResponsavelIds.length > 0 },
   { rotulo: "Oferta pretendida", preenchido: (v) => !!v.ofertaPretendidaId },
   { rotulo: "Organização pretendida", preenchido: (v) => !!v.organizacaoPretendidaId },
+  {
+    rotulo: "Nível e justificativa de cada área de apoio",
+    preenchido: (v) => v.apoiosPorArea.every((a) => !!a.nivel && !!a.justificativa.trim()),
+  },
   { rotulo: "Parecer da equipe", preenchido: (v) => !!v.parecerEquipe?.trim() },
   { rotulo: "Recomendação de elegibilidade", preenchido: (v) => !!v.recomendacaoElegibilidade },
   { rotulo: "Justificativa", preenchido: (v) => !!v.justificativaElegibilidade?.trim() },
@@ -121,7 +132,7 @@ const CAMPOS_DE_CONTEUDO = [
   "historicoEscolar", "informacoesFamilia", "contextoSociocultural",
   "habilidadesConceituais", "habilidadesSociais", "habilidadesPraticas", "dimensaoParticipacao",
   "contextoEscolar", "contextoFamiliar", "contextoComunitario", "fatoresFacilitadores",
-  "barreirasIdentificadas", "necessidadesEspecificas", "nivelApoio", "parecerEquipe",
+  "barreirasIdentificadas", "necessidadesEspecificas", "parecerEquipe",
   "recomendacaoElegibilidade", "justificativaElegibilidade", "encaminhamentoRecomendado", "orientacoesPai",
 ] as const;
 
@@ -138,7 +149,7 @@ export function statusAutomatico(
 ): "rascunho" | "em_andamento" | "concluida" {
   if (podeConcluir && camposFaltantesConclusao(values).length === 0) return "concluida";
   const temConteudo =
-    CAMPOS_DE_CONTEUDO.some((campo) => !!values[campo]?.trim()) || values.areasApoio.length > 0;
+    CAMPOS_DE_CONTEUDO.some((campo) => !!values[campo]?.trim()) || values.apoiosPorArea.length > 0;
   return temConteudo || statusAtual === "em_andamento" ? "em_andamento" : "rascunho";
 }
 
@@ -163,8 +174,7 @@ export const AVALIACAO_EMPTY_VALUES: AvaliacaoValues = {
   fatoresFacilitadores: "",
   barreirasIdentificadas: "",
   necessidadesEspecificas: "",
-  nivelApoio: "",
-  areasApoio: [],
+  apoiosPorArea: [],
   parecerEquipe: "",
   recomendacaoElegibilidade: "",
   justificativaElegibilidade: "",

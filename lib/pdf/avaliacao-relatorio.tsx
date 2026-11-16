@@ -142,8 +142,7 @@ export type AvaliacaoRelatorioData = {
   fatoresFacilitadores: string;
   barreirasIdentificadas: string;
   necessidadesEspecificas: string;
-  nivelApoio: string;
-  areasApoio: string[];
+  apoiosPorArea: { area: string; nivel: string; justificativa: string }[];
   parecerEquipe: string;
   recomendacaoElegibilidade: string;
   justificativaElegibilidade: string;
@@ -252,11 +251,17 @@ export function AvaliacaoRelatorioPdf({
         <Secao titulo="5. Necessidades e apoios">
           <Text style={styles.rotulo}>Necessidades educacionais específicas</Text>
           <Text style={styles.paragrafo}>{data.necessidadesEspecificas || "—"}</Text>
-          <Campo rotulo="Nível de apoio requerido" valor={NIVEL_APOIO_LABEL[data.nivelApoio] ?? "—"} />
           <Text style={styles.rotulo}>Áreas de apoio</Text>
-          <Text style={styles.paragrafo}>
-            {data.areasApoio.length > 0 ? data.areasApoio.join(", ") : "—"}
-          </Text>
+          {data.apoiosPorArea.length > 0 ? (
+            data.apoiosPorArea.map((a) => (
+              <View key={a.area}>
+                <Campo rotulo={a.area} valor={NIVEL_APOIO_LABEL[a.nivel] ?? "—"} />
+                <Text style={styles.paragrafo}>{a.justificativa || "—"}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.paragrafo}>—</Text>
+          )}
         </Secao>
 
         <Secao titulo="6. Análise integrada e elegibilidade">

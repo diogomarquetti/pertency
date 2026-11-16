@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 import { funcaoExibicao } from "../usuarios/schema";
+import type { ApoioPorArea } from "./avaliacao-schema";
 import { DOCUMENTO_TIPOS_FIXOS } from "./documentos-schema";
 
 export type AuditoriaOrigem =
@@ -232,8 +233,7 @@ export type AvaliacaoIngresso = {
   fatoresFacilitadores: string;
   barreirasIdentificadas: string;
   necessidadesEspecificas: string;
-  nivelApoio: string;
-  areasApoio: string[];
+  apoiosPorArea: ApoioPorArea[];
   parecerEquipe: string;
   recomendacaoElegibilidade: string;
   justificativaElegibilidade: string;
@@ -265,7 +265,7 @@ export async function getVersoesAvaliacaoIngresso(estudanteId: string): Promise<
        contexto_sociocultural, habilidades_conceituais, habilidades_sociais,
        habilidades_praticas, dimensao_participacao, contexto_escolar, contexto_familiar,
        contexto_comunitario, fatores_facilitadores, barreiras_identificadas,
-       necessidades_especificas, nivel_apoio, areas_apoio, parecer_equipe,
+       necessidades_especificas, apoios_por_area, parecer_equipe,
        recomendacao_elegibilidade, justificativa_elegibilidade, encaminhamento_recomendado,
        orientacoes_pai`,
     )
@@ -305,8 +305,7 @@ export async function getVersoesAvaliacaoIngresso(estudanteId: string): Promise<
     fatoresFacilitadores: row.fatores_facilitadores ?? "",
     barreirasIdentificadas: row.barreiras_identificadas ?? "",
     necessidadesEspecificas: row.necessidades_especificas ?? "",
-    nivelApoio: row.nivel_apoio ?? "",
-    areasApoio: row.areas_apoio ?? [],
+    apoiosPorArea: (row.apoios_por_area as ApoioPorArea[] | null) ?? [],
     parecerEquipe: row.parecer_equipe ?? "",
     recomendacaoElegibilidade: row.recomendacao_elegibilidade ?? "",
     justificativaElegibilidade: row.justificativa_elegibilidade ?? "",
