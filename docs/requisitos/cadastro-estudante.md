@@ -93,8 +93,8 @@ A situação é um campo único, no card Identificação da Aba 1 (não existe m
 
 * Novo cadastro: apenas Dados pessoais fica disponível para edição; demais abas permanecem bloqueadas.  
 * Após salvar os dados pessoais mínimos, Avaliação de Ingresso é liberada.  
-* Documentos é liberada quando a Avaliação de Ingresso estiver disponível para continuidade.  
-* Dados escolares somente poderá ser concluída quando houver parecer elegível e decisão de efetivação do vínculo.  
+* Documentos, Dados escolares e Condição do estudante são liberados logo após salvar os dados pessoais, junto com a Avaliação de Ingresso, para a Secretaria não ficar travada durante a avaliação. *(Ajuste do P.O, 2026-11-16.)*  
+* O estudante só vira Ativo com parecer elegível, matrícula completa (turma, número da matrícula (SERE) e data) e situação "A matricular".  
 * Condição do estudante é liberada para os perfis autorizados após o cadastro avançar para vínculo escolar ou quando a coordenação precisar registrar informação funcional durante o processo.  
 * Se a avaliação concluir Não elegível, Dados escolares não pode criar vínculo ativo, mas Documentos e histórico permanecem consultáveis.  
 * Bloqueios devem exibir motivo claro e ação necessária para continuidade.
@@ -187,7 +187,7 @@ A situação é um campo único, no card Identificação da Aba 1 (não existe m
 | 5\. Contexto | Barreiras identificadas | Texto longo | Não | Equipe | Elementos que dificultam aprendizagem, participação e permanência. |
 | 6\. Necessidades | Necessidades educacionais específicas | Texto longo | Sim | Equipe | Comunicação, mediação, autocuidado, ambiente, organização, permanência, adaptações e outras. |
 | 7\. Apoios | Nível de apoio requerido | Seleção | Sim | Equipe | Intermitente, Limitado, Extensivo ou Pervasivo. |
-| 7\. Apoios | Áreas de apoio | Seleção múltipla | Sim | Equipe | Acadêmica, Comunicacional, Motora, Social, Comportamental, Autonomia e vida diária. |
+| 7\. Apoios | Áreas de apoio | Seleção múltipla | Sim | Equipe | Acadêmica, Comunicacional, Motora, Social, Comportamental, Autonomia e vida diária. Cada área marcada tem nível de apoio próprio (Intermitente, Limitado, Extensivo ou Pervasivo) e justificativa obrigatória. *(Ajuste do P.O, 2026-11-16.)* |
 | 9\. Análise integrada | Análise integrada da equipe | Texto longo | Sim | Equipe | Síntese baseada em evidências; potencialidades, dificuldades funcionais e implicações pedagógicas. |
 | 10\. Elegibilidade | Elegibilidade | Escolha única | Sim | Equipe autorizada | Elegível ou Não elegível. |
 | 10\. Elegibilidade | Justificativa | Texto longo | Sim | Equipe autorizada | Baseada no conjunto de evidências. |
@@ -478,7 +478,7 @@ Para cada alteração auditável registrar: usuário, data, hora, valor anterior
 | CA07 | Avaliação | Dado que a avaliação foi aberta | quando a equipe registrar Oferta pretendida | então Organização pretendida deve mostrar somente opções compatíveis. |
 | CA08 | Avaliação | Dado que a avaliação está em andamento | quando um profissional autorizado salvar sua contribuição | então a contribuição deve registrar profissional, função, data e conteúdo. |
 | CA09 | Avaliação | Dado que um profissional complementar não é autor da contribuição | quando tentar editar a contribuição de outro usuário | então o sistema deve bloquear a edição, salvo permissão superior. |
-| CA10 | Avaliação | Dado que a equipe seleciona nível de apoio | quando abrir as opções | então somente Intermitente, Limitado, Extensivo e Pervasivo devem estar disponíveis. |
+| CA10 | Avaliação | Dado que a equipe seleciona nível de apoio | quando abrir as opções de uma área marcada | então somente Intermitente, Limitado, Extensivo e Pervasivo devem estar disponíveis. |
 | CA11 | Avaliação | Dado que a avaliação é concluída | quando elegibilidade e justificativa estiverem preenchidas | então o sistema deve registrar status Concluída e histórico. |
 | CA12 | Avaliação | Dado que a elegibilidade \= Não elegível | quando a avaliação for concluída | então o sistema deve preservar o cadastro, bloquear vínculo ativo e manter parecer/encaminhamento. |
 | CA13 | PDF | Dado que a avaliação está concluída | quando o usuário autorizado clicar em Gerar relatório | então o sistema deve oferecer Relatório padrão e Relatório completo. |

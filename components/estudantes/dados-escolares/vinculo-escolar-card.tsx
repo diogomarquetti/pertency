@@ -286,7 +286,7 @@ export function VinculoEscolarCard({
           name="matriculaInterna"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de matrícula</FormLabel>
+              <FormLabel>Número da matrícula (SERE)</FormLabel>
               <FormControl>
                 <Input placeholder="Nº do SERE ou outro número oficial" {...field} />
               </FormControl>

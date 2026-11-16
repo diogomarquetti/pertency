@@ -81,7 +81,7 @@ const CAMPOS_MATRICULA: [keyof typeof dadosEscolaresFields, string][] = [
   ["anoLetivoId", "Selecione o ano letivo"],
   ["turnoId", "Selecione o turno"],
   ["turmaId", "Selecione a turma"],
-  ["matriculaInterna", "Informe o número de matrícula"],
+  ["matriculaInterna", "Informe o número da matrícula (SERE)"],
   ["dataMatriculaEfetiva", "Informe a data de matrícula efetiva"],
   ["formaOrigem", "Selecione a forma de origem"],
 ];

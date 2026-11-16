@@ -24,12 +24,9 @@ import {
   ENCAMINHAMENTO_OPTIONS,
   NIVEL_APOIO_OPTIONS,
   RECOMENDACAO_OPTIONS,
+  type ApoioPorArea,
   type AvaliacaoValues,
 } from "@/app/(app)/estudantes/avaliacao-schema";
-
-function toggleValue(current: string[], value: string) {
-  return current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-}
 
 export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoValues> }) {
   // id="parecer": âncora do link "Escrever parecer" da homepage.
@@ -55,55 +52,72 @@ export function AvaliacaoParecerCard({ control }: { control: Control<AvaliacaoVa
 
       <FormField
         control={control}
-        name="nivelApoio"
-        render={({ field }) => (
-          <FormItem className="sm:w-[280px]">
-            <FormLabel>Nível de apoio requerido</FormLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione…" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {NIVEL_APOIO_OPTIONS.map((nivel) => (
-                  <SelectItem key={nivel.value} value={nivel.value}>
-                    {nivel.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="areasApoio"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Áreas de apoio</FormLabel>
-            <div className="rounded-sm border border-line px-[10px]">
-              {AREA_APOIO_OPTIONS.map((area, index) => (
-                <label
-                  key={area}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-[10px] py-[9px] text-[14px] text-ink",
-                    index > 0 && "border-t border-line",
-                  )}
-                >
-                  <Checkbox
-                    checked={field.value.includes(area)}
-                    onCheckedChange={() => field.onChange(toggleValue(field.value, area))}
-                  />
-                  {area}
-                </label>
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
+        name="apoiosPorArea"
+        render={({ field }) => {
+          const apoios = field.value;
+          const atualizar = (area: string, parcial: Partial<ApoioPorArea>) =>
+            field.onChange(apoios.map((a) => (a.area === area ? { ...a, ...parcial } : a)));
+          return (
+            <FormItem>
+              <FormLabel>Áreas de apoio</FormLabel>
+              <p className="text-[12.5px] text-muted">
+                Marque as áreas em que o estudante precisa de apoio. Para cada uma, informe o nível
+                requerido e a justificativa.
+              </p>
+              <div className="rounded-sm border border-line px-[10px]">
+                {AREA_APOIO_OPTIONS.map((area, index) => {
+                  const apoio = apoios.find((a) => a.area === area);
+                  return (
+                    <div
+                      key={area}
+                      className={cn("py-[9px]", index > 0 && "border-t border-line")}
+                    >
+                      <label className="flex cursor-pointer items-center gap-[10px] text-[14px] text-ink">
+                        <Checkbox
+                          checked={!!apoio}
+                          onCheckedChange={() =>
+                            field.onChange(
+                              apoio
+                                ? apoios.filter((a) => a.area !== area)
+                                : [...apoios, { area, nivel: "", justificativa: "" }],
+                            )
+                          }
+                        />
+                        {area}
+                      </label>
+                      {apoio && (
+                        <div className="mt-2 flex flex-col gap-2 pl-[26px]">
+                          <Select
+                            value={apoio.nivel}
+                            onValueChange={(nivel) => atualizar(area, { nivel })}
+                          >
+                            <SelectTrigger className="sm:w-[280px]" aria-label={`Nível de apoio — ${area}`}>
+                              <SelectValue placeholder="Nível de apoio requerido…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {NIVEL_APOIO_OPTIONS.map((nivel) => (
+                                <SelectItem key={nivel.value} value={nivel.value}>
+                                  {nivel.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Textarea
+                            value={apoio.justificativa}
+                            onChange={(e) => atualizar(area, { justificativa: e.target.value })}
+                            placeholder={`Justificativa do nível escolhido em ${area.toLowerCase()}…`}
+                            aria-label={`Justificativa — ${area}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
 
       <FormField

@@ -241,16 +241,12 @@ export function EstudanteForm(props: EstudanteFormProps) {
   }
 
   // Avaliação de Ingresso só faz sentido depois que os Dados pessoais foram
-  // salvos ao menos uma vez (regra da história). Documentos e Dados
-  // escolares liberam quando a avaliação estiver Concluída com recomendação
-  // Elegível. Condição do estudante libera junto com a Avaliação — a HU
-  // v2.0 permite a Coordenação registrar informação funcional "durante o
-  // processo", não só depois do vínculo escolar efetivado.
+  // salvos ao menos uma vez (regra da história). Documentos, Dados
+  // escolares e Condição do estudante liberam junto com ela (ajuste do P.O,
+  // 2026-11-16: a Secretaria não fica travada enquanto o estudante está em
+  // avaliação). Virar Ativo continua exigindo matrícula completa.
   const avaliacaoLiberada = props.mode === "edit";
-  const documentosLiberado =
-    props.mode === "edit" &&
-    props.avaliacao?.statusAvaliacao === "concluida" &&
-    props.avaliacao?.recomendacaoElegibilidade === "elegivel";
+  const documentosLiberado = props.mode === "edit";
   const condicaoLiberada = avaliacaoLiberada;
 
   // Hero no topo do cadastro: nome/situação reagem ao que está sendo
