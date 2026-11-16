@@ -7,6 +7,10 @@ alter table public.avaliacoes_ingresso
   add column if not exists apoios_por_area jsonb;
 
 -- Backfill: cada área já marcada herda o nível único antigo, sem justificativa.
+-- Versões concluídas são imutáveis (trigger) e a cópia não é ato do usuário:
+-- desliga os triggers de usuário só durante o backfill.
+alter table public.avaliacoes_ingresso disable trigger user;
+
 update public.avaliacoes_ingresso a
 set apoios_por_area = (
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -15,6 +19,8 @@ set apoios_por_area = (
   from unnest(a.areas_apoio) as area
 )
 where a.areas_apoio is not null and a.apoios_por_area is null;
+
+alter table public.avaliacoes_ingresso enable trigger user;
 
 create or replace function public.audit_avaliacoes_ingresso_changes()
 returns trigger
